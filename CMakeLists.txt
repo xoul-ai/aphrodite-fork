@@ -293,6 +293,8 @@ if(APHRODITE_GPU_LANG STREQUAL "CUDA")
     # Include CUTLASS only when needed
     include(FetchContent)
     SET(CUTLASS_ENABLE_HEADERS_ONLY=ON)
+    # Set CUTLASS_REVISION manually -- its revision detection doesn't work in this case.
+    set(CUTLASS_REVISION "v3.5.1" CACHE STRING "CUTLASS revision to use")
     FetchContent_Declare(
           cutlass
           GIT_REPOSITORY https://github.com/nvidia/cutlass.git
