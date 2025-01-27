@@ -25,7 +25,8 @@ models = ["llava-hf/llava-onevision-qwen2-7b-ov-hf"]
 
 
 def aphrodite_to_hf_output(
-    aphrodite_output: Tuple[List[int], str, Optional[SampleLogprobs]], model: str
+    aphrodite_output: Tuple[List[int], str, Optional[SampleLogprobs]],
+    model: str
 ):
     """Sanitize aphrodite output to be comparable with hf output."""
     output_ids, output_str, out_logprobs = aphrodite_output
@@ -335,7 +336,8 @@ def run_image_test(
 @pytest.mark.parametrize("max_tokens", [128])
 @pytest.mark.parametrize("num_logprobs", [5])
 def test_models_multiple_image_inputs(
-    hf_runner, aphrodite_runner, image_assets, model, dtype, max_tokens, num_logprobs
+    hf_runner, aphrodite_runner, image_assets, model, dtype, max_tokens,
+    num_logprobs
 ) -> None:
     stop_sign = image_assets[0].pil_image
     cherry_blossom = image_assets[1].pil_image
@@ -346,7 +348,8 @@ def test_models_multiple_image_inputs(
                 <|im_end|><|im_start|>assistant\n",
                 "<|im_start|>user <image><image>\nDescribe 2 images. \
                 <|im_end|><|im_start|>assistant\n",
-                "<|im_start|>user <image><image><image><image>\nDescribe 4 images. \
+                "<|im_start|>user <image><image><image><image>\nDescribe 4 \
+                images. \
                 <|im_end|><|im_start|>assistant\n",
                 "<|im_start|>user <image>\nWhat is the season? \
                 <|im_end|><|im_start|>assistant\n",
