@@ -41,17 +41,16 @@ jobs:
 
   wheel:
     name: Build Wheel
-    runs-on: ${{ matrix.os }}
+    runs-on: self-hosted
     needs: release
-
     strategy:
       fail-fast: false
       matrix:
-          os: ['ubuntu-22.04']
-          python-version: ['3.12']
-          pytorch-version: ['2.4.0']  # Must be the most recent version that meets requirements-cuda.txt.
-          cuda-version: ['12.4']
-
+        python-version: ['3.12']
+        pytorch-version: ['2.4.0']
+        cuda-version: ['12.4']
+    container:
+      image: nvidia/cuda:12.4.0-devel-ubuntu22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -70,11 +69,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-            python-version: ${{ matrix.python-version }}
-
-      - name: Install CUDA ${{ matrix.cuda-version }}
-        run: |
-          bash -x .github/workflows/scripts/cuda-install.sh ${{ matrix.cuda-version }} ${{ matrix.os }}
+          python-version: ${{ matrix.python-version }}
 
       - name: Install PyTorch ${{ matrix.pytorch-version }} with CUDA ${{ matrix.cuda-version }}
         run: |
@@ -83,7 +78,7 @@ jobs:
       - name: Build wheel
         shell: bash
         env:
-          CMAKE_BUILD_TYPE: Release # do not compile with debug symbol to reduce wheel size
+          CMAKE_BUILD_TYPE: Release
         run: |
           bash -x .github/workflows/scripts/build.sh ${{ matrix.python-version }} ${{ matrix.cuda-version }}
           wheel_name=$(ls dist/*whl | xargs -n 1 basename)
