@@ -594,7 +594,7 @@ def gptq_marlin_moe_repack(b_q_weight: torch.Tensor, perm: torch.Tensor,
                            num_bits: int) -> torch.Tensor:
     num_experts = b_q_weight.shape[0]
     assert size_k % 16 == 0
-    output = torch.empty((num_experts, size_k // 16, size_n * 2),
+    output = torch.empty((num_experts, size_k // 16, size_n * (num_bits // 2)),
                          device=b_q_weight.device,
                          dtype=b_q_weight.dtype)
     for e in range(num_experts):
@@ -616,13 +616,11 @@ def gptq_marlin_gemm(a: torch.Tensor,
                      size_k: int,
                      is_k_full: bool,
                      has_zp: bool = False,
-                     use_fp32_reduce: bool = False,
-                     is_zp_float: bool = False) -> torch.Tensor:
+                     use_fp32_reduce: bool = False) -> torch.Tensor:
     return torch.ops._C.gptq_marlin_gemm(a, b_q_weight, b_scales, b_zeros,
                                          g_idx, perm, workspace, b_q_type,
                                          size_m, size_n, size_k, is_k_full,
-                                         has_zp, use_fp32_reduce,
-                                         is_zp_float)
+                                         has_zp, use_fp32_reduce)
 
 
 # machete

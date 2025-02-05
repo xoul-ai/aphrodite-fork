@@ -1,7 +1,6 @@
 /*
  * Adapted from
  * https://github.com/NVIDIA/TensorRT-LLM/blob/v0.7.1/cpp/tensorrt_llm/kernels/mixtureOfExperts/moe_kernels.cu
- * Copyright (c) 2024, The PygmalionAI team.
  * Copyright (c) 2024, The vLLM team.
  * SPDX-FileCopyrightText: Copyright (c) 1993-2023 NVIDIA CORPORATION &
  * AFFILIATES. All rights reserved. SPDX-License-Identifier: Apache-2.0
@@ -253,8 +252,8 @@ __launch_bounds__(WARPS_PER_CTA* WARP_SIZE) __global__
 
   // Determine the pointer type to use to read in the data depending on the
   // BYTES_PER_LDG template param. In theory, this can support all powers of 2
-  // up to 16. NOTE: The original implementation uses CUTLASS aligned array
-  // here. We defined our own aligned array and use it here to avoid the
+  // up to 16. NOTE(woosuk): The original implementation uses CUTLASS aligned
+  // array here. We defined our own aligned array and use it here to avoid the
   // dependency on CUTLASS.
   using AccessType = AlignedArray<float, ELTS_PER_LDG>;
 
