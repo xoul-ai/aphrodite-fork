@@ -70,7 +70,7 @@ class Metrics:
             documentation="CPU KV-cache usage. 1 means 100 percent usage.",
             labelnames=labelnames,
             multiprocess_mode="sum")
-        
+
         #   Prefix caching block hit rate
         self.gauge_cpu_prefix_cache_hit_rate = self._gauge_cls(
             name="aphrodite:cpu_prefix_cache_hit_rate",
@@ -289,7 +289,7 @@ class RayMetrics(Metrics):
 
 def build_1_2_5_buckets(max_value: int) -> List[int]:
     """
-    Builds a list of buckets with increasing powers of 10 multiplied by 
+    Builds a list of buckets with increasing powers of 10 multiplied by
     mantissa values (1, 2, 5) until the value exceeds the specified maximum.
 
     Example:

@@ -1,4 +1,4 @@
-"""Minimal implementation of BlipVisionModel intended to be only used 
+"""Minimal implementation of BlipVisionModel intended to be only used
 within a vision language model."""
 from typing import Iterable, Optional, Tuple, Union
 
@@ -294,7 +294,7 @@ class BlipEncoderLayer(nn.Module):
 
 class BlipEncoder(nn.Module):
     """
-    Transformer encoder consisting of `config.num_hidden_layers` self 
+    Transformer encoder consisting of `config.num_hidden_layers` self
     attention layers. Each layer is a [`BlipEncoderLayer`].
     Args:
         config: BlipConfig

@@ -103,7 +103,7 @@ class GPTQMarlinConfig(QuantizationConfig):
                         " so forcing gptq. Use quantization=gptq_marlin for"
                         " faster inference")
         return None
-            
+
 
     def get_quant_method(self, layer: torch.nn.Module,
                          prefix: str) -> Optional["GPTQMarlinLinearMethod"]:

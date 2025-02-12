@@ -1,7 +1,7 @@
 """
 Based on:
-Chen, L., Ye, Z., Wu, Y., Zhuo, D., Ceze, L., & Krishnamurthy, A. (2023). 
-Punica: Multi-Tenant LoRA Serving. 
+Chen, L., Ye, Z., Wu, Y., Zhuo, D., Ceze, L., & Krishnamurthy, A. (2023).
+Punica: Multi-Tenant LoRA Serving.
 https://arxiv.org/abs/2310.18547
 """
 
@@ -40,10 +40,10 @@ def _sgmv_expand_slice_kernel(
 ):
     """
 
-    Similar to the 'sgmv_expand' operator, but with an added parameter 
-    'slice_offset'. The reason for not reusing the 'sgmv_expand' operator 
-    might be that in the future, we could implement a fusion operator to 
-    achieve the current functionality instead of having to call it multiple 
+    Similar to the 'sgmv_expand' operator, but with an added parameter
+    'slice_offset'. The reason for not reusing the 'sgmv_expand' operator
+    might be that in the future, we could implement a fusion operator to
+    achieve the current functionality instead of having to call it multiple
     times.
     """
     pid = tl.program_id(axis=0)
@@ -135,11 +135,11 @@ def _sgmv_expand_slice(
         batches (int): batch size
         max_seq_length (int): The max sequence lengths of the sequences
             in the batch
-        token_nums (int): The token numbers in the batch. Used to verify if the 
+        token_nums (int): The token numbers in the batch. Used to verify if the
             token numbers in the inputs matches the one in the metadata.
         slice_offset (int): output_tensor's offset
         slice_size (int): current output_tensor's size
-        add_inputs (bool, optional): Defaults to False, adds the final lora 
+        add_inputs (bool, optional): Defaults to False, adds the final lora
             results to the output.
     """
 

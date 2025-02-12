@@ -206,7 +206,7 @@ def maybe_mock_device_tensors(sampler_output: SamplerOutput, batch_size: int,
 
 @contextmanager
 def nvtx_range(msg, *args, **kwargs):
-    """ 
+    """
     Context manager / decorator that pushes an NVTX range at the beginning
     of its scope, and pops it at the end. If extra arguments are given,
     they are passed as arguments to msg.format().

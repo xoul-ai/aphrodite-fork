@@ -336,7 +336,7 @@ class CompressedTensorsLinearMethod(LinearMethodBase):
                        output_size: int, params_dtype: torch.dtype,
                        **extra_weight_attrs):
         """
-        Use the CompressedTensorsScheme associated with each layer to create 
+        Use the CompressedTensorsScheme associated with each layer to create
         the necessary parameters for the layer. See LinearMethodBase for param
         details
         """
@@ -355,8 +355,8 @@ class CompressedTensorsLinearMethod(LinearMethodBase):
               x: torch.Tensor,
               bias: Optional[torch.Tensor] = None):
         """
-        Use the output of create_weights and the CompressedTensorsScheme 
-        associated with the layer to apply the forward pass with the 
+        Use the output of create_weights and the CompressedTensorsScheme
+        associated with the layer to apply the forward pass with the
         layer input.  See LinearMethodBase for param details
 
         """

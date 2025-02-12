@@ -58,7 +58,7 @@ if not is_cpu():
 
         * hf_runner: HuggingFace (HF) test model runner
         * aphrodite_runner: Aphrodite test model runner
-        * example_encoder_decoder_prompts: test fixture which provides a 
+        * example_encoder_decoder_prompts: test fixture which provides a
                                            dictionary of dummy prompts
         * model: the HF ID of the specific BART variant under test
         * dtype: the tensor datatype to employ
@@ -69,46 +69,46 @@ if not is_cpu():
                                prompt scenarios to test
 
         A note on using HF BART as a baseline for validating Aphrodite BART,
-        specifically when the decoder prompt is None. 
-        
+        specifically when the decoder prompt is None.
+
         The HF GenerationMixin's default behavior is to force the first
         decoded token to be <BOS> if the prompt does not already contain
         <BOS> (this is accomplished using a logit
         processor setting.)
-        
+
         So when we use HF BART as our baseline for comparison, note that
         when the user provides a request with a None decoder prompt
         (i.e. a singleton encoder prompt, or else an explicit encoder/
         decoder prompt with the decoder sub-prompt set to None), HF and
         Aphrodite handle this in different ways:
-        
-        * HF will (1) tokenize the None prompt as an empty token-list, 
+
+        * HF will (1) tokenize the None prompt as an empty token-list,
           (2) append <decoder-start-token> to the beginning, yielding
           [<decoder-start-token>], (3) pass this token list to the model, and
           then (4) after computing logits during prefill, override the model
           logits & force <BOS> to be the first generated token.
-        
+
         * Aphrodite will (1) tokenize the None prompt as [<BOS>], (2) append
           <decoder-start-token> to the beginning, yielding
           [<decoder-start-token><BOS>], (3) pass these tokens to the model &
           proceed with generation.
-        
+
         The net effect is that compared to Aphrodite, the list of HF *decoded*
         tokens will contain one more initial <BOS> than the Aphrodite generated
         tokens, because Aphrodite's <BOS> token is injected into the prompt
         rather than into the generated output. This is in spite of the fact
         that overall, the complete sequences (prompt + decoded tokens) produced
         by Aphrodite will match HF.
-        
+
         So when we use HF decoded token output to validate Aphrodite's decoded
         token output, the testing process must account for the difference in
         decoded token sequences between Aphrodite and HF specifically in the
-        decoder-prompt-is-None case. 
-        
+        decoder-prompt-is-None case.
+
         One option is to disable the logit processor feature that forces the
         <BOS> token to be decoded (forced_bos_token_id = None), eliminating
         the problem entirely. However this is not "normal" BART usage.
-        
+
         The other option is - only in the decoder-prompt-is-None case - to
         discard the first decoded token from the HF output before comparing it
         to Aphrodite.

@@ -31,37 +31,37 @@ def run_benchmarks():
         'diff': {'python': [], 'c': []},
         'indices': {'python': [], 'c': []}
     }
-    
+
     for size in sizes:
         # Generate test strings
         s1 = generate_random_string(size)
         s2 = s1[:size//2] + generate_random_string(size//2)  # Share prefix
         text = "hello " * (size // 5)  # For find_all_indices
-        
+
         # Benchmark prefix
         py_time = benchmark_function(py_prefix, s1, s2)
         c_time = benchmark_function(c_utils.find_common_prefix, s1, s2)
         results['prefix']['python'].append(py_time)
         results['prefix']['c'].append(c_time)
-        
+
         # Benchmark suffix
         py_time = benchmark_function(py_suffix, s1, s2)
         c_time = benchmark_function(c_utils.find_common_suffix, s1, s2)
         results['suffix']['python'].append(py_time)
         results['suffix']['c'].append(c_time)
-        
+
         # Benchmark diff
         py_time = benchmark_function(py_diff, s1, s2)
         c_time = benchmark_function(c_utils.extract_intermediate_diff, s1, s2)
         results['diff']['python'].append(py_time)
         results['diff']['c'].append(c_time)
-        
+
         # Benchmark indices
         py_time = benchmark_function(py_indices, text, "hello")
         c_time = benchmark_function(c_utils.find_all_indices, text, "hello")
         results['indices']['python'].append(py_time)
         results['indices']['c'].append(c_time)
-        
+
         print(f"\nResults for size {size}:")
         for func_name in results:
             speedup = results[func_name]['python'][-1] / results[func_name]['c'][-1]
@@ -78,7 +78,7 @@ def run_benchmarks():
         'diff': ax3,
         'indices': ax4
     }
-    
+
     for func_name, ax in plots.items():
         ax.plot(sizes, results[func_name]['python'], 'b-', label='Python')
         ax.plot(sizes, results[func_name]['c'], 'r-', label='C')
@@ -89,7 +89,7 @@ def run_benchmarks():
         ax.set_yscale('log')
         ax.legend()
         ax.grid(True)
-    
+
     plt.tight_layout()
     plt.savefig('benchmark_results.png')
     plt.close()

@@ -145,7 +145,7 @@ def test_activation_triton(
 ])
 @torch.inference_mode()
 def test_activation_performance(
-    activation_cls, kwargs, batch_size: int, seq_len: int, 
+    activation_cls, kwargs, batch_size: int, seq_len: int,
     hidden_size: int, device: str = "cuda"
 ) -> None:
     """Test that Triton implementation performance is close to CUDA.
@@ -159,10 +159,10 @@ def test_activation_performance(
 
     # For SiluAndMul and GeluAndMul, input shape needs 2*hidden_size
     if activation_cls in [SiluAndMul, GeluAndMul]:
-        x = torch.randn(batch_size, seq_len, 2 * hidden_size, 
+        x = torch.randn(batch_size, seq_len, 2 * hidden_size,
                        dtype=torch.float16, device=device)
     else:
-        x = torch.randn(batch_size, seq_len, hidden_size, 
+        x = torch.randn(batch_size, seq_len, hidden_size,
                        dtype=torch.float16, device=device)
 
     # Warmup

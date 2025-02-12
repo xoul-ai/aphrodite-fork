@@ -59,7 +59,7 @@ class SpecDecodeBaseSampler(nn.Module):
             bonus_token_ids: torch.Tensor,  # [batch_size]
     ) -> torch.Tensor:
         """Format output. Returns a matrix of token ids. When
-        a token is rejected via sampling, all subsequent token ids are 
+        a token is rejected via sampling, all subsequent token ids are
         set to -1 for the sequence.
         Args:
             accepted: A boolean tensor indicating if the corresponding
@@ -67,12 +67,12 @@ class SpecDecodeBaseSampler(nn.Module):
             substitute_token_ids: A tensor of token_ids that can be used
             as substitutes for the draft token ids if the proposed token
             is rejected.
-            draft_token_ids: A tensor of token ids speculated by the 
+            draft_token_ids: A tensor of token ids speculated by the
             draft model.
             bonus_token_ids: Token ids to use as the bonus token if
             all the draft tokens are accepted.
         Returns:
-            A tensor containing the accepted token ids. The shape of the 
+            A tensor containing the accepted token ids. The shape of the
             tensor is [batch_size, k + num_bonus_tokens]
         """
         batch_size, k = substitute_token_ids.shape

@@ -1,7 +1,7 @@
 """
 These types are defined in this file to avoid importing
 aphrodite.engine.metrics and therefore importing prometheus_client.
-This is required due to usage of Prometheus multiprocess mode to enable 
+This is required due to usage of Prometheus multiprocess mode to enable
 metrics after splitting out the uvicorn process from the engine process.
 Prometheus multiprocess mode requires setting PROMETHEUS_MULTIPROC_DIR
 before prometheus_client is imported. Typically, this is done by setting

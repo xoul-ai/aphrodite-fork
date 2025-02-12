@@ -457,7 +457,7 @@ class RayGPUExecutor(DistributedGPUExecutor):
                 "cupy is not installed but required since "
                 "APHRODITE_USE_RAY_COMPILED_DAG_NCCL_CHANNEL is set."
                 "Run `pip install ray[adag]` and check cupy installation.")
-    
+
     def _compiled_ray_dag(self, enable_asyncio: bool):
         assert self.parallel_config.use_ray
         self._check_ray_adag_installation()

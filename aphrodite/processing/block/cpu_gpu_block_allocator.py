@@ -136,18 +136,18 @@ class CpuGpuBlockAllocator(DeviceAwareBlockAllocator):
     def allocate_immutable_blocks(self, prev_block: Optional[Block],
                                   block_token_ids: List[List[int]],
                                   device: Optional[Device]) -> List[Block]:
-        """Allocates a new group of immutable blocks with the provided block 
+        """Allocates a new group of immutable blocks with the provided block
         token IDs on the specified device.
 
         Args:
             prev_block (Optional[Block]): The previous block in the sequence.
                 Used for prefix hashing.
-            block_token_ids (List[int]): The list of block token IDs to be 
+            block_token_ids (List[int]): The list of block token IDs to be
                 stored in the new blocks.
             device (Device): The device on which to allocate the new block.
 
         Returns:
-            List[Block]: The newly allocated list of immutable blocks 
+            List[Block]: The newly allocated list of immutable blocks
                 containing the provided block token IDs.
         """
         return self._allocators[device].allocate_immutable_blocks(
@@ -221,12 +221,12 @@ class CpuGpuBlockAllocator(DeviceAwareBlockAllocator):
         return self._allocators[device].get_num_total_blocks()
 
     def get_physical_block_id(self, device: Device, absolute_id: int) -> int:
-        """Returns the zero-offset block id on certain device given the 
+        """Returns the zero-offset block id on certain device given the
         absolute block id.
 
         Args:
             device (Device): The device for which to query relative block id.
-                absolute_id (int): The absolute block id for the block in 
+                absolute_id (int): The absolute block id for the block in
                 whole allocator.
 
         Returns:
@@ -237,15 +237,15 @@ class CpuGpuBlockAllocator(DeviceAwareBlockAllocator):
     def swap(self, blocks: List[Block], src_device: Device,
              dst_device: Device) -> Dict[int, int]:
         """Execute the swap for the given blocks from source_device
-        on to dest_device, save the current swap mapping and append 
-        them to the accumulated `self._swap_mapping` for each 
+        on to dest_device, save the current swap mapping and append
+        them to the accumulated `self._swap_mapping` for each
         scheduling move.
 
         Args:
             blocks: List of blocks to be swapped.
             src_device (Device): Device to swap the 'blocks' from.
             dst_device (Device): Device to swap the 'blocks' to.
-        
+
         Returns:
             Dict[int, int]: Swap mapping from source_device
                 on to dest_device.
@@ -272,7 +272,7 @@ class CpuGpuBlockAllocator(DeviceAwareBlockAllocator):
         Args:
             blocks: List of blocks to be swapped.
             device (Device): Device to swap the 'blocks' on.
-            num_lookahead_slots (int): Number of lookahead slots used in 
+            num_lookahead_slots (int): Number of lookahead slots used in
                 speculative decoding, default to 0.
 
         Returns:
@@ -287,7 +287,7 @@ class CpuGpuBlockAllocator(DeviceAwareBlockAllocator):
             source to destination block IDs.
 
         Returns:
-            List[Tuple[int, int]]: A list mapping source block IDs to 
+            List[Tuple[int, int]]: A list mapping source block IDs to
                 destination block IDs.
         """
         # CoW only supported on GPU

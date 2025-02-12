@@ -742,7 +742,7 @@ def test_sampler_no_repeat_ngram(seed: int, device: str):
             )
 
             sampler_output = _do_sample(
-                1, 
+                1,
                 fake_logits[0:1].clone(),  # Just use first row
                 sampler,
                 sampling_params,
@@ -878,7 +878,7 @@ def test_sampler_dry_sequence_breakers(device: str):
 
     # 7 is a sequence breaker
     input_sequence = [1, 2, 7, 1, 2]
-    
+
     seq_group_metadata = SequenceGroupMetadata(
         request_id="test_0",
         is_prompt=True,
@@ -942,7 +942,7 @@ def test_sampler_nsigma(seed: int, device: str):
             nsigma=nsigma,
             seed=random.randint(0, 10000),
         )
-        
+
         sampler_output = _do_sample(batch_size, fake_logits.clone(), sampler,
                                   sampling_params, device)
 

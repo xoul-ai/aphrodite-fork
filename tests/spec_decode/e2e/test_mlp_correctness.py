@@ -120,7 +120,7 @@ def test_mlp_e2e_acceptance_rate(aphrodite_runner, common_llm_kwargs,
                                  per_test_common_llm_kwargs,
                                  baseline_llm_kwargs, test_llm_kwargs,
                                  batch_size: int, output_len: int, seed: int):
-    """Verify acceptance rate with different batch size and large output 
+    """Verify acceptance rate with different batch size and large output
     length."""
     run_equality_correctness_test(aphrodite_runner,
                                   common_llm_kwargs,

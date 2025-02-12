@@ -324,10 +324,10 @@ class PrefixCachingBlockAllocator(BlockAllocator):
         return block_id
 
     def _free_block_id(self, block: Block) -> None:
-        """Decrements the refcount of the block. The block may be in two 
-        possible states: (1) immutable/cached or (2) mutable/hashless. 
+        """Decrements the refcount of the block. The block may be in two
+        possible states: (1) immutable/cached or (2) mutable/hashless.
         In the first case, the refcount is decremented directly and the block
-        may be possibly added to the evictor. In other case, hashless 
+        may be possibly added to the evictor. In other case, hashless
         allocator free(..) with keep_block_object=True is called to only free
         the block id (since the block object may be reused by the caller)
         """
@@ -404,7 +404,7 @@ class PrefixCachingBlockAllocator(BlockAllocator):
         given the absolute block id.
 
         Args:
-            absolute_id (int): The absolute block id for the block 
+            absolute_id (int): The absolute block id for the block
                 in whole allocator.
 
         Returns:
@@ -476,7 +476,7 @@ class PrefixCachingBlockAllocator(BlockAllocator):
             block (Block): The block to check for copy-on-write.
 
         Returns:
-            BlockId: The block index of the new block if a copy-on-write 
+            BlockId: The block index of the new block if a copy-on-write
                 operation was performed, or the original block index if
                 no copy-on-write was necessary.
         """
@@ -591,9 +591,9 @@ class PrefixCachingBlockAllocator(BlockAllocator):
 
         Args:
             blocks (List[Block]): The potential blocks to swap.
-            num_lookahead_slots (int): number of lookahead slots (0 for 
+            num_lookahead_slots (int): number of lookahead slots (0 for
                 swap out).
-        
+
         Returns:
             int: the number of blocks that will be touched by
                 swapping in/out the given blocks and num_lookahead_slots.
@@ -616,7 +616,7 @@ class PrefixCachingBlockAllocator(BlockAllocator):
         return num_touched_blocks
 
     def swap_out(self, blocks: List[Block]) -> None:
-        """Execute the swap out actions. Basically just free the 
+        """Execute the swap out actions. Basically just free the
         given blocks.
 
         Args:
@@ -626,9 +626,9 @@ class PrefixCachingBlockAllocator(BlockAllocator):
             self._free_block_id(block)
 
     def swap_in(self, blocks: List[Block]) -> None:
-        """Execute the swap in actions. Change the block id from 
-        old allocator to current allocator for each block to finish 
-        the block table update. 
+        """Execute the swap in actions. Change the block id from
+        old allocator to current allocator for each block to finish
+        the block table update.
 
         Args:
             blocks: List of blocks to be swapped in.
@@ -860,11 +860,11 @@ class PrefixCachingBlock(Block):
 
 
 class ComputedBlocksTracker:
-    """Handles caching of per-sequence computed block ids. 
-        When a sequence appears for the first time, it traverses all of the 
+    """Handles caching of per-sequence computed block ids.
+        When a sequence appears for the first time, it traverses all of the
         blocks and detects the prefix of blocks that is computed. On the
-        subsequent times, it only traverses the new blocks that were added 
-        and updates the already recorded prefix of blocks with the newly 
+        subsequent times, it only traverses the new blocks that were added
+        and updates the already recorded prefix of blocks with the newly
         computed blocks.
 
         To avoid redundant traversals, the algorithm also detects when there
@@ -874,7 +874,7 @@ class ComputedBlocksTracker:
         iteration, and will add more computed blocks only after the sequence is
         freed and reused again.
 
-        Note that currently, for a given sequence, we also skip the last 
+        Note that currently, for a given sequence, we also skip the last
         block id for caching purposes, to avoid caching of a full sequence
     """
 

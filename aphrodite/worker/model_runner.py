@@ -1224,7 +1224,7 @@ class GPUModelRunnerBase(ModelRunnerBase[TModelInputForGPU]):
         if single_seq_mode:
             seq_len = max_num_batched_tokens
             batch_size = seq_len
-            
+
             seq_data, dummy_multi_modal_data = self.input_registry \
                 .dummy_data_for_profiling(self.model_config,
                                         seq_len,
@@ -1247,7 +1247,7 @@ class GPUModelRunnerBase(ModelRunnerBase[TModelInputForGPU]):
                 seq_len = (max_num_batched_tokens // max_num_seqs +
                         (group_id < max_num_batched_tokens % max_num_seqs))
                 batch_size += seq_len
-                
+
                 seq_data, dummy_multi_modal_data = self.input_registry \
                     .dummy_data_for_profiling(self.model_config,
                                             seq_len,

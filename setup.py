@@ -72,7 +72,7 @@ if not sys.platform.startswith("linux"):
         APHRODITE_TARGET_DEVICE = "cuda"
     else:
         APHRODITE_TARGET_DEVICE = "empty"
-       
+
 
 MAIN_CUDA_VERSION = "12.4"
 

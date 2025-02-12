@@ -776,11 +776,11 @@ def test_populate_seq_ids_with_bonus_tokens():
 @torch.inference_mode()
 def test_handle_finished_requests():
     """
-    Test to verify that finished request IDs are appropriately processed to 
+    Test to verify that finished request IDs are appropriately processed to
     update the internal state of the SpecDecodeWorker.
 
-    This test initializes the SpecDecodeWorker with mock data, marks certain 
-    requests as finished, and ensures that the corresponding sequence IDs are 
+    This test initializes the SpecDecodeWorker with mock data, marks certain
+    requests as finished, and ensures that the corresponding sequence IDs are
     correctly removed from the internal mappings.
     """
     batch_size = 32

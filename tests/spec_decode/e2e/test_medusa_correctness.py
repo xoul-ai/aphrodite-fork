@@ -121,7 +121,7 @@ def test_medusa_e2e_greedy_correctness_cuda_graph(
         aphrodite_runner, common_llm_kwargs, per_test_common_llm_kwargs,
         baseline_llm_kwargs, test_llm_kwargs, batch_size: int, output_len: int,
         seed: int):
-    """Verify greedy equality with cuda graph enabled and different 
+    """Verify greedy equality with cuda graph enabled and different
     batch sizes."""
     run_equality_correctness_test(aphrodite_runner,
                                   common_llm_kwargs,

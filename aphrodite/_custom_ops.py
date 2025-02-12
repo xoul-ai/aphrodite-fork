@@ -674,7 +674,7 @@ def scaled_fp8_quant(
         scale: Optional scaling factor for the FP8 quantization
         num_token_padding: If specified, pad the first dimension
             of the output to at least this value.
-         use_per_token_if_dynamic: Whether to do per_tensor or per_token 
+         use_per_token_if_dynamic: Whether to do per_tensor or per_token
             in the dynamic quantization case.
 
     Returns:

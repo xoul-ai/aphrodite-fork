@@ -144,7 +144,7 @@ class AphroditeEngine:
             decoding.
         executor_class: The model executor class for managing distributed
             execution.
-        prompt_adapter_config (Optional): The configuration related to serving 
+        prompt_adapter_config (Optional): The configuration related to serving
             prompt adapters.
         log_stats: Whether to log statistics.
     """
@@ -831,7 +831,7 @@ class AphroditeEngine:
         and return responses.
         ctx: The virtual engine context to work on
         request_id: If provided, then only this request is going to be processed
-        
+
         """
         now = time.time()
 
@@ -1531,7 +1531,7 @@ class AphroditeEngine:
             self.stat_loggers.clear()
         if hasattr(self, 'model_executor'):
             self.model_executor.shutdown()
-        
+
 
     def is_encoder_decoder_model(self):
         return self.input_preprocessor.is_encoder_decoder_model()

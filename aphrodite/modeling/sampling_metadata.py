@@ -118,9 +118,9 @@ class SamplingMetadata:
             The first tuple is [1, 2] (sampled index within original logit),
             and the second tuple is [0, 1] (sampled index within pruned logit).
         num_prompts: Number of prompt sequence groups in seq_groups.
-        skip_sampler_cpu_output: Indicates if we want to skip the GPU=>CPU 
+        skip_sampler_cpu_output: Indicates if we want to skip the GPU=>CPU
             serialization of token outputs.
-        reuse_sampling_tensors: Indicates if we want to reuse sampling 
+        reuse_sampling_tensors: Indicates if we want to reuse sampling
             tensors that are part of the sampler forward pass. Currently,
             it is mainly used for multi-step decode.
     """
@@ -789,14 +789,14 @@ class SamplingTensors:
                                  pin_memory=pin_memory)
         dry_multipliers_t = torch.tensor(
             dry_multipliers,
-            device="cpu", 
+            device="cpu",
             dtype=dtype,
             pin_memory=pin_memory,
         )
         dry_bases_t = torch.tensor(
             dry_bases,
             device="cpu",
-            dtype=dtype, 
+            dtype=dtype,
             pin_memory=pin_memory,
         )
         dry_allowed_lengths_t = torch.tensor(
@@ -807,7 +807,7 @@ class SamplingTensors:
         )
         dry_sequence_breakers_t = torch.tensor(
             [seq + [0] * (max(len(s) for s in
-                              dry_sequence_breaker_ids) - len(seq)) 
+                              dry_sequence_breaker_ids) - len(seq))
              for seq in dry_sequence_breaker_ids],
             device="cpu",
             dtype=torch.long,

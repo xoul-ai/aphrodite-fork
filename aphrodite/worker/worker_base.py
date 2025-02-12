@@ -16,8 +16,8 @@ from aphrodite.lora.request import LoRARequest
 from aphrodite.modeling.layers.sampler import SamplerOutput
 from aphrodite.platforms import current_platform
 from aphrodite.worker.model_runner_base import (BroadcastableModelInput,
-                                                      ModelRunnerBase,
-                                                      ModelRunnerInputBase)
+                                                ModelRunnerBase,
+                                                ModelRunnerInputBase)
 
 
 class WorkerBase(ABC):
@@ -263,7 +263,7 @@ class LocalOrDistributedWorkerBase(WorkerBase):
             model_input = dataclasses.replace(  # type: ignore
                 model_input,
                 async_callback=execute_model_req.async_callback)
-    
+
         return model_input, worker_input, kwargs
 
     def prepare_input(
@@ -443,7 +443,7 @@ def extract_previous_hidden_states(
         data: Union[ExecuteModelRequest, Dict[str, torch.Tensor]]) -> \
             Dict[str, torch.Tensor]:
     """If data contains previous_hidden_states, extract it. This returns a dict
-    which can be used directly as additional kwargs in any following 
+    which can be used directly as additional kwargs in any following
     execute_model calls. This is used in draft models like EAGLE."""
     output = {}
     # When called from non-driver worker, data is dict but when called from

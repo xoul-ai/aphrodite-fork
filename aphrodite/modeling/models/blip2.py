@@ -606,7 +606,7 @@ class Blip2ForConditionalGeneration(nn.Module, SupportsMultiModal):
         Tokenizer outputs:
         `[2, 45641, 35, 653, 18, 5, 1383, 9, 5, 2274, 116, 31652, 35]`.
         To reserve space in KV cache, we have to insert placeholder tokens
-        before they are inputted to the model, so the input processor prepends 
+        before they are inputted to the model, so the input processor prepends
         dummy tokens (denoted as `50265`), resulting in:
         `[50265, ..., 50265, 2, 45641, 35, ..., 31652, 35]`.
         We insert 32 tokens since it corresponds to the number of query
@@ -617,7 +617,7 @@ class Blip2ForConditionalGeneration(nn.Module, SupportsMultiModal):
             input_ids: Flattened (concatenated) input_ids corresponding to a
                 batch.
             pixel_values: The pixels in each input image.
-        
+
         See also:
             :class:`Blip2ImageInputs`
         """

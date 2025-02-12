@@ -184,7 +184,7 @@ def test_models(hf_runner, aphrodite_runner, video_assets, model, size_factors,
 
     All the image fixtures for the test is under tests/videos.
     For huggingface runner, we provide the np.ndarray as input.
-    For aphrodite runner, we provide MultiModalDataDict objects 
+    For aphrodite runner, we provide MultiModalDataDict objects
     and corresponding MultiModalConfig as input.
     Note, the text input is also adjusted to abide by aphrodite contract.
     The text output is sanitized to be able to compare with hf.

@@ -36,12 +36,12 @@ class MQAphroditeEngine:
     """A multiprocessing wrapper for :class:`AphroditeEngine`.
 
     This class is used to wrap the :class:`AphroditeEngine` class to enable use
-    in concurrnet manner. It runs a background loop and uses zeromq to 
+    in concurrnet manner. It runs a background loop and uses zeromq to
     receive new requests and stream outputs incrementally via ipc.
-    
-    The :class:`AphroditeEngine.generate` is kicked off when a new 
+
+    The :class:`AphroditeEngine.generate` is kicked off when a new
     RPCGenerateRequest is received by the input_socket.
-    
+
     The self.engine_loop checks the input_socket for new requests,
     adds them to the AphroditeEngine if there are any, calls the internal
     :class:`AphroditeEngine.step()`, and sends the RequestOutputs back over

@@ -76,10 +76,10 @@ class MultiStepOutputProcessor(SequenceGroupOutputProcessor):
         one new token per sequence.
 
         This applies logic like stop condition checking and detokenization.
-        It also handles cases where there are tokens emitted after 
+        It also handles cases where there are tokens emitted after
         the EOS token.
-        is_async - Indicates whether this postprocessor runs in 
-            parallel with the GPU forward pass and is processing 
+        is_async - Indicates whether this postprocessor runs in
+            parallel with the GPU forward pass and is processing
             tokens from the previous step. If this is true, then
             no tokens need to be appended since it is already done
             externally (before the next schedule() call)

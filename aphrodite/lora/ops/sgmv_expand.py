@@ -1,7 +1,7 @@
 """
 Based on:
-Chen, L., Ye, Z., Wu, Y., Zhuo, D., Ceze, L., & Krishnamurthy, A. (2023). 
-Punica: Multi-Tenant LoRA Serving. 
+Chen, L., Ye, Z., Wu, Y., Zhuo, D., Ceze, L., & Krishnamurthy, A. (2023).
+Punica: Multi-Tenant LoRA Serving.
 https://arxiv.org/abs/2310.18547
 """
 
@@ -124,11 +124,11 @@ def _sgmv_expand(
             corresponding to each batch. An index of -1 means no lora should be
             applied.
         batches (int): batch size
-        max_seq_length (int): The max sequence lengths of the sequences in the 
+        max_seq_length (int): The max sequence lengths of the sequences in the
             batch.
-        token_nums (int): The token numbers in the batch. Used to verify if the 
+        token_nums (int): The token numbers in the batch. Used to verify if the
             token numbers in the inputs matches the one in the metadata.
-        add_inputs (bool, optional): Defaults to False, adds the final lora 
+        add_inputs (bool, optional): Defaults to False, adds the final lora
             results to the output.
     """
 

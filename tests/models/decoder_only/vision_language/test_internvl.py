@@ -78,7 +78,7 @@ def run_test(
 
     All the image fixtures for the test are from IMAGE_ASSETS.
     For huggingface runner, we provide the PIL images as input.
-    For aphrodite runner, we provide MultiModalDataDict objects 
+    For aphrodite runner, we provide MultiModalDataDict objects
     and corresponding MultiModalConfig as input.
     Note, the text input is also adjusted to abide by aphrodite contract.
     The text output is sanitized to be able to compare with hf.

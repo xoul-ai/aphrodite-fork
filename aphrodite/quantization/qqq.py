@@ -23,7 +23,7 @@ MARLIN_QQQ_SUPPORTED_SYM = [True]
 
 class QQQConfig(QuantizationConfig):
     """Config class for QQQ
-    
+
     Reference: https://arxiv.org/pdf/2406.09904
     """
 

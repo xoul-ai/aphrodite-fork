@@ -48,11 +48,11 @@ def convert_mapping(
 ) -> torch.Tensor:
     """Converts PromptAdapterMapping to index tensors.
     Args:
-        mapping: PromptAdapterMapping mapping rows in a 
+        mapping: PromptAdapterMapping mapping rows in a
                 batch to PromptAdapter ids.
-        prompt_adapter_index_to_id: List mapping PromptAdapter 
+        prompt_adapter_index_to_id: List mapping PromptAdapter
                 ids to PromptAdapter indices.
-        
+
     Returns:
         pa_indices: Tensor of shape [batch_size] mapping batch rows to
             PromptAdapter indices.
@@ -156,7 +156,7 @@ class PromptAdapterModelManager(AdapterModelManager):
         self,
         prompt_adapter_id: int,
     ) -> bool:
-        """Move PromptAdapter into a GPU buffer 
+        """Move PromptAdapter into a GPU buffer
             to be used in the forward pass."""
         if prompt_adapter_id in self._active_adapters:
             return False

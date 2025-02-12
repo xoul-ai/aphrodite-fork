@@ -128,8 +128,8 @@ MultiModalDataDict = Union[MultiModalDataBuiltins,
 """
 A dictionary containing an item for each modality type to input.
 
-The data belonging to each modality is converted into keyword arguments 
-to the model by the corresponding mapper. By default, the mapper of 
+The data belonging to each modality is converted into keyword arguments
+to the model by the corresponding mapper. By default, the mapper of
 the corresponding plugin with the same modality key is applied.
 """
 
