@@ -37,7 +37,7 @@ using GemmDispatcher_ = GemmDispatcher<
     {{DataTypeTag[type_config.element_b_scale]}}, // Scales
     {{DataTypeTag[type_config.element_b_zeropoint]}}>; // Zeropoints
 
-{% for s in schedules %}extern torch::Tensor 
+{% for s in schedules %}extern torch::Tensor
 impl_{{type_name}}_sch_{{ gen_sch_name(s) }}(PyTorchArguments args);
 {% endfor %}
 template <>
@@ -45,7 +45,7 @@ torch::Tensor GemmDispatcher_::dispatch(PyTorchArguments args) {
   [[maybe_unused]] auto M = args.A.size(0);
   [[maybe_unused]] auto N = args.B.size(1);
   [[maybe_unused]] auto K = args.A.size(1);
-    
+
   if (!args.schedule) {
     {%- for cond, s in heuristic %}
     {%if cond is not none%}if ({{cond}})
@@ -65,7 +65,7 @@ torch::Tensor GemmDispatcher_::dispatch(PyTorchArguments args) {
 
 template <>
 std::vector<std::string> GemmDispatcher_::supported_schedules() {
-  return { 
+  return {
     {% for s in schedules -%}
     "{{ gen_sch_name(s) }}"{{ ",
     " if not loop.last }}{%- endfor %}
@@ -104,7 +104,7 @@ struct sch_{{schedule_name}} {
   using EpilogueTileType = cutlass::epilogue::collective::EpilogueTileAuto;
 };
 
-torch::Tensor 
+torch::Tensor
 impl_{{type_name}}_sch_{{schedule_name}}(PyTorchArguments args) {
   bool with_C = args.C.has_value(), with_scales = args.scales.has_value(),
        with_zeropoints = args.zeros.has_value();
@@ -119,8 +119,8 @@ impl_{{type_name}}_sch_{{schedule_name}}(PyTorchArguments args) {
 
   TORCH_CHECK_NOT_IMPLEMENTED(
       false, "for the sake of compile times and binary size machete_mm(..) is "
-      " not implemented for with_C=", with_C, ", with_scales=", with_scales, 
-      ", with_zeropoints=", with_zeropoints, 
+      " not implemented for with_C=", with_C, ", with_scales=", with_scales,
+      ", with_zeropoints=", with_zeropoints,
       " (for {{type_name}}_sch_{{schedule_name}})");
 }
 {% endfor %}

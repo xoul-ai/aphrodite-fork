@@ -56,7 +56,7 @@ class FuyuImagePixelInputs(TypedDict):
     type: Literal["pixel_values"]
     data: torch.Tensor
     """
-    Shape: 
+    Shape:
     (batch_size, num_patches, patch_size_x * patch_size_y * num_channels)
     """
 

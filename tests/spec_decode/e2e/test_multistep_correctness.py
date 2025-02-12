@@ -12,7 +12,7 @@ numerics, see https://arxiv.org/pdf/2302.01318.pdf), we can expect greedy
 equality. This gives us good coverage of temp=0.
 
 At temp=0, the TypicalAcceptanceSampler ensures that only the tokens with the
-highest probability in the target distribution are accepted. Therefore, we can 
+highest probability in the target distribution are accepted. Therefore, we can
 expect greedy equality for the TypicalAcceptanceSampler at temp=0.
 
 For temp>0, we rely on unit tests on the rejection sampler to verify that the

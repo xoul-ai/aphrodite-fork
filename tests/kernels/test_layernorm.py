@@ -84,18 +84,18 @@ def test_rms_norm_triton(
     torch.random.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
-    
+
     # Explicitly move the layer to the selected device.
     layer = RMSNorm(hidden_size).to(device=device, dtype=dtype)
     layer.weight.data.normal_(mean=1.0, std=0.1)
-    
+
     scale = 1 / (2 * hidden_size)
     x = torch.randn(num_tokens, hidden_size, dtype=dtype, device=device) * scale
     residual = torch.randn_like(x) * scale if add_residual else None
 
     ref_out = layer.forward_native(x, residual)
     triton_out = layer.forward_triton(x, residual)
-    
+
     if add_residual:
         torch.testing.assert_close(triton_out[0], ref_out[0],
                                    atol=1e-2, rtol=1e-2)

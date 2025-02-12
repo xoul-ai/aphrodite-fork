@@ -1,4 +1,4 @@
-"""Compares the outputs of gptq vs gptq_marlin 
+"""Compares the outputs of gptq vs gptq_marlin
 Note: GPTQ and Marlin do not have bitwise correctness.
 As a result, in this test, we just confirm that the top selected tokens of the
 Marlin/GPTQ models are in the top 5 selections of each other.
@@ -12,8 +12,8 @@ import os
 
 import pytest
 
-from tests.quantization.utils import is_quant_method_supported
 from aphrodite.modeling.layers.rotary_embedding import _ROPE_DICT
+from tests.quantization.utils import is_quant_method_supported
 
 from ...utils import check_logprobs_close
 

@@ -25,9 +25,9 @@ from aphrodite.worker.xpu_model_runner import XPUModelRunner
 
 class XPUWorker(LoraNotSupportedWorkerBase, Worker):
     """A worker class that executes (a partition of) the model on a GPU.
-    
-    Each worker is associated with a single XPU device. The worker is 
-    responsible for maintaining the KV cache and executing the model on the 
+
+    Each worker is associated with a single XPU device. The worker is
+    responsible for maintaining the KV cache and executing the model on the
     XPU. In case of distributed inference, each worker is assigned a partition
     of the model.
     """

@@ -271,7 +271,7 @@ class LRUCache(Generic[T]):
 
 
 class PyObjectCache:
-    """Used to cache python objects to avoid object allocations 
+    """Used to cache python objects to avoid object allocations
     across scheduler iterations.
     """
 
@@ -290,7 +290,7 @@ class PyObjectCache:
             self._obj_cache.append(self._obj_builder())
 
     def get_object(self):
-        """Returns a pre-allocated cached object. If there is not enough 
+        """Returns a pre-allocated cached object. If there is not enough
         objects, then the cache size will double.
         """
         if self._index >= len(self._obj_cache):
@@ -563,7 +563,7 @@ def get_open_zmq_ipc_path() -> str:
         # windows doesn't support ipc://
         # use tcp:// instead
         return f"tcp://127.0.0.1:{get_open_port()}"
-     
+
 def get_open_port(port: Optional[int] = None) -> int:
     port = envs.APHRODITE_PORT
     if port is not None:
@@ -1091,7 +1091,7 @@ def _cuda_device_count_stateless(
 def cuda_device_count_stateless() -> int:
     """Get number of CUDA devices, caching based on the value of
     CUDA_VISIBLE_DEVICES at the time of call.
-    
+
     This should be used instead of torch.cuda.device_count()
     unless CUDA_VISIBLE_DEVICES has already been set to the desired
     value."""

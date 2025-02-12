@@ -201,7 +201,7 @@ class SpecDecodeWorker(LoraNotSupportedWorkerBase):
                 Aphrodite Worker.
             spec_decode_sampler: A Torch module used to perform acceptance
                 sampling of the draft tokens in the verification step of
-                speculative decoding. Currently we support two different 
+                speculative decoding. Currently we support two different
                 types of sampler namely RejectionSampler and
                 TypicalAcceptanceSampler. 'spec_decode_sampler' is either an
                 instance of RejectionSampler or TypicalAcceptanceSampler.
@@ -431,9 +431,9 @@ class SpecDecodeWorker(LoraNotSupportedWorkerBase):
             self, execute_model_req: ExecuteModelRequest,
             sampler_output: SamplerOutput) -> SamplerOutput:
         """
-        Creates and returns a `SamplerOutput` with only the sampled token IDs 
+        Creates and returns a `SamplerOutput` with only the sampled token IDs
         being serialized to CPU & populated in `CompletionSequenceGroupOutput`.
-        All other parameters in `CompletionSequenceGroupOutput` related to log 
+        All other parameters in `CompletionSequenceGroupOutput` related to log
         probabilities are skipped.
 
         Args:
@@ -443,7 +443,7 @@ class SpecDecodeWorker(LoraNotSupportedWorkerBase):
             only GPU tensors populated.
 
         Returns:
-            SamplerOutput: A new `SamplerOutput` instance containing a list of 
+            SamplerOutput: A new `SamplerOutput` instance containing a list of
             `CompletionSequenceGroupOutput` objects with only sampled token
             IDs populated.
         """
@@ -791,7 +791,7 @@ class SpecDecodeWorker(LoraNotSupportedWorkerBase):
                List[List[List[Optional[float]]]],
                List[List[List[Optional[int]]]]]:
         """
-        Creates and returns four dummy lists representing token probabilities 
+        Creates and returns four dummy lists representing token probabilities
         and their ranks.
 
         This method initializes and returns:
@@ -808,7 +808,7 @@ class SpecDecodeWorker(LoraNotSupportedWorkerBase):
             num_steps (int): The number of steps in the sequence.
             num_top_k (int): The number of top-k token log probabilities to
             return.
-        
+
         Returns:
             A tuple containing four dummy lists as described above.
         """
@@ -852,10 +852,10 @@ class SpecDecodeWorker(LoraNotSupportedWorkerBase):
             log probabilities of the target model,
             shaped (num_steps, batch_size, vocab_size)
             accepted_token_ids_by_step (torch.Tensor): Tensor representing
-            the accepted  token_ids, shaped (num_steps, batch_size) 
+            the accepted  token_ids, shaped (num_steps, batch_size)
             num_top_k (int): The number of top-k token log probabilities to
             return.
-        
+
         Returns:
             A tuple containing the lists as described above.
         """
@@ -937,7 +937,7 @@ class SpecDecodeWorker(LoraNotSupportedWorkerBase):
 
     def get_cache_block_size_bytes(self):
         """Return the size of a cache block in bytes.
-        
+
         This function is only used to compose workers within a SpecDecodeWorker.
         We leave composing a SpecDecodeWorker within a SpecDecodeWorker
         undefined for now, although it could be implemented in the future.

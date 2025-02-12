@@ -784,7 +784,7 @@ def build_normalization_transform(image_size: int) -> transforms.Compose:
 
     Args:
         image_size: size of the image to be processed for visual embeddings.
-    
+
     Returns:
         Callable transform for normalizing and resizing one RGB image.
     """
@@ -808,7 +808,7 @@ def dummy_data_for_qwen(
         ctx: Context of the loaded model.
         seq_len: Number of tokens in the text sequence.
         mm_counts: multimodal data counts.
-    
+
     Returns:
         Tuple containing sequential and multimodal data.
     """

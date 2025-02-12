@@ -522,7 +522,7 @@ class SamplingParams(
             raise ValueError(
                 "skew must be non-negative, got "
                 f"{self.skew}.")
-        
+
         if self.sampler_priority is not None:
             if not self.sampler_priority:
                 self.sampler_priority = None

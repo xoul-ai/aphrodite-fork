@@ -37,11 +37,11 @@ class BlocksparseParams:
     # Controlling the sparsity
     vert_stride: int
     """
-    If to use the same vertical stride offset for all heads, 
+    If to use the same vertical stride offset for all heads,
     i.e., attend to the same block of tokens on all heads.
-    By default, it is False, i.e., attention on the non-local 
+    By default, it is False, i.e., attention on the non-local
     blocks depends on the `head_idx`, that is on
-    blocks satisfying 
+    blocks satisfying
     `(block_idx + head_idx * head_sliding_step + 1) % vert_stride == 0`
     where `head_sliding_step=max(1, int(vert_stride / num_total_heads))`,
             `block_idx = position_id // sparse_block_size`.

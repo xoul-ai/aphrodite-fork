@@ -379,7 +379,7 @@ class CommonAttentionState(AttentionState):
         encoder-decoder model.
         This method modifies attention-related tensors and metadata required
         for CUDA graph capture in encoder-decoder models. Specifically, it
-        updates the cross-attention and encoder sequence tensors in the 
+        updates the cross-attention and encoder sequence tensors in the
         AttentionMetadata object.
         """
         # During decode phase the cross_slot_mapping will be empty. Hence set
@@ -424,7 +424,7 @@ class CommonAttentionState(AttentionState):
         This method fills the input buffers with encoder-decoder specific
         tensors. It copies data from the `attn_metadata` and keyword arguments
         (`kwargs`) into corresponding buffers in the `input_buffers` dictionary.
-        The copied data includes attention-related metadata as well as input 
+        The copied data includes attention-related metadata as well as input
         IDs and positional information for the encoder.
         """
         input_buffers["encoder_seq_lens_tensor"].copy_(

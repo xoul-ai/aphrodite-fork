@@ -68,7 +68,7 @@ def should_ignore_layer(layer_name: Optional[str],
 def check_equal_or_regex_match(layer_name: str,
                                targets: Iterable[str]) -> bool:
     """
-    Checks whether a layer_name is exactly equal or a regex match for 
+    Checks whether a layer_name is exactly equal or a regex match for
     if target starts with 're:' to any target in list.
     """
     for target in targets:
@@ -82,10 +82,10 @@ def find_matched_target(layer_name: Optional[str], module: Module,
     """
     Helper function to look up which "target" in the compressed-tensors
     config that a layer corresponds to.
-    Recall that a compressed-tensors configs has a concept of 
+    Recall that a compressed-tensors configs has a concept of
     config_groups, where each layer can be quantized with with a different
     scheme.
-    targets in each config_group will be a list of either layer names 
+    targets in each config_group will be a list of either layer names
     (or regexes corresponding to layer names) or names of torch Modules.
     First, we try to match the layer_name with a target
     Second, we try to match the module's name with a target

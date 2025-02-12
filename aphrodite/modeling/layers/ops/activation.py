@@ -37,7 +37,7 @@ def _fg_kernel(e, g, h, n_elements, BLOCK_SIZE: tl.constexpr):
     """
     Compute SiLU activation and multiply with gate:
     h = silu(e) * g where silu(x) = x * sigmoid(x)
-    
+
     Differences from unsloth:
     1. Support for 2D inputs
     """
@@ -86,7 +86,7 @@ def _exact_gelu_kernel(e, g, h, n_elements, BLOCK_SIZE: tl.constexpr):
     """
     Compute exact GELU activation and multiply with gate:
     h = gelu(e) * g where gelu(x) = x * 0.5 * (1 + erf(x/sqrt(2)))
-    
+
     Differences from unsloth:
     1. Support for 2D inputs
     """
@@ -111,7 +111,7 @@ def _approx_gelu_kernel(e, g, h, n_elements, BLOCK_SIZE: tl.constexpr):
     Compute approximate GELU activation and multiply with gate:
     h = gelu(e) * g where
     gelu(x) = 0.5 * x * (1 + tanh(sqrt(2/pi) * (x + 0.044715 * x^3)))
-    
+
     Differences from unsloth:
     1. Support for 2D inputs
     """
@@ -323,7 +323,7 @@ def quick_gelu_kernel(x: torch.Tensor) -> torch.Tensor:
 def _relu_squared_kernel(
     x_ptr, output_ptr, n_elements, BLOCK_SIZE: tl.constexpr):
     """
-    Compute Squared ReLU: 
+    Compute Squared ReLU:
     relu2(x) = x² if x > 0 else 0
 
     Optimization: Uses direct bit manipulation instead of relu->square

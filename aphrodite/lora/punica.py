@@ -1,7 +1,7 @@
 """
 Based on:
-Chen, L., Ye, Z., Wu, Y., Zhuo, D., Ceze, L., & Krishnamurthy, A. (2023). 
-Punica: Multi-Tenant LoRA Serving. 
+Chen, L., Ye, Z., Wu, Y., Zhuo, D., Ceze, L., & Krishnamurthy, A. (2023).
+Punica: Multi-Tenant LoRA Serving.
 https://arxiv.org/abs/2310.18547
 """
 
@@ -177,8 +177,8 @@ def convert_mapping(
 
 class PunicaWrapper:
     """
-    PunicaWrapper is designed to manage and provide metadata for the punica 
-    kernel. The main function  is to maintain the state information for 
+    PunicaWrapper is designed to manage and provide metadata for the punica
+    kernel. The main function  is to maintain the state information for
     Multi-LoRA, and to provide the interface for the punica kernel.
     """
 
@@ -301,11 +301,11 @@ class PunicaWrapper:
         self
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, int, int, int]:
         """
-        This property provides a convenient way to access the necessary 
+        This property provides a convenient way to access the necessary
         metadata for prefill-related  kernel computations.
             1. seq_start_locs: Tensor of sequence start positions.
             2. seq_lengths: Tensor of sequence lengths.
-            3. lora_indices_per_batch: Tensor of lora indices, and an index of 
+            3. lora_indices_per_batch: Tensor of lora indices, and an index of
                 -1 means no lora should be applied.
             4. batch_size: Batch size after clustering identical lora indices.
             5. max_length: The maximum sequence length in the batch.
@@ -319,7 +319,7 @@ class PunicaWrapper:
     @property
     def token_lora_indices(self) -> torch.Tensor:
         """
-        This property provides the lora indices corresponding to each token 
+        This property provides the lora indices corresponding to each token
         in the batch. An index of -1 means no lora should be applied.
         """
         token_lora_len = self.indices_len[0]
@@ -327,8 +327,8 @@ class PunicaWrapper:
 
     @property
     def sampler_indices(self) -> torch.Tensor:
-        """ 
-        This property is used to access the lora indices specifically for 
+        """
+        This property is used to access the lora indices specifically for
         LogitsProcessorWithLoRA
         """
         sampler_indices_len = self.indices_len[1]
@@ -345,7 +345,7 @@ class PunicaWrapper:
     @property
     def embeddings_indices(self) -> torch.Tensor:
         """
-        This property provides access to the indices used for lora embeddings, 
+        This property provides access to the indices used for lora embeddings,
         specifically for VocabParallelEmbeddingWithLoRA
         """
         embeddings_indices_len = self.indices_len[3]
@@ -353,8 +353,8 @@ class PunicaWrapper:
 
     @property
     def long_lora_indices(self) -> torch.Tensor:
-        """ 
-        This property provides access to the indices used for long context 
+        """
+        This property provides access to the indices used for long context
         lora, specifically for LinearScalingRotaryEmbeddingWithLora
         """
         long_lora_len = self.indices_len[4]
@@ -565,7 +565,7 @@ class PunicaWrapper:
                                scale: float,
                                output_slices: Tuple[int, ...]) -> None:
         """
-        Applies lora to each input. Similar to add_lora, This method is 
+        Applies lora to each input. Similar to add_lora, This method is
         used for layers that are composed of multiple sublayers
         (slices) packed together.
         """

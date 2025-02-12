@@ -198,7 +198,7 @@ class NaiveBlockAllocator(BlockAllocator):
         given the absolute block id.
 
         Args:
-            absolute_id (int): The absolute block id for the block 
+            absolute_id (int): The absolute block id for the block
             in whole allocator.
 
         Returns:
@@ -222,7 +222,7 @@ class NaiveBlockAllocator(BlockAllocator):
             block (Block): The block to check for copy-on-write.
 
         Returns:
-            BlockId: The block index of the new block if a copy-on-write 
+            BlockId: The block index of the new block if a copy-on-write
                 operation was performed, or the original block index if
                 no copy-on-write was necessary.
         """
@@ -293,9 +293,9 @@ class NaiveBlockAllocator(BlockAllocator):
 
         Args:
             blocks (List[Block]): The potential blocks to swap.
-            num_lookahead_slots (int): number of lookahead slots (0 for swap 
+            num_lookahead_slots (int): number of lookahead slots (0 for swap
                 out).
-        
+
         Returns:
             int: the number of blocks that will be touched by
                 swapping in/out the given blocks and num_lookahead_slots.
@@ -386,11 +386,11 @@ class NaiveBlock(Block):
         self._append_token_ids_no_cow(token_ids)
 
     def append_token_ids(self, token_ids: List[int]) -> None:
-        """Appends the given token IDs to the block and performs a 
+        """Appends the given token IDs to the block and performs a
         copy-on-write if necessary.
 
         Args:
-            token_ids (Optional[List[int]]): The token IDs to be appended 
+            token_ids (Optional[List[int]]): The token IDs to be appended
                 to the block.
         """
         self._append_token_ids_no_cow(token_ids)

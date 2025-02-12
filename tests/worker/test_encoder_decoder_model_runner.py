@@ -491,7 +491,7 @@ def test_prepare_decode(batch_size, multiple_seqs_per_seq_group):
 def test_prepare_decode_cuda_graph(batch_size, multiple_seqs_per_seq_group):
     """
     Tests that for encoder-decoder models with CUDA Graph capture and replay
-    enabled, the tensors used during the decode phase are correctly padded 
+    enabled, the tensors used during the decode phase are correctly padded
     for varying input batch sizes.
     """
     model_runner = _create_model_runner(

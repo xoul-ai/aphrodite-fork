@@ -328,7 +328,7 @@ class DefaultModelLoader(BaseModelLoader):
         hf_folder, hf_weights_files, use_safetensors = self._prepare_weights(
             source.model_or_path, source.revision, source.fall_back_to_pt)
         est_weight_bytes = sum(os.path.getsize(f) for f in hf_weights_files)
-        
+
         if self.load_config.load_format == LoadFormat.NPCACHE:
             # Currently np_cache only support *.bin checkpoints
             assert use_safetensors is False
@@ -351,9 +351,9 @@ class DefaultModelLoader(BaseModelLoader):
                     xm.mark_step()
 
             weights_iterator = _xla_weights_iterator(weights_iterator)
-        
+
         # Apply the prefix
-        return ((source.prefix + name, tensor) 
+        return ((source.prefix + name, tensor)
                 for (name, tensor) in weights_iterator), est_weight_bytes
 
     def _get_all_weights(
@@ -367,14 +367,14 @@ class DefaultModelLoader(BaseModelLoader):
             model_config.revision,
             prefix="",
             fall_back_to_pt=getattr(model, "fall_back_to_pt_during_load", True))
-        
+
         primary_iterator, primary_bytes = self._get_weights_iterator(
             primary_weights)
         total_bytes = primary_bytes
-        
+
         # Collect all weight iterators and their sizes
         iterators = [primary_iterator]
-        
+
         secondary_weights = cast(Iterable[DefaultModelLoader.Source],
                                  getattr(model, "secondary_weights", ()))
         for source in secondary_weights:
@@ -403,7 +403,7 @@ class DefaultModelLoader(BaseModelLoader):
                 model = _initialize_model(model_config, self.load_config,
                                           lora_config, cache_config,
                                           scheduler_config)
-                
+
             weights_iter, total_bytes = self._get_all_weights(
                 model_config, model)
             model.load_weights(tensor_progress_bar(weights_iter, total_bytes,
@@ -788,8 +788,8 @@ class BitsAndBytesModelLoader(BaseModelLoader):
             model_name_or_path: str,
             allowed_patterns: List[str],
             revision: Optional[str] = None) -> Tuple[List[str], str]:
-        """Retrieve weight files. Download the files if necessary. 
-        
+        """Retrieve weight files. Download the files if necessary.
+
         Return the weight files and the file pattern."""
         is_local = os.path.isdir(model_name_or_path)
 

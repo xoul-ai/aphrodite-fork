@@ -7,7 +7,7 @@ from aphrodite.processing.interfaces import AllocStatus, BlockSpaceManager
 
 class PlaceholderBlockSpaceManager(BlockSpaceManager):
     """A version of BlockSpaceManager for use in environments
-    where block management is not required. 
+    where block management is not required.
     For example: embedding models or attention-free models like Mamba.
     This class provides the same interface as BlockSpaceManager, but its
     methods perform no actions or return simple values like True in specific

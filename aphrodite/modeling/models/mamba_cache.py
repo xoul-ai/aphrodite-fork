@@ -158,9 +158,9 @@ class MambaCacheManager:
 
     def copy_inputs_before_cuda_graphs(self, input_buffers, **kwargs):
         """
-        Copy the relevant Mamba cache into the CUDA graph input buffer 
-        that was provided during the capture runs 
-        (JambaForCausalLM.mamba_gc_cache_buffer). 
+        Copy the relevant Mamba cache into the CUDA graph input buffer
+        that was provided during the capture runs
+        (JambaForCausalLM.mamba_gc_cache_buffer).
         """
         assert all(
             key in kwargs
@@ -175,7 +175,7 @@ class MambaCacheManager:
     def get_seqlen_agnostic_capture_inputs(self, batch_size: int):
         """
         Provide the CUDA graph capture runs with a buffer in adjusted size.
-        The buffer is used to maintain the Mamba Cache during the CUDA graph 
+        The buffer is used to maintain the Mamba Cache during the CUDA graph
         replay runs.
         """
         return tuple(buffer[:, :batch_size] for buffer in self.mamba_cache)

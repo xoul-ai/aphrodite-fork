@@ -556,7 +556,7 @@ class LlavaNextForConditionalGeneration(nn.Module, SupportsMultiModal):
         9047, 13566, 29901]`.
 
         To reserve space in KV cache, we have to insert placeholder tokens
-        before they are inputted to the model, so the input processor prepends 
+        before they are inputted to the model, so the input processor prepends
         additional image tokens (denoted as `32000`), resulting in:
         `[1, 319, 13563, 1546, 263, 12758, 5199, 322, 385, 23116, 21082, 20255,
         29889, 450, 20255, 4076, 8444, 29892, 13173, 29892, 322, 1248, 568,
@@ -577,7 +577,7 @@ class LlavaNextForConditionalGeneration(nn.Module, SupportsMultiModal):
                 batch.
             pixel_values: The pixels in each grid patch for each input image.
             image_sizes: The original `(height, width)` for each input image.
-        
+
         See also:
             :class:`LlavaNextImageInputs`
         """
@@ -645,4 +645,4 @@ class LlavaNextForConditionalGeneration(nn.Module, SupportsMultiModal):
 
         # load llm backbone
         self.language_model.load_weights(weights_group["language_model"])
-    
+

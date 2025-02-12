@@ -301,9 +301,9 @@ class Sampler(nn.Module):
                 0].sampling_params.sampler_priority
 
             # Warn if both custom order and temp_last are specified
-            if (sampling_metadata.seq_groups and 
+            if (sampling_metadata.seq_groups and
                 sampling_metadata.seq_groups[0].is_prompt and
-                sampler_order is not None and 
+                sampler_order is not None and
                 do_temp_last):
                 logger.warning(
                     "Both sampler_priority and temperature_last=True "
@@ -374,7 +374,7 @@ class Sampler(nn.Module):
                     sampling_tensors.prompt_tokens,
                     sampling_tensors.output_tokens,
                     sampling_tensors.dry_multipliers,
-                    sampling_tensors.dry_bases, 
+                    sampling_tensors.dry_bases,
                     sampling_tensors.dry_allowed_lengths,
                     sampling_tensors.dry_sequence_breaker_ids,
                     sampling_tensors.dry_ranges,
@@ -680,10 +680,10 @@ def _apply_temperatures(
     dyn_temp = (dynatemp_mins + (dynatemp_maxs - dynatemp_mins) *
                 normalized_entropies.pow_(dynatemp_exps))
     temperatures[dynatemp_mask] = dyn_temp
-  
+
     temperatures[temperatures.isnan()] = _TEMPERATURE_MINIMUM
     temperatures[temperatures <= _TEMPERATURE_MINIMUM] = _TEMPERATURE_MINIMUM
-  
+
     # To prevent saturation of top logits, we shift the range to [-inf, 1]
     # Why align to 1, instead of 0? Because [0, 1] holds 25% of all floats.
     # Why mask? So we aren't potentially discarding data in milder temps.
@@ -753,7 +753,7 @@ def _apply_dry(
     logits: torch.Tensor,
     input_token_ids: torch.Tensor,
     output_token_ids: torch.Tensor,
-    multipliers: torch.Tensor, 
+    multipliers: torch.Tensor,
     bases: torch.Tensor,
     allowed_lengths: torch.Tensor,
     sequence_breakers_ids: torch.Tensor,
@@ -856,7 +856,7 @@ def _apply_no_repeat_ngram(
     input_ids: torch.Tensor,
     ngram_size: torch.Tensor,
 ) -> torch.Tensor:
-    """Apply no-repeat-ngram penalty which sets logits to -inf for tokens that 
+    """Apply no-repeat-ngram penalty which sets logits to -inf for tokens that
     would create a repeated n-gram.
     """
     if torch.all(ngram_size == 0):
@@ -1106,7 +1106,7 @@ def _apply_xtc_sampling(
     # Find indices where the next probability is above the threshold
     # Skips the top choice, which later on becomes skipping the last choice.
     above_threshold = sorted_probs[..., 1:] >= xtc_thresholds.unsqueeze(-1)
-    
+
     # Apply XTC only to rows where it should be applied
     for i in range(logits.shape[0]):
         if apply_xtc[i]:
@@ -1126,7 +1126,7 @@ def _apply_top_nsigma(
         nsigma: torch.Tensor,
 ) -> torch.Tensor:
     """Apply top-nsigma truncation to the logits.
-    
+
     Reference: https://arxiv.org/abs/2411.07641
 
     Args:
@@ -1135,7 +1135,7 @@ def _apply_top_nsigma(
     Returns:
         Modified logits with values below threshold set to -inf
     """
-    std = logits.std(dim=-1, keepdim=True) 
+    std = logits.std(dim=-1, keepdim=True)
     threshold = (logits.max(dim=-1, keepdim=True).values -
                  nsigma.unsqueeze(dim=1) * std)
     logits[logits < threshold] = float("-inf")
@@ -1413,7 +1413,7 @@ def _sample_with_torch(
 ) -> SampleReturnType:
     """Torch-oriented _sample() implementation.
 
-    Single-step scheduling: 
+    Single-step scheduling:
     * Perform GPU-side sampling computation
     * Immediately Pythonize sampling result
 
@@ -1546,7 +1546,7 @@ def _sample(
     Returns:
         (next_token_ids, parent_seq_ids) for each seq group in a batch.
             If sampling is skipped, it returns ([], [])
-        sampled_token_ids_tensor: A tensor of sampled token ids.    
+        sampled_token_ids_tensor: A tensor of sampled token ids.
     """
     return _sample_with_torch(
         probs,
@@ -1567,7 +1567,7 @@ def _get_ranks(x: torch.Tensor, indices: torch.Tensor) -> torch.Tensor:
         indices (torch.Tensor): List of chosen token indices.
     Returns:
         torch.Tensor: 1D tensor of shape (N,) where N is the no. of tokens.
-                    Each element in the returned tensor represents the rank 
+                    Each element in the returned tensor represents the rank
                     of the chosen token in the input logprob tensor.
     """
     vals = x[torch.arange(0, len(x), device=x.device, dtype=indices.dtype),
@@ -1862,7 +1862,7 @@ def _modify_greedy_probs_inplace(logprobs: torch.Tensor, probs: torch.Tensor,
                 distribution.
             - Greedy sampling performs `argmax` to obtain the token with the
                 highest likelihood.
-    
+
     Ignoring greedy sampling for a moment, we find that the computed probability
     distribution has the following property: we can sample from it independently
     and find that the token sampled by the Sampler has a frequency corresponding
@@ -1976,7 +1976,7 @@ def _get_next_prompt_tokens(seq_group: SequenceGroupToSample) -> List[str]:
     return next_prompt_tokens
 
 def _get_ngrams(
-    ngram_size: int, 
+    ngram_size: int,
     prev_input_ids: torch.Tensor
 ) -> Dict[Tuple[int, ...], List[int]]:
     """Get dictionary of ngrams and the tokens that followed them.
@@ -2002,9 +2002,9 @@ def _get_ngrams(
     return generated_ngrams
 
 def _get_generated_ngrams(
-    banned_ngrams: Dict[Tuple[int, ...], List[int]], 
+    banned_ngrams: Dict[Tuple[int, ...], List[int]],
     prev_input_ids: torch.Tensor,
-    ngram_size: int, 
+    ngram_size: int,
     cur_len: int
 ) -> List[int]:
     """Get list of tokens that would create a repeated ngram if generated next.
@@ -2046,7 +2046,7 @@ def _calc_banned_ngram_tokens(
 
     banned_tokens = _get_generated_ngrams(
         generated_ngrams,
-        prev_input_ids, 
+        prev_input_ids,
         ngram_size,
         cur_len
     )

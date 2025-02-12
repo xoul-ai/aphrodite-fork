@@ -93,7 +93,7 @@ class EncoderDecoderModelRunner(GPUModelRunnerBase[EncoderDecoderModelInput]):
         EncoderDecoderModelRunner constructor.
         `lora_config` and `prompt_adapter_config` are
         unused (since these features are not yet supported for encoder/decoder
-        models) but these arguments are present here for compatibility with 
+        models) but these arguments are present here for compatibility with
         the base-class constructor.
         '''
 
@@ -348,7 +348,7 @@ class EncoderDecoderModelRunner(GPUModelRunnerBase[EncoderDecoderModelInput]):
         Constructs a new model inputs data structure, based on
         (1) the existing fields in the `model_inputs` argument,
         and (2) the following additional fields which are
-        computed (or in the case of `attn_metadata`, updated) 
+        computed (or in the case of `attn_metadata`, updated)
         by this function:
         * attn_metadata
         * encoder_input_tokens

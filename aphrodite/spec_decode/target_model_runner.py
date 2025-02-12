@@ -17,7 +17,7 @@ class TargetModelRunner(ModelRunner):
     tokens are accepted. For this reason disabling log probabilities in the
     target model will make decode faster. The model runner sets the
     SamplingMetadata parameters according to whether log probabilities are
-    requested or not. 
+    requested or not.
     """
 
     def __init__(self,

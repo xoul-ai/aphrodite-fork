@@ -210,7 +210,7 @@ class OpenAIServing:
                 return None, prompt_adapter
         # if _check_model has been called earlier, this will be unreachable
         raise ValueError(f"The model `{request.model}` does not exist.")
-    
+
     def add_lora(self, lora: LoRAModulePath):
         if lora.name in [
                 lora.lora_name for lora in self.lora_requests
@@ -223,7 +223,7 @@ class OpenAIServing:
                 lora_int_id=len(self.lora_requests) + 1,
                 lora_path=lora.path,
             ))
-        
+
     def remove_lora(self, lora_name: str):
         self.lora_requests = [
             lora for lora in self.lora_requests if lora.lora_name != lora_name
@@ -247,7 +247,7 @@ class OpenAIServing:
                 prompt_adapter_id=len(self.prompt_adapter_requests) + 1,
                 prompt_adapter_local_path=prompt_adapter.local_path,
                 prompt_adapter_num_virtual_tokens=num_virtual_tokens))
-        
+
     def remove_prompt_adapter(self, prompt_adapter_name: str):
         self.prompt_adapter_requests = [
             prompt_adapter for prompt_adapter in self.prompt_adapter_requests

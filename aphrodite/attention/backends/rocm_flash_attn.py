@@ -285,7 +285,7 @@ class ROCmFlashAttentionImpl(AttentionImpl):
     If chunked prefill is enabled, prefill tokens and decode tokens can be
     batched together in a flattened 1D query.
 
-    |<----- num_prefill_tokens ---->|<------- num_decode_tokens ----------->|	
+    |<----- num_prefill_tokens ---->|<------- num_decode_tokens ----------->|
     |<-prompt_0->|...|<-prompt_N-1->|<-generation_0->|...|<-generation_M-1->|
 
     Currently, cuda graph is disabled for chunked prefill, meaning there's no

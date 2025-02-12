@@ -181,7 +181,7 @@ class FlashAttnVarlenFunc(torch.autograd.Function):
         ctx.alibi_slopes = alibi_slopes
         ctx.deterministic = deterministic
         return out if not return_softmax else (out, softmax_lse, S_dmask)
-    
+
 
 def flash_attn_varlen_func(
     q,

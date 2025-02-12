@@ -686,7 +686,7 @@ class CompletionRequest(OpenAIBaseModel):
             raise ValueError(
                 "Stream options can only be defined when stream is True.")
         return data
-    
+
     @model_validator(mode='before')
     @classmethod
     def parse_dry_sequence_breakers(cls, data):
@@ -699,11 +699,11 @@ class CompletionRequest(OpenAIBaseModel):
                 except json.JSONDecodeError as e:
                     raise ValueError(f"Invalid JSON for dry_sequence_breakers:"
                                      f" {e}") from e
-                
+
             # Validate that we now have a list of strings
             is_list = isinstance(data['dry_sequence_breakers'], list)
             all_strings = all(
-                isinstance(x, str) 
+                isinstance(x, str)
                 for x in data['dry_sequence_breakers']
             )
             if not is_list or not all_strings:
@@ -711,7 +711,7 @@ class CompletionRequest(OpenAIBaseModel):
                     "dry_sequence_breakers must be a list of strings or a "
                     "JSON string representing a list of strings"
                 )
-        
+
         return data
 
 

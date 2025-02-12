@@ -263,7 +263,7 @@ async def _handle_model_switch(
         if config:
             config.pop("model", None)
             request_data.update(config)
-            
+
         load_response = await load_model(
             raw_request,
             request=json.dumps(request_data)
@@ -324,7 +324,7 @@ async def unload_model(raw_request: Request):
             status_code=500
         )
     client = raw_request.app.state.engine_client
-    
+
     if isinstance(client, MQAphroditeEngineClient):
         try:
             shutdown_req = RPCShutdownRequest()
@@ -344,7 +344,7 @@ async def unload_model(raw_request: Request):
 
             raw_request.app.state.engine_client = None
             raw_request.app.state.openai_serving_chat = None
-            raw_request.app.state.openai_serving_completion = None 
+            raw_request.app.state.openai_serving_completion = None
             raw_request.app.state.openai_serving_embedding = None
             raw_request.app.state.openai_serving_tokenization = None
             raw_request.app.state.model_is_loaded = False
@@ -505,7 +505,7 @@ async def load_model(
     except Exception as e:
         return JSONResponse(
             content={
-                "status": "error", 
+                "status": "error",
                 "message": f"Failed to load model: {str(e)}"
             },
             status_code=500
@@ -591,7 +591,7 @@ async def show_version():
 async def serviceinfo():
     """Return service information including version, API endpoints,
     and documentation URLs."""
-    
+
     return JSONResponse(content={
         "version": 0.2,
         "software": {
@@ -609,7 +609,7 @@ async def serviceinfo():
                 "version": 1,
             },
             "koboldai": {
-                "name": "KoboldAI API", 
+                "name": "KoboldAI API",
                 "rel_url": "/api",
                 "documentation": "/redoc",
                 "version": 1,
@@ -696,7 +696,7 @@ async def create_embedding(request: EmbeddingRequest, raw_request: Request):
                             status_code=generator.code)
     else:
         return JSONResponse(content=generator.model_dump())
-    
+
 
 @router.post("/v1/lora/load")
 async def load_lora(lora: LoRAModulePath, raw_request: Request):
@@ -1060,7 +1060,7 @@ def build_app(args: Namespace) -> FastAPI:
             if request.url.path.startswith(
                 ("/v1/lora", "/v1/soft_prompt", "/v1/model")):
                 if ((admin_key is not None and (
-                        api_key_header == admin_key or 
+                        api_key_header == admin_key or
                         auth_header == "Bearer " + admin_key)) or
                     (auth_header == f"Bearer {token}" or
                      api_key_header == token)):
@@ -1173,7 +1173,7 @@ def init_app_state(
 
     if args.launch_kobold_api:
         _set_badwords(tokenizer, model_config.hf_config)
-    
+
 
 async def run_server(args, **uvicorn_kwargs) -> None:
 

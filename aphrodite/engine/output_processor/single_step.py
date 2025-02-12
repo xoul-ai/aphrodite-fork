@@ -80,8 +80,8 @@ class SingleStepOutputProcessor(SequenceGroupOutputProcessor):
 
         Invokes detokenizer to detokenize new tokens, and also marks sequences
         as finished if they meet stop conditions.
-        is_async - Indicates whether this postprocessor runs in 
-            parallel with the GPU forward pass and is processing 
+        is_async - Indicates whether this postprocessor runs in
+            parallel with the GPU forward pass and is processing
             tokens from the previous step. If this is true, then
             no tokens need to be appended since it is already done
             externally (before the next schedule() call)
@@ -95,7 +95,7 @@ class SingleStepOutputProcessor(SequenceGroupOutputProcessor):
                                outputs: List[SequenceGroupOutput]) -> None:
         """Process prompt logprobs associated with one step of a single-step-
         scheduled computation.
-        
+
         Args:
           seq_group: the output is associated with this :class:`SequenceGroup`
           output: the :class:`SequenceGroupOutput` for a single scheduler step

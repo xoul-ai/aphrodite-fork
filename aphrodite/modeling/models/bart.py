@@ -76,7 +76,7 @@ class BartLearnedPositionalEmbedding(VocabParallelEmbedding):
 
 class BartScaledWordEmbedding(VocabParallelEmbedding):
     """
-    This module overrides VocabParallelEmbedding's 
+    This module overrides VocabParallelEmbedding's
     forward by multiplying with embeddings scale.
     """
 
