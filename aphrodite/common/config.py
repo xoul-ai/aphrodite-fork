@@ -12,7 +12,7 @@ from transformers import PretrainedConfig
 
 import aphrodite.common.envs as envs
 from aphrodite.common.utils import (GiB_bytes, cuda_device_count_stateless,
-                                    get_cpu_memory, is_cpu, is_hip, is_neuron,
+                                    get_cpu_memory, is_cpu, is_hip,
                                     is_openvino, is_xpu, print_warning_once)
 from aphrodite.distributed import get_current_tp_rank_partition_size
 from aphrodite.modeling.models import ModelRegistry
@@ -292,8 +292,10 @@ class ModelConfig(ConfigMixin):
         self.is_attention_free = self._init_attention_free()
         self.has_noops = self._init_has_noops()
         self.has_inner_state = self._init_has_inner_state()
-        self.override_neuron_config = override_neuron_config if is_neuron(
-        ) else None
+        if current_platform.is_neuron():
+            self.override_neuron_config = override_neuron_config
+        else:
+            self.override_neuron_config = None
 
         supported_tasks, task = self._resolve_task(task, self.hf_config)
         self.supported_tasks = supported_tasks
@@ -521,7 +523,7 @@ class ModelConfig(ConfigMixin):
                     "APHRODITE_USE_TRITON_AWQ.")
                 envs.APHRODITE_USE_TRITON_AWQ = True
 
-            if is_neuron(
+            if current_platform.is_neuron(
             ) and self.quantization not in neuron_supported_quantization:
                 raise ValueError(
                     f"{self.quantization} quantization is currently not "
@@ -1317,7 +1319,7 @@ class DeviceConfig(ConfigMixin):
     def __init__(self, device: str = "auto") -> None:
         if device == "auto":
             # Automated device type detection
-            if is_neuron():
+            if current_platform.is_neuron():
                 self.device_type = "neuron"
             elif is_openvino():
                 self.device_type = "openvino"

@@ -1,24 +1,38 @@
 """Code inside this file can safely assume cuda platform, e.g. importing
 pynvml. However, it should not initialize cuda context.
 """
+
 import os
 from functools import lru_cache, wraps
-from typing import List, Tuple
+from typing import Callable, List, Tuple, TypeVar
 
 import pynvml
 from loguru import logger
+from typing_extensions import ParamSpec
 
-from .interface import Platform, PlatformEnum
+from .interface import DeviceCapability, Platform, PlatformEnum
+
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
+
+if pynvml.__file__.endswith("__init__.py"):
+    logger.warning(
+        "You are using a deprecated `pynvml` package. Please install"
+        " `nvidia-ml-py` instead, and make sure to uninstall `pynvml`."
+        " When both of them are installed, `pynvml` will take precedence"
+        " and cause errors. See https://pypi.org/project/pynvml "
+        "for more information.")
 
 # NVML utils
 # Note that NVML is not affected by `CUDA_VISIBLE_DEVICES`,
 # all the related functions work on real physical device ids.
 # the major benefit of using NVML is that it will not initialize CUDA
 
-def with_nvml_context(fn):
+
+def with_nvml_context(fn: Callable[_P, _R]) -> Callable[_P, _R]:
 
     @wraps(fn)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
         pynvml.nvmlInit()
         try:
             return fn(*args, **kwargs)
@@ -42,6 +56,13 @@ def get_physical_device_name(device_id: int = 0) -> str:
     return pynvml.nvmlDeviceGetName(handle)
 
 
+@lru_cache(maxsize=8)
+@with_nvml_context
+def get_physical_device_total_memory(device_id: int = 0) -> int:
+    handle = pynvml.nvmlDeviceGetHandleByIndex(device_id)
+    return int(pynvml.nvmlDeviceGetMemoryInfo(handle).total)
+
+
 @with_nvml_context
 def warn_if_different_devices():
     device_ids: int = pynvml.nvmlDeviceGetCount()
@@ -58,29 +79,37 @@ def warn_if_different_devices():
 def device_id_to_physical_device_id(device_id: int) -> int:
     if "CUDA_VISIBLE_DEVICES" in os.environ:
         device_ids = os.environ["CUDA_VISIBLE_DEVICES"].split(",")
-        device_ids = [int(device_id) for device_id in device_ids]
+        if device_ids == [""]:
+            raise RuntimeError("CUDA_VISIBLE_DEVICES is set to empty string,"
+                               " which means GPU support is disabled.")
         physical_device_id = device_ids[device_id]
+        return int(physical_device_id)
     else:
-        physical_device_id = device_id
-    return physical_device_id
+        return device_id
 
 
 class CudaPlatform(Platform):
     _enum = PlatformEnum.CUDA
 
-    @staticmethod
-    def get_device_capability(device_id: int = 0) -> Tuple[int, int]:
+    @classmethod
+    def get_device_capability(cls, device_id: int = 0) -> DeviceCapability:
         physical_device_id = device_id_to_physical_device_id(device_id)
-        return get_physical_device_capability(physical_device_id)
+        major, minor = get_physical_device_capability(physical_device_id)
+        return DeviceCapability(major=major, minor=minor)
 
-    @staticmethod
-    def get_device_name(device_id: int = 0) -> str:
+    @classmethod
+    def get_device_name(cls, device_id: int = 0) -> str:
         physical_device_id = device_id_to_physical_device_id(device_id)
         return get_physical_device_name(physical_device_id)
 
-    @staticmethod
+    @classmethod
+    def get_device_total_memory(cls, device_id: int = 0) -> int:
+        physical_device_id = device_id_to_physical_device_id(device_id)
+        return get_physical_device_total_memory(physical_device_id)
+
+    @classmethod
     @with_nvml_context
-    def is_full_nvlink(physical_device_ids: List[int]) -> bool:
+    def is_full_nvlink(cls, physical_device_ids: List[int]) -> bool:
         """
         query if the set of gpus are fully connected by nvlink (1 hop)
         """
@@ -96,10 +125,9 @@ class CudaPlatform(Platform):
                             pynvml.NVML_P2P_CAPS_INDEX_NVLINK)
                         if p2p_status != pynvml.NVML_P2P_STATUS_OK:
                             return False
-                    except pynvml.NVMLError as error:
-                        logger.error(
+                    except pynvml.NVMLError:
+                        logger.exception(
                             "NVLink detection failed. This is normal if your"
-                            " machine has no NVLink equipped.",
-                            exc_info=error)
+                            " machine has no NVLink equipped.")
                         return False
         return True

@@ -31,7 +31,7 @@ with contextlib.suppress(ImportError):
     import aphrodite._xqa_C
 
 
-if TYPE_CHECKING:
+if TYPE_CHECKING or current_platform.is_neuron():
 
     def register_fake(fn):
         return lambda name: fn

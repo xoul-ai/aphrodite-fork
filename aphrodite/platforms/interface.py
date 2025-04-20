@@ -1,6 +1,6 @@
 import enum
 import platform
-from typing import NamedTuple, Optional, Tuple
+from typing import NamedTuple, Optional, Tuple, Union
 
 import torch
 
@@ -11,6 +11,7 @@ class PlatformEnum(enum.Enum):
     TPU = enum.auto()
     XPU = enum.auto()
     CPU = enum.auto()
+    NEURON = enum.auto()
     UNSPECIFIED = enum.auto()
 
 
@@ -32,6 +33,7 @@ class DeviceCapability(NamedTuple):
     def to_int(self) -> int:
         """
         Express device capability as an integer ``<major><minor>``.
+
         It is assumed that the minor version is always a single digit.
         """
         assert 0 <= self.minor < 10
@@ -50,23 +52,64 @@ class Platform:
     def is_tpu(self) -> bool:
         return self._enum == PlatformEnum.TPU
 
-    def is_cpu(self) -> bool:
-        return self._enum == PlatformEnum.CPU
-
     def is_xpu(self) -> bool:
         return self._enum == PlatformEnum.XPU
 
-    @staticmethod
-    def get_device_capability(device_id: int = 0) -> Optional[Tuple[int, int]]:
+    def is_cpu(self) -> bool:
+        return self._enum == PlatformEnum.CPU
+
+    def is_neuron(self) -> bool:
+        return self._enum == PlatformEnum.NEURON
+
+    def is_cuda_alike(self) -> bool:
+        """Stateless version of :func:`torch.cuda.is_available`."""
+        return self._enum in (PlatformEnum.CUDA, PlatformEnum.ROCM)
+
+    @classmethod
+    def get_device_capability(
+        cls,
+        device_id: int = 0,
+    ) -> Optional[DeviceCapability]:
+        """Stateless version of :func:`torch.cuda.get_device_capability`."""
         return None
 
-    @staticmethod
-    def get_device_name(device_id: int = 0) -> str:
+    @classmethod
+    def has_device_capability(
+        cls,
+        capability: Union[Tuple[int, int], int],
+        device_id: int = 0,
+    ) -> bool:
+        """
+        Test whether this platform is compatible with a device capability.
+
+        The ``capability`` argument can either be:
+
+        - A tuple ``(major, minor)``.
+        - An integer ``<major><minor>``. (See :meth:`DeviceCapability.to_int`)
+        """
+        current_capability = cls.get_device_capability(device_id=device_id)
+        if current_capability is None:
+            return False
+
+        if isinstance(capability, tuple):
+            return current_capability >= capability
+
+        return current_capability.to_int() >= capability
+
+    @classmethod
+    def get_device_name(cls, device_id: int = 0) -> str:
+        """Get the name of a device."""
         raise NotImplementedError
 
-    @staticmethod
-    def inference_mode():
+    @classmethod
+    def get_device_total_memory(cls, device_id: int = 0) -> int:
+        """Get the total memory of a device in bytes."""
+        raise NotImplementedError
+
+    @classmethod
+    def inference_mode(cls):
         """A device-specific wrapper of `torch.inference_mode`.
+
         This wrapper is recommended because some hardware backends such as TPU
         do not support `torch.inference_mode`. In such a case, they will fall
         back to `torch.no_grad` by overriding this method.
