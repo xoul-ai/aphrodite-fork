@@ -731,7 +731,7 @@ class Scheduler:
                 self._async_stopped.append(seq_group)
                 continue
 
-            # NOTE(woosuk): Preemption happens only when there is no available
+            # NOTE: Preemption happens only when there is no available
             # slot to keep all the sequence groups in the RUNNING state.
             while not self._can_append_slots(seq_group, enable_chunking):
                 budget.subtract_num_batched_tokens(seq_group.request_id,
@@ -1777,11 +1777,11 @@ class Scheduler:
         # swapping. However, when the sequence group has multiple sequences
         # (e.g., beam search), recomputation is not currently supported. In
         # such a case, we use swapping instead.
-        # FIXME(woosuk): This makes our scheduling policy a bit bizarre.
+        # FIXME: This makes our scheduling policy a bit bizarre.
         # As swapped sequences are prioritized over waiting sequences,
         # sequence groups with multiple sequences are implicitly prioritized
         # over sequence groups with a single sequence.
-        # TODO(woosuk): Support recomputation for sequence groups with multiple
+        # TODO: Support recomputation for sequence groups with multiple
         # sequences. This may require a more sophisticated CUDA kernel.
         if self.user_specified_preemption_mode is None:
             if seq_group.get_max_num_running_seqs() == 1:
@@ -1850,7 +1850,7 @@ class Scheduler:
         blocks_to_swap_out: List[Tuple[int, int]],
     ) -> None:
         if not self.block_manager.can_swap_out(seq_group):
-            # FIXME(woosuk): Abort the sequence group instead of aborting the
+            # FIXME: Abort the sequence group instead of aborting the
             # entire engine.
             raise RuntimeError(
                 "Aborted due to the lack of CPU swap space. Please increase "

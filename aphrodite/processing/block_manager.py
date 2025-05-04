@@ -104,7 +104,7 @@ class SelfAttnBlockSpaceManager(BlockSpaceManager):
     def can_allocate(self,
                      seq_group: SequenceGroup,
                      num_lookahead_slots: int = 0) -> AllocStatus:
-        # FIXME(woosuk): Here we assume that all sequences in the group share
+        # FIXME: Here we assume that all sequences in the group share
         # the same prompt. This may not be true for preempted sequences.
 
         check_no_caching_or_swa_for_blockmgr_encdec(self, seq_group)
