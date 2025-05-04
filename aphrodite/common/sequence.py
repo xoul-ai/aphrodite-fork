@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: Apache-2.0
 """Sequence and its related classes."""
 import copy
 import enum

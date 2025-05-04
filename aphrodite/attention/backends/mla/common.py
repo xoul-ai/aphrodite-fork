@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: Apache-2.0
 """
 This file implements common components for MLA implementations.
 
