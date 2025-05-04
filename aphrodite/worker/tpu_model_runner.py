@@ -336,7 +336,7 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
             # We pad the seq_len to reduce the compilation overhead.
             # We execute each prompt individually (i.e., with batch_size 1)
             # because the FlashAttention kernel does not support ragged inputs.
-            # TODO(woosuk): Use SplashAttention to support ragged inputs.
+            # TODO: Use SplashAttention to support ragged inputs.
             padded_prompt_len = _get_padded_prefill_len(prompt_len)
             num_paddings = padded_prompt_len - prompt_len
             input_tokens += [0] * num_paddings

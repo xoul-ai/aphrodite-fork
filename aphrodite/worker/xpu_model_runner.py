@@ -168,7 +168,7 @@ class ModelInputForXPUBuilder(ModelRunnerInputBuilderBase[ModelInputForXPU]):
             seq_lens.append(seq_len)  # Prompt token num
             input_tokens.extend(prompt_tokens)  # Token ids
             # Token position ids
-            # NOTE(woosuk): Here we assume that the first token in the prompt
+            # NOTE: Here we assume that the first token in the prompt
             # is always the first token in the sequence.
             input_positions.extend(list(range(computed_len, seq_len)))
             if seq_group_metadata.block_tables is None:

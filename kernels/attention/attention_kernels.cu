@@ -686,7 +686,7 @@ __global__ void paged_attention_v2_reduce_kernel(
           blocksparse_vert_stride, blocksparse_block_size,                     \
           blocksparse_head_sliding_step);
 
-// TODO(woosuk): Tune NUM_THREADS.
+// TODO: Tune NUM_THREADS.
 template <typename T, typename CACHE_T, int BLOCK_SIZE,
           aphrodite::Fp8KVCacheDataType KV_DTYPE, bool IS_BLOCK_SPARSE,
           int NUM_THREADS = 128>
