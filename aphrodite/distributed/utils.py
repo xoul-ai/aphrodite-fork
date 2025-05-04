@@ -79,7 +79,7 @@ def get_pp_indices(num_hidden_layers: int, pp_rank: int,
     because they contain the input and output embeddings respectively and we
     are attempting to reduce maximum memory consumption across partitions.
     """
-    partition_list_str = envs.VLLM_PP_LAYER_PARTITION
+    partition_list_str = envs.APHRODITE_PP_LAYER_PARTITION
     if partition_list_str is not None:
         try:
             partitions = [
@@ -103,7 +103,7 @@ def get_pp_indices(num_hidden_layers: int, pp_rank: int,
             logger.info(
                 "Hidden layers were unevenly partitioned: [%s]. "
                 "This can be manually overridden using the "
-                "VLLM_PP_LAYER_PARTITION environment variable",
+                "APHRODITE_PP_LAYER_PARTITION environment variable",
                 ",".join(str(p) for p in partitions))
 
     start_layer = sum(partitions[:pp_rank])

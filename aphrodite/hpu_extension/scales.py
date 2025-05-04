@@ -5,7 +5,6 @@
 # LICENSE file in the root directory of this source tree.
 ###############################################################################
 import torch
-import habana_frameworks.torch.core as htcore
 import habana_frameworks.torch.utils.experimental as htexp
 
 from aphrodite.platforms import current_platform

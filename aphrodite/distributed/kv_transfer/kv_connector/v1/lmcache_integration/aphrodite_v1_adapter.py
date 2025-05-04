@@ -46,7 +46,7 @@ def get_zmq_rpc_path_lmcache(
         role: KVConnectorRole,
         is_tp: bool = False,
         aphrodite_config: Optional["VllmConfig"] = None) -> str:
-    base_url = envs.VLLM_RPC_BASE_PATH
+    base_url = envs.APHRODITE_RPC_BASE_PATH
     # Default to 0 if not configured
     rpc_port = 0
     if aphrodite_config is not None:

@@ -189,10 +189,10 @@ def read_bucket_settings(phase: str, dim: str, **defaults):
     phase is either 'prompt' or 'decode'
     dim is either 'bs', 'seq' or 'block'
     param is either 'min', 'step' or 'max'
-    example env variable: VLLM_DECODE_BS_BUCKET_STEP=128
+    example env variable: APHRODITE_DECODE_BS_BUCKET_STEP=128
     """
     params = ['min', 'step', 'max']
-    env_vars = [f'VLLM_{phase}_{dim}_BUCKET_{p}'.upper() for p in params]
+    env_vars = [f'APHRODITE_{phase}_{dim}_BUCKET_{p}'.upper() for p in params]
     default_values = [defaults[p] for p in params]
     values = [
         int(os.environ.get(e, d)) for e, d in zip(env_vars, default_values)
@@ -218,7 +218,7 @@ def warmup_range(config: Tuple[int, int, int]):
     bmin, bstep, bmax = config
     assert bmin <= bmax, ("Min. batch size cannot be greater than max. "
                           "batch size. If you want to skip warmup, "
-                          "set VLLM_SKIP_WARMUP=true")
+                          "set APHRODITE_SKIP_WARMUP=true")
     base = itertools.repeat(2)
     ramp_up_acc = itertools.accumulate(base, func=operator.mul, initial=bmin)
     ramp_up_tw = itertools.takewhile(lambda x: x < bstep and x <= bmax, \

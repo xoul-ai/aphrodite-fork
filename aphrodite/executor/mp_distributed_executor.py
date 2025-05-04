@@ -1,66 +1,67 @@
 import asyncio
 import os
-from functools import partial
-from typing import Any, List, Optional
+from typing import Any, Callable, List, Optional, Union
 
-import torch
-from loguru import logger
+import cloudpickle
 
 from aphrodite.common.sequence import ExecuteModelRequest
 from aphrodite.common.utils import (_run_task_with_lock,
                                     cuda_device_count_stateless,
-                                    cuda_is_initialized,
-                                    get_aphrodite_instance_id,
-                                    get_distributed_init_method, get_open_port,
-                                    make_async, update_environment_variables)
-from aphrodite.executor.distributed_gpu_executor import (  # yapf: disable
-    DistributedGPUExecutor, DistributedGPUExecutorAsync)
-from aphrodite.executor.gpu_executor import create_worker
-from aphrodite.executor.multiproc_worker_utils import (ProcessWorkerWrapper,
-                                                       ResultHandler,
-                                                       WorkerMonitor)
+                                    get_distributed_init_method, get_ip,
+                                    get_open_port, make_async, run_method,
+                                    update_environment_variables)
+from aphrodite.executor.executor_base import DistributedExecutorBase
+from aphrodite.executor.multiproc_worker_utils import (
+    ProcessWorkerWrapper, ResultHandler, WorkerMonitor,
+    set_multiprocessing_worker_envs)
 from aphrodite.modeling.layers.sampler import SamplerOutput
-from aphrodite.triton_utils import maybe_set_triton_cache_manager
+from aphrodite.worker.worker_base import WorkerWrapperBase
 
 
-class MultiprocessingGPUExecutor(DistributedGPUExecutor):
-    """Python multiprocessing-based multi-GPU executor"""
+class MultiprocessingDistributedExecutor(DistributedExecutorBase):
+    """Python multiprocessing-based distributed executor"""
 
     uses_ray: bool = False
 
+    def _check_cuda(self) -> None:
+        """Check that the number of GPUs is sufficient for the parallel
+        configuration. Separate from _init_executor to reduce the number of
+        indented blocks.
+        """
+        parallel_config = self.parallel_config
+        world_size = parallel_config.world_size
+        tensor_parallel_size = parallel_config.tensor_parallel_size
+
+        cuda_device_count = cuda_device_count_stateless()
+        # Use confusing message for more common TP-only case.
+        if tensor_parallel_size > cuda_device_count:
+            raise RuntimeError(
+                f"please set tensor_parallel_size ({tensor_parallel_size}) "
+                f"to less than max local gpu count ({cuda_device_count})")
+
+        if world_size > cuda_device_count:
+            raise RuntimeError(
+                f"please ensure that world_size ({world_size}) "
+                f"is less than than max local gpu count ({cuda_device_count})")
+
+        # Set CUDA_VISIBLE_DEVICES for the driver, inherited by workers
+        if "CUDA_VISIBLE_DEVICES" not in os.environ:
+            update_environment_variables({
+                "CUDA_VISIBLE_DEVICES": (",".join(map(str, range(world_size))))
+            })
+
     def _init_executor(self) -> None:
 
-        self._check_executor_parameters()
+        from aphrodite.platforms import current_platform
+        if current_platform.is_cuda_alike():
+            self._check_cuda()
 
         # Create the parallel GPU workers.
         world_size = self.parallel_config.world_size
         tensor_parallel_size = self.parallel_config.tensor_parallel_size
 
-        # Ensure that APHRODITE_INSTANCE_ID is set, to be inherited by workers
-        os.environ["APHRODITE_INSTANCE_ID"] = get_aphrodite_instance_id()
-        # Disable torch async compiling which won't work with daemonic processes
-        os.environ["TORCHINDUCTOR_COMPILE_THREADS"] = "1"
-
-        # Configure thread parallelism if OMP_NUM_THREADS isn't set
-        #
-        # Helps to avoid CPU contention. The default of spawning a thread per
-        # core combined with multiprocessing for each GPU can have a negative
-        # impact on performance. The contention is amplified when running in a
-        # container where CPU limits can cause throttling.
-        default_omp_num_threads = 1
-        if "OMP_NUM_THREADS" not in os.environ and (
-                current_parallelism :=
-                torch.get_num_threads()) > default_omp_num_threads:
-            logger.warning(
-                f"Reducing Torch parallelism from {current_parallelism} "
-                f"threads to {default_omp_num_threads} to avoid "
-                "unnecessary CPU contention. Set OMP_NUM_THREADS in the "
-                "external environment to tune this value as needed.")
-            os.environ["OMP_NUM_THREADS"] = str(default_omp_num_threads)
-            torch.set_num_threads(default_omp_num_threads)
-
-        if world_size > 1:
-            maybe_set_triton_cache_manager()
+        # Set multiprocessing envs that are common to V0 and V1
+        set_multiprocessing_worker_envs(self.parallel_config)
 
         # Multiprocessing-based executor does not support multi-node setting.
         # Since it only works for single node, we can use the loopback address
@@ -83,15 +84,9 @@ class MultiprocessingGPUExecutor(DistributedGPUExecutor):
         else:
             result_handler = ResultHandler()
             for rank in range(1, world_size):
-                worker = ProcessWorkerWrapper(
-                    result_handler,
-                    partial(
-                        create_worker,
-                        **self._get_create_worker_kwargs(
-                            rank=rank,
-                            local_rank=rank,
-                            distributed_init_method=distributed_init_method,
-                        )))
+                worker = ProcessWorkerWrapper(result_handler,
+                                              WorkerWrapperBase,
+                                              self.aphrodite_config, rank)
                 self.workers.append(worker)
                 if rank % tensor_parallel_size == 0:
                     self.tp_driver_workers.append(worker)
@@ -105,40 +100,30 @@ class MultiprocessingGPUExecutor(DistributedGPUExecutor):
         # Set up signal handlers to shutdown the executor cleanly
         # sometimes gc does not work well
 
-        self.driver_worker = self._create_worker(
-            distributed_init_method=distributed_init_method)
+        self.driver_worker = WorkerWrapperBase(self.aphrodite_config, 0)
+
+        all_kwargs = []
+        distributed_init_method = get_distributed_init_method(
+            get_ip(), get_open_port())
+        for i in range(world_size):
+            local_rank = i
+            rank = i
+            kwargs = dict(
+                aphrodite_config=self.aphrodite_config,
+                local_rank=local_rank,
+                rank=rank,
+                distributed_init_method=distributed_init_method,
+                is_driver_worker=(not self.parallel_config)
+                or (rank % self.parallel_config.tensor_parallel_size == 0),
+            )
+            all_kwargs.append(kwargs)
+        self._run_workers("init_worker", all_kwargs)
         self._run_workers("init_device")
         self._run_workers("load_model",
                           max_concurrent_workers=self.parallel_config.
                           max_parallel_loading_workers)
-
-    def _check_executor_parameters(self):
-        world_size = self.parallel_config.world_size
-        tensor_parallel_size = self.parallel_config.tensor_parallel_size
-
-        # Set CUDA_VISIBLE_DEVICES for the driver, inherited by workers
-        if "CUDA_VISIBLE_DEVICES" not in os.environ:
-            update_environment_variables({
-                "CUDA_VISIBLE_DEVICES": (",".join(map(str, range(world_size))))
-            })
-
-        if (cuda_is_initialized()
-                and os.environ.get(
-                    "APHRODITE_WORKER_MULTIPROC_METHOD") != "spawn"):
-            logger.warning("CUDA was previously initialized. We must use "
-                           "the `spawn` multiprocessing start method. Setting "
-                           "APHRODITE_WORKER_MULTIPROC_METHOD to 'spawn'.")
-            os.environ["APHRODITE_WORKER_MULTIPROC_METHOD"] = "spawn"
-
-        cuda_device_count = cuda_device_count_stateless()
-        # Use confusing message for more common TP-only case.
-        assert tensor_parallel_size <= cuda_device_count, (
-            f"please set tensor_parallel_size ({tensor_parallel_size}) "
-            f"to less than max local gpu count ({cuda_device_count})")
-
-        assert world_size <= cuda_device_count, (
-            f"please ensure that world_size ({world_size}) "
-            f"is less than than max local gpu count ({cuda_device_count})")
+        self.driver_exec_model = make_async(self.driver_worker.execute_model)
+        self.pp_locks: Optional[List[asyncio.Lock]] = None
 
     def shutdown(self):
         if (worker_monitor := getattr(self, "worker_monitor",
@@ -149,6 +134,7 @@ class MultiprocessingGPUExecutor(DistributedGPUExecutor):
         self, execute_model_req: Optional[ExecuteModelRequest]
     ) -> Optional[List[SamplerOutput]]:
         """Run execute_model in the driver worker.
+
         Passing None will cause the driver to stop the model execution
         loop running in each of the remote workers.
         """
@@ -156,19 +142,25 @@ class MultiprocessingGPUExecutor(DistributedGPUExecutor):
 
     def _run_workers(
         self,
-        method: str,
+        method: Union[str, Callable],
         *args,
         async_run_tensor_parallel_workers_only: bool = False,
         max_concurrent_workers: Optional[int] = None,
         **kwargs,
-    ) -> Any:
+    ) -> List[Any]:
         """Runs the given method on all workers.
+
         Args:
             async_run_tensor_parallel_workers_only: If True the method will be
                 run only in the remote TP workers, not the driver worker.
                 It will also be run asynchronously and return a list of futures
                 rather than blocking on the results.
         """
+        if isinstance(method, str):
+            sent_method = method
+        else:
+            sent_method = cloudpickle.dumps(method)
+        del method
 
         if max_concurrent_workers:
             raise NotImplementedError(
@@ -177,18 +169,18 @@ class MultiprocessingGPUExecutor(DistributedGPUExecutor):
         if async_run_tensor_parallel_workers_only:
             # Run only non-driver workers and just return futures.
             return [
-                worker.execute_method(method, *args, **kwargs)
+                worker.execute_method(sent_method, *args, **kwargs)
                 for worker in self.non_driver_workers
             ]
 
         # Start all remote workers first.
         worker_outputs = [
-            worker.execute_method(method, *args, **kwargs)
+            worker.execute_method(sent_method, *args, **kwargs)
             for worker in self.workers
         ]
 
-        driver_worker_method = getattr(self.driver_worker, method)
-        driver_worker_output = driver_worker_method(*args, **kwargs)
+        driver_worker_output = run_method(self.driver_worker, sent_method,
+                                          args, kwargs)
 
         # Get the results of the workers.
         return [driver_worker_output
@@ -205,15 +197,6 @@ class MultiprocessingGPUExecutor(DistributedGPUExecutor):
         async_run_remote_workers_only to complete."""
         for result in parallel_worker_tasks:
             result.get()
-
-
-class MultiprocessingGPUExecutorAsync(MultiprocessingGPUExecutor,
-                                      DistributedGPUExecutorAsync):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.driver_exec_model = make_async(self.driver_worker.execute_model)
-        self.pp_locks: Optional[List[asyncio.Lock]] = None
 
     async def _driver_execute_model_async(
         self,

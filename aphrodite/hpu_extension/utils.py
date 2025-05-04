@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 ###############################################################################
 
-from functools import cache, wraps
+from functools import wraps
 import os
 from functools import lru_cache
 
@@ -17,7 +17,7 @@ from .cache_ops import insert_or_update_cache
 
 @lru_cache(maxsize=None)
 def is_fake_hpu() -> bool:
-    return os.environ.get('VLLM_USE_FAKE_HPU', '0') != '0'
+    return os.environ.get('APHRODITE_USE_FAKE_HPU', '0') != '0'
 
 
 def with_mark_steps(fn):
@@ -56,7 +56,7 @@ class VLLMKVCache(torch.nn.Module):
 
     def __init__(self):
         super(VLLMKVCache, self).__init__()
-        self.use_contiguous_pa = os.environ.get('VLLM_CONTIGUOUS_PA',
+        self.use_contiguous_pa = os.environ.get('APHRODITE_CONTIGUOUS_PA',
                                                 'true').lower() == 'true'
 
     def forward(self, input, cache, block_indices, block_offset):
@@ -76,7 +76,7 @@ class VLLMKVCache(torch.nn.Module):
 class ModuleFusedSDPA(torch.nn.Module):
     def __init__(self, fusedSDPA):
         super().__init__()
-        assert fusedSDPA is not None, f'fusedSDPA kernel is None'
+        assert fusedSDPA is not None, 'fusedSDPA kernel is None'
         self._hpu_kernel_fsdpa = fusedSDPA
 
     def forward(

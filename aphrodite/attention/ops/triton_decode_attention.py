@@ -645,7 +645,7 @@ def decode_attention_fwd(
         # MHA
         decode_attention_fwd_normal(
             q,
-            k_buffer,vllm
+            k_buffer,
             v_buffer,
             o,
             req_to_token,

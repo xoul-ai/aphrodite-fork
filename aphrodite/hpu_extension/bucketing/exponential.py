@@ -182,11 +182,11 @@ def read_bucket_settings(phase: str, dim: str, **defaults):
     phase is either 'prompt' or 'decode'
     dim is either 'bs', 'seq' or 'block'
     param is either 'min', 'step' or 'max'
-    example env variable: VLLM_DECODE_BS_BUCKET_STEP=128
+    example env variable: APHRODITE_DECODE_BS_BUCKET_STEP=128
     """
     params = ['min', 'step', 'max', 'limit']
     hidden_params = ['min', 'step', 'max']
-    env_vars = [f'VLLM_{phase}_{dim}_BUCKET_{p}'.upper() for p in params]
+    env_vars = [f'APHRODITE_{phase}_{dim}_BUCKET_{p}'.upper() for p in params]
     default_values = [defaults[p] for p in params]
     values = [
         int(d if p in hidden_params else os.environ.get(e, d)) for p, e, d in zip(params, env_vars, default_values)
@@ -204,7 +204,8 @@ def find_bucket(buckets, value, dim=None):
     try:
         return next(p for p in sorted(buckets) if p >= value)
     except StopIteration:
-        import pdb; pdb.set_trace()
+        import pdb
+        pdb.set_trace()
         
 
 def get_buckets_single_dim(buckets, dim):

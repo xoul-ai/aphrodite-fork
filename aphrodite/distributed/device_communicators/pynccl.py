@@ -3,6 +3,7 @@ from typing import Optional, Union
 # ===================== import region =====================
 import torch
 import torch.distributed as dist
+from loguru import logger
 from torch.distributed import ProcessGroup, ReduceOp
 
 from aphrodite.common.utils import current_stream

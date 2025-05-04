@@ -1,57 +1,94 @@
 import asyncio
+import json
 import os
 from collections import defaultdict
-from itertools import islice, repeat
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
 
+import cloudpickle
 import msgspec
 from loguru import logger
 
 import aphrodite.common.envs as envs
 from aphrodite.common.sequence import ExecuteModelRequest
 from aphrodite.common.utils import (_run_task_with_lock,
-                                    get_aphrodite_instance_id,
                                     get_distributed_init_method, get_ip,
                                     get_open_port, make_async)
-from aphrodite.executor.distributed_gpu_executor import (  # yapf: disable
-    DistributedGPUExecutor, DistributedGPUExecutorAsync)
+from aphrodite.executor.executor_base import (
+    DistributedExecutorBase)  # yapf: disable
 from aphrodite.executor.msgspec_utils import encode_hook
-from aphrodite.executor.ray_utils import RayWorkerWrapper, ray
+from aphrodite.executor.ray_utils import (RayWorkerWrapper,
+                                          initialize_ray_cluster, ray)
 from aphrodite.modeling.layers.sampler import SamplerOutput
+from aphrodite.platforms import current_platform
 
 if ray is not None:
+    from ray.actor import ActorHandle
     from ray.util.scheduling_strategies import PlacementGroupSchedulingStrategy
+else:
+    ActorHandle = None
 
 if TYPE_CHECKING:
     from ray.util.placement_group import PlacementGroup
 
-# If the env var is set, it uses the Ray's compiled DAG API
-# which optimizes the control plane overhead.
-# Run Aphrodite with APHRODITE_USE_RAY_COMPILED_DAG=1 to enable it.
-APHRODITE_USE_RAY_COMPILED_DAG = envs.APHRODITE_USE_RAY_COMPILED_DAG
-APHRODITE_TRACE_FUNCTION = envs.APHRODITE_TRACE_FUNCTION
-APHRODITE_USE_RAY_SPMD_WORKER = envs.APHRODITE_USE_RAY_SPMD_WORKER
-
-APHRODITE_USE_RAY_COMPILED_DAG_NCCL_CHANNEL = (
-    envs.APHRODITE_USE_RAY_COMPILED_DAG_NCCL_CHANNEL)
 
 
-class RayGPUExecutor(DistributedGPUExecutor):
+@dataclass
+class RayWorkerMetaData:
+    """
+    Metadata for a Ray worker.
+    The order of ray worker creation can be random,
+    and we need to reset the rank after creating all workers.
+    """
+    worker: ActorHandle
+    created_rank: int
+    adjusted_rank: int = -1
+    ip: str = ""
+
+
+class RayDistributedExecutor(DistributedExecutorBase):
+    """Ray-based distributed executor"""
+
+    # These env vars are worker-specific, therefore are NOT copied
+    # from the driver to the workers
+    WORKER_SPECIFIC_ENV_VARS = {
+        "APHRODITE_HOST_IP", "APHRODITE_HOST_PORT", "LOCAL_RANK", "CUDA_VISIBLE_DEVICES"
+    }
+
+    config_home = envs.APHRODITE_CONFIG_ROOT
+    # This file contains a list of env vars that should not be copied
+    # from the driver to the Ray workers.
+    non_carry_over_env_vars_file = os.path.join(
+        config_home, "ray_non_carry_over_env_vars.json")
+    if os.path.exists(non_carry_over_env_vars_file):
+        with open(non_carry_over_env_vars_file) as f:
+            non_carry_over_env_vars = set(json.load(f))
+    else:
+        non_carry_over_env_vars = set()
 
     uses_ray: bool = True
 
     def _init_executor(self) -> None:
-        self.forward_dag: Optional["ray.dag.CompiledDAG"] = None
+        self.forward_dag: Optional[ray.dag.CompiledDAG] = None
+        if envs.APHRODITE_USE_V1:
+            # V1 uses SPMD worker and compiled DAG
+            os.environ["APHRODITE_USE_RAY_SPMD_WORKER"] = "1"
+            os.environ["APHRODITE_USE_RAY_COMPILED_DAG"] = "1"
+
+            # For TPU, avoid compiling NVIDIA's NCCL
+            if current_platform.is_tpu():
+                os.environ["APHRODITE_USE_RAY_COMPILED_DAG_CHANNEL_TYPE"] = "shm"
+
         # If the env var is set, it uses the Ray's compiled DAG API
         # which optimizes the control plane overhead.
         # Run Aphrodite with APHRODITE_USE_RAY_COMPILED_DAG=1 to enable it.
         # Currently, this requires USE_RAY_SPMD_WORKER=True.
-        self.use_ray_compiled_dag = APHRODITE_USE_RAY_COMPILED_DAG
+        self.use_ray_compiled_dag = envs.APHRODITE_USE_RAY_COMPILED_DAG
         # If the env var is set, then we do not distinguish between the
         # "driver worker" vs other workers. Also, the rank 0 worker will
         # be executed in a remote Ray worker. Currently this requires
         # USE_RAY_COMPILED_DAG=True.
-        self.use_ray_spmd_worker = APHRODITE_USE_RAY_SPMD_WORKER
+        self.use_ray_spmd_worker = envs.APHRODITE_USE_RAY_SPMD_WORKER
         if self.use_ray_compiled_dag:
             assert self.use_ray_spmd_worker, (
                 "APHRODITE_USE_RAY_COMPILED_DAG=1 requires "
@@ -63,6 +100,7 @@ class RayGPUExecutor(DistributedGPUExecutor):
                 "APHRODITE_USE_RAY_COMPILED_DAG=1")
 
         assert self.uses_ray
+        initialize_ray_cluster(self.parallel_config)
         placement_group = self.parallel_config.placement_group
 
         # Disable Ray usage stats collection.
@@ -76,8 +114,18 @@ class RayGPUExecutor(DistributedGPUExecutor):
         self.input_encoder = msgspec.msgpack.Encoder(enc_hook=encode_hook)
         self.output_decoder = msgspec.msgpack.Decoder(
             Optional[List[SamplerOutput]])
+        self.use_v1 = envs.APHRODITE_USE_V1
+
+        self.pp_locks: Optional[List[asyncio.Lock]] = None
+        if not self.use_ray_compiled_dag:
+            self.driver_exec_method = make_async(
+                self.driver_worker.execute_method)
 
     def shutdown(self) -> None:
+        logger.info(
+            "Shutting down Ray distributed executor. If you see error log "
+            "from logging.cc regarding SIGTERM received, please ignore because "
+            "this is the expected termination process in Ray.")
         if hasattr(self, "forward_dag") and self.forward_dag is not None:
             self.forward_dag.teardown()
             import ray
@@ -100,30 +148,13 @@ class RayGPUExecutor(DistributedGPUExecutor):
 
         return ray_remote_kwargs
 
-    def _get_worker_wrapper_args(self) -> Dict[str, Any]:
-        (worker_module_name, worker_class_name,
-         worker_class_fn) = self._get_worker_module_and_class()
-
-        return dict(
-            worker_module_name=worker_module_name,
-            worker_class_name=worker_class_name,
-            worker_class_fn=worker_class_fn,
-            trust_remote_code=self.model_config.trust_remote_code,
-        )
-
     # child class could overwrite this to return actual env vars.
     def _get_env_vars_to_be_updated(self):
         return self._env_vars_for_all_workers
 
     def _init_workers_ray(self, placement_group: "PlacementGroup",
                           **ray_remote_kwargs):
-        if (self.parallel_config.tensor_parallel_size == 1
-                and self.parallel_config.pipeline_parallel_size == 1):
-            # For single GPU case, we use a ray worker with constrained memory.
-            num_gpus = self.cache_config.gpu_memory_utilization
-        else:
-            # Otherwise, the ray workers are allocated with a full GPU.
-            num_gpus = 1
+        num_gpus = envs.APHRODITE_RAY_PER_WORKER_GPUS
 
         # The driver dummy worker does not actually use any resources.
         # It holds the resource for the driver worker.
@@ -140,78 +171,131 @@ class RayGPUExecutor(DistributedGPUExecutor):
             ray_remote_kwargs = self._configure_ray_workers_use_nsight(
                 ray_remote_kwargs)
 
-        logger.info(f"use_ray_spmd_worker: {self.use_ray_spmd_worker}")
+        logger.info("use_ray_spmd_worker: %s", self.use_ray_spmd_worker)
+
         # Create the workers.
+        bundle_indices: List[int]
+        if envs.APHRODITE_RAY_BUNDLE_INDICES:
+            # Use the bundle indices specified by the user.
+            bundle_indices = list(
+                map(int, envs.APHRODITE_RAY_BUNDLE_INDICES.split(",")))
+            assert len(bundle_indices) == self.parallel_config.world_size, \
+            ("APHRODITE_RAY_BUNDLE_INDICES must have the same size"
+            f" as the world size, but got {bundle_indices=} "
+            f"and {self.parallel_config.world_size=}")
+            assert len(set(bundle_indices)) == len(bundle_indices), \
+            ("APHRODITE_RAY_BUNDLE_INDICES cannot have duplicate values,"
+            f" but got {bundle_indices=}")
+        else:
+            # use the first N bundles that have GPU resources.
+            bundle_indices = []
+            for bundle_id, bundle in enumerate(placement_group.bundle_specs):
+                if bundle.get(current_platform.ray_device_key, 0):
+                    bundle_indices.append(bundle_id)
+            bundle_indices = bundle_indices[:self.parallel_config.world_size]
+
+        worker_metadata: List[RayWorkerMetaData] = []
         driver_ip = get_ip()
-        logger.info(f"driver_ip: {driver_ip}")
-        worker_wrapper_kwargs = self._get_worker_wrapper_args()
-        for bundle_id, bundle in enumerate(placement_group.bundle_specs):
-            if not bundle.get("GPU", 0):
-                continue
+        for rank, bundle_id in enumerate(bundle_indices):
             scheduling_strategy = PlacementGroupSchedulingStrategy(
                 placement_group=placement_group,
                 placement_group_capture_child_tasks=True,
                 placement_group_bundle_index=bundle_id,
             )
 
-            worker = ray.remote(
-                num_cpus=0,
-                num_gpus=num_gpus,
-                scheduling_strategy=scheduling_strategy,
-                **ray_remote_kwargs,
-            )(RayWorkerWrapper).remote(**worker_wrapper_kwargs)
-
-            if self.use_ray_spmd_worker:
-                self.workers.append(worker)
+            if current_platform.ray_device_key == "GPU":
+                # NV+AMD GPUs, and Intel XPUs
+                worker = ray.remote(
+                    num_cpus=0,
+                    num_gpus=num_gpus,
+                    scheduling_strategy=scheduling_strategy,
+                    **ray_remote_kwargs,
+                )(RayWorkerWrapper).remote(aphrodite_config=self.aphrodite_config,
+                                           rpc_rank=rank)
             else:
-                worker_ip = ray.get(worker.get_node_ip.remote())
-                if worker_ip == driver_ip and self.driver_dummy_worker is None:
+                worker = ray.remote(
+                    num_cpus=0,
+                    num_gpus=0,
+                    resources={current_platform.ray_device_key: num_gpus},
+                    scheduling_strategy=scheduling_strategy,
+                    **ray_remote_kwargs,
+                )(RayWorkerWrapper).remote(aphrodite_config=self.aphrodite_config,
+                                           rpc_rank=rank)
+            worker_metadata.append(
+                RayWorkerMetaData(worker=worker, created_rank=rank))
+
+        worker_ips = ray.get([
+            each.worker.get_node_ip.remote()  # type: ignore[attr-defined]
+            for each in worker_metadata
+        ])
+
+        for each, ip in zip(worker_metadata, worker_ips):
+            each.ip = ip
+
+        if not self.use_ray_spmd_worker:
+            for i, each in enumerate(worker_metadata):
+                # find and remove the dummy worker from the list
+                worker = each.worker
+                worker_ip = each.ip
+                if self.driver_dummy_worker is None and worker_ip == driver_ip:
                     # If the worker is on the same node as the driver, we use it
                     # as the resource holder for the driver process.
                     self.driver_dummy_worker = worker
                     self.driver_worker = RayWorkerWrapper(
-                        **worker_wrapper_kwargs)
-                else:
-                    # Else, added to the list of workers.
-                    self.workers.append(worker)
+                        aphrodite_config=self.aphrodite_config, rpc_rank=0)
+                    worker_metadata.pop(i)
+                    break
 
-        logger.debug(f"workers: {self.workers}")
-        logger.debug(f"driver_dummy_worker: {self.driver_dummy_worker}")
+        logger.debug("workers: %s", worker_metadata)
+        logger.debug("driver_dummy_worker: %s", self.driver_dummy_worker)
         if not self.use_ray_spmd_worker and self.driver_dummy_worker is None:
             raise ValueError(
-                "Ray does not allocate any GPUs on the driver node. Consider "
-                "adjusting the Ray placement group or running the driver on a "
-                "GPU node.")
+                "Ray does not allocate any GPUs on the driver node."
+                f"Driver IP: {driver_ip}, worker IPs: {worker_ips}."
+                "Consider adjusting the Ray placement group or running "
+                "the driver on a GPU node.")
 
-        worker_ips = [
-            ray.get(worker.get_node_ip.remote())  # type: ignore[attr-defined]
-            for worker in self.workers
-        ]
         ip_counts: Dict[str, int] = {}
         for ip in worker_ips:
             ip_counts[ip] = ip_counts.get(ip, 0) + 1
 
-        def sort_by_driver_then_worker_ip(worker):
+        def sort_by_driver_then_worker_ip(item: RayWorkerMetaData):
             """
             Sort the workers based on 3 properties:
-            1. If the worker is on the same node as the driver (vllm engine),
+            1. If the worker is on the same node as the driver (aphrodite engine),
                 it should be placed first.
             2. Then, if the worker is on a node with fewer workers, it should
                 be placed first.
             3. Finally, if the work is on a node with smaller IP address, it
                 should be placed first.
             """
-            ip = ray.get(worker.get_node_ip.remote())
-            return (ip != driver_ip, ip_counts[ip], ip)
+            ip = item.ip
+            return (0 if ip == driver_ip else 1, ip_counts[ip], ip)
 
         # After sorting, the workers on the same node will be
         # close to each other, and the workers on the driver
         # node will be placed first.
-        self.workers = sorted(self.workers, key=sort_by_driver_then_worker_ip)
+        sorted_worker_metadata = sorted(worker_metadata,
+                                        key=sort_by_driver_then_worker_ip)
+        start_rank = 0 if self.use_ray_spmd_worker else 1
+        for i, item in enumerate(sorted_worker_metadata):
+            item.adjusted_rank = i + start_rank
+        self.workers = [item.worker for item in sorted_worker_metadata]
+        rerank_mapping = {
+            item.created_rank: item.adjusted_rank
+            for item in sorted_worker_metadata
+        }
+        self._run_workers("adjust_rank", rerank_mapping)
 
         # Get the set of GPU IDs used on each node.
-        worker_node_and_gpu_ids = self._run_workers("get_node_and_gpu_ids",
-                                                    use_dummy_driver=True)
+        worker_node_and_gpu_ids = []
+        for worker in [self.driver_dummy_worker] + self.workers:
+            if worker is None:
+                # driver_dummy_worker can be None when using ray spmd worker.
+                continue
+            worker_node_and_gpu_ids.append(
+                ray.get(worker.get_node_and_gpu_ids.remote()) \
+            ) # type: ignore
 
         node_workers = defaultdict(list)  # node id -> list of worker ranks
         node_gpus = defaultdict(list)  # node id -> list of gpu ids
@@ -222,6 +306,7 @@ class RayGPUExecutor(DistributedGPUExecutor):
             # convert them to integers for consistency.
             # NOTE: gpu_ids can be larger than 9 (e.g. 16 GPUs),
             # string sorting is not sufficient.
+            # see https://github.com/aphrodite-project/aphrodite/issues/5590
             gpu_ids = [int(x) for x in gpu_ids]
             node_gpus[node_id].extend(gpu_ids)
         for node_id, gpu_ids in node_gpus.items():
@@ -230,33 +315,52 @@ class RayGPUExecutor(DistributedGPUExecutor):
         all_ips = set(worker_ips + [driver_ip])
         n_ips = len(all_ips)
         n_nodes = len(node_workers)
+
         if n_nodes != n_ips:
             raise RuntimeError(
                 f"Every node should have a unique IP address. Got {n_nodes}"
                 f" nodes with node ids {list(node_workers.keys())} and "
                 f"{n_ips} unique IP addresses {all_ips}. Please check your"
-                " network configuration. If you set `APHRODITE_HOST_IP` or "
-                "`HOST_IP` environment variable, make sure it is unique for"
+                " network configuration. If you set `APHRODITE_HOST_IP`"
+                " environment variable, make sure it is unique for"
                 " each node.")
 
-        APHRODITE_INSTANCE_ID = get_aphrodite_instance_id()
-
         # Set environment variables for the driver and workers.
-        all_args_to_update_environment_variables = [({
-            "CUDA_VISIBLE_DEVICES":
+        all_args_to_update_environment_variables = [{
+            current_platform.device_control_env_var:
             ",".join(map(str, node_gpus[node_id])),
-            "APHRODITE_INSTANCE_ID":
-            APHRODITE_INSTANCE_ID,
-            "APHRODITE_TRACE_FUNCTION":
-            str(APHRODITE_TRACE_FUNCTION),
-            **({
-                "APHRODITE_ATTENTION_BACKEND": envs.APHRODITE_ATTENTION_BACKEND
-            } if envs.APHRODITE_ATTENTION_BACKEND is not None else {})
-        }, ) for (node_id, _) in worker_node_and_gpu_ids]
+        } for (node_id, _) in worker_node_and_gpu_ids]
+
+        # Environment variables to copy from driver to workers
+        env_vars_to_copy = [
+            v for v in envs.environment_variables
+            if v not in self.WORKER_SPECIFIC_ENV_VARS
+            and v not in self.non_carry_over_env_vars
+        ]
+
+        env_vars_to_copy.extend(current_platform.additional_env_vars)
+
+        # Copy existing env vars to each worker's args
+        for args in all_args_to_update_environment_variables:
+            # TODO: refactor platform-specific env vars
+            for name in env_vars_to_copy:
+                if name in os.environ:
+                    args[name] = os.environ[name]
+
+        logger.info("non_carry_over_env_vars from config: %s",
+                    self.non_carry_over_env_vars)
+        logger.info(
+            "Copying the following environment variables to workers: %s",
+            [v for v in env_vars_to_copy if v in os.environ])
+        logger.info(
+            "If certain env vars should NOT be copied to workers, add them to "
+            "%s file", self.non_carry_over_env_vars_file)
+
         self._env_vars_for_all_workers = (
             all_args_to_update_environment_variables)
+
         self._run_workers("update_environment_variables",
-                          all_args=self._get_env_vars_to_be_updated())
+                          self._get_env_vars_to_be_updated())
 
         if len(node_gpus) == 1:
             # in single node case, we don't need to get the IP address.
@@ -272,14 +376,19 @@ class RayGPUExecutor(DistributedGPUExecutor):
             driver_ip, get_open_port())
 
         # Initialize the actual workers inside worker wrapper.
-        init_worker_all_kwargs = [
-            self._get_worker_kwargs(
-                local_rank=node_workers[node_id].index(rank),
+        all_kwargs = []
+        for rank, (node_id, _) in enumerate(worker_node_and_gpu_ids):
+            local_rank = node_workers[node_id].index(rank)
+            kwargs = dict(
+                aphrodite_config=self.aphrodite_config,
+                local_rank=local_rank,
                 rank=rank,
                 distributed_init_method=distributed_init_method,
-            ) for rank, (node_id, _) in enumerate(worker_node_and_gpu_ids)
-        ]
-        self._run_workers("init_worker", all_kwargs=init_worker_all_kwargs)
+                is_driver_worker=(not self.parallel_config)
+                or (rank % self.parallel_config.tensor_parallel_size == 0),
+            )
+            all_kwargs.append(kwargs)
+        self._run_workers("init_worker", all_kwargs)
 
         self._run_workers("init_device")
         self._run_workers("load_model",
@@ -339,19 +448,22 @@ class RayGPUExecutor(DistributedGPUExecutor):
         if self.forward_dag is None:
             self.forward_dag = self._compiled_ray_dag(enable_asyncio=False)
 
-        serialized_data = self.input_encoder.encode(execute_model_req)
+        if self.use_v1:
+            serialized_data = execute_model_req
+        else:
+            serialized_data = self.input_encoder.encode(execute_model_req)
         outputs = ray.get(self.forward_dag.execute(serialized_data))
-        output = self.output_decoder.decode(outputs[0])
+        if self.use_v1:
+            output = outputs[0]
+        else:
+            output = self.output_decoder.decode(outputs[0])
         return output
 
     def _run_workers(
         self,
-        method: str,
+        method: Union[str, Callable],
         *args,
         async_run_tensor_parallel_workers_only: bool = False,
-        all_args: Optional[List[Tuple[Any, ...]]] = None,
-        all_kwargs: Optional[List[Dict[str, Any]]] = None,
-        use_dummy_driver: bool = False,
         max_concurrent_workers: Optional[int] = None,
         **kwargs,
     ) -> Any:
@@ -364,9 +476,12 @@ class RayGPUExecutor(DistributedGPUExecutor):
           It will also be run asynchronously and return a list of futures
           rather than blocking on the results.
         - args/kwargs: All workers share the same args/kwargs
-        - all_args/all_kwargs: args/kwargs for each worker are specified
-          individually
         """
+        if isinstance(method, str):
+            sent_method = method
+        else:
+            sent_method = cloudpickle.dumps(method)
+        del method
         if self.use_ray_spmd_worker:
             assert not async_run_tensor_parallel_workers_only, (
                 "async_run_tensor_parallel_workers_only is not supported for "
@@ -376,26 +491,13 @@ class RayGPUExecutor(DistributedGPUExecutor):
             raise NotImplementedError(
                 "max_concurrent_workers is not supported yet.")
 
-        count = len(self.workers) if not \
-            async_run_tensor_parallel_workers_only \
-            else len(self.non_driver_workers)
-        # If using SPMD worker, all workers are the same, so we should execute
-        # the args on all workers. Otherwise, we skip the first worker's args
-        # because those args will go to the driver worker.
-        first_worker_args_index: int = 0 if self.use_ray_spmd_worker else 1
-        all_worker_args = repeat(args, count) if all_args is None \
-            else islice(all_args, first_worker_args_index, None)
-        all_worker_kwargs = repeat(kwargs, count) if all_kwargs is None \
-            else islice(all_kwargs, first_worker_args_index, None)
-
         # Start the ray workers first.
         ray_workers = self.workers
         if async_run_tensor_parallel_workers_only:
             ray_workers = self.non_driver_workers
         ray_worker_outputs = [
-            worker.execute_method.remote(method, *worker_args, **worker_kwargs)
-            for (worker, worker_args, worker_kwargs
-                 ) in zip(ray_workers, all_worker_args, all_worker_kwargs)
+            worker.execute_method.remote(sent_method, *args, **kwargs)
+            for worker in ray_workers
         ]
 
         if async_run_tensor_parallel_workers_only:
@@ -407,22 +509,10 @@ class RayGPUExecutor(DistributedGPUExecutor):
         # so we only explicitly execute on the driver worker if using a
         # non-SPMD worker class.
         if not self.use_ray_spmd_worker:
-            driver_args = args if all_args is None else all_args[0]
-            driver_kwargs = kwargs if all_kwargs is None else all_kwargs[0]
-
             # Start the driver worker after all the ray workers.
-            if not use_dummy_driver:
-                driver_worker_output = [
-                    self.driver_worker.execute_method(method, *driver_args,
-                                                      **driver_kwargs)
-                ]
-            else:
-                assert self.driver_dummy_worker is not None
-                driver_worker_output = [
-                    ray.get(
-                        self.driver_dummy_worker.execute_method.remote(
-                            method, *driver_args, **driver_kwargs))
-                ]
+            driver_worker_output = [
+                self.driver_worker.execute_method(sent_method, *args, **kwargs)
+            ]
 
         # Get the results of the ray workers.
         if self.workers:
@@ -434,44 +524,72 @@ class RayGPUExecutor(DistributedGPUExecutor):
         """Wait for futures returned from _run_workers() with
         async_run_remote_workers_only to complete."""
         ray.get(parallel_worker_tasks)
-    def _check_ray_adag_installation(self):
+
+    def _check_ray_cgraph_installation(self):
         import pkg_resources
         from packaging import version
 
-        required_version = version.parse("2.35")
+        required_version = version.parse("2.43.0")
         current_version = version.parse(
             pkg_resources.get_distribution("ray").version)
         if current_version < required_version:
-            raise ValueError(f"Ray version {required_version} or greater is "
+            raise ValueError(f"Ray version {required_version} is "
                              f"required, but found {current_version}")
 
         import importlib.util
-        adag_spec = importlib.util.find_spec(
+        cgraph_spec = importlib.util.find_spec(
             "ray.experimental.compiled_dag_ref")
-        if adag_spec is None:
-            raise ValueError("Ray accelerated DAG is not installed. "
-                             "Run `pip install ray[adag]` to install it.")
+        if cgraph_spec is None:
+            raise ValueError("Ray Compiled Graph is not installed. "
+                             "Run `pip install ray[cgraph]` to install it.")
+
         cupy_spec = importlib.util.find_spec("cupy")
-        if cupy_spec is None and APHRODITE_USE_RAY_COMPILED_DAG_NCCL_CHANNEL:
+        if (cupy_spec is None
+                and envs.APHRODITE_USE_RAY_COMPILED_DAG_CHANNEL_TYPE == "nccl"):
             raise ValueError(
                 "cupy is not installed but required since "
-                "APHRODITE_USE_RAY_COMPILED_DAG_NCCL_CHANNEL is set."
-                "Run `pip install ray[adag]` and check cupy installation.")
+                "APHRODITE_USE_RAY_COMPILED_DAG_CHANNEL_TYPE is set to 'nccl'. "
+                "Run `pip install ray[cgraph]` and check cupy installation.")
 
     def _compiled_ray_dag(self, enable_asyncio: bool):
         assert self.parallel_config.use_ray
-        self._check_ray_adag_installation()
+        self._check_ray_cgraph_installation()
         from ray.dag import InputNode, MultiOutputNode
-        from ray.experimental.channel.torch_tensor_type import TorchTensorType
 
-        logger.info(f"APHRODITE_USE_RAY_COMPILED_DAG_NCCL_CHANNEL = "
-                    f"{APHRODITE_USE_RAY_COMPILED_DAG_NCCL_CHANNEL}")
+        logger.info("APHRODITE_USE_RAY_COMPILED_DAG_CHANNEL_TYPE = %s",
+                    envs.APHRODITE_USE_RAY_COMPILED_DAG_CHANNEL_TYPE)
+        logger.info("APHRODITE_USE_RAY_COMPILED_DAG_OVERLAP_COMM = %s",
+                    envs.APHRODITE_USE_RAY_COMPILED_DAG_OVERLAP_COMM)
+
+        channel_type = envs.APHRODITE_USE_RAY_COMPILED_DAG_CHANNEL_TYPE
+        if channel_type not in ("auto", "nccl", "shm"):
+            raise ValueError(
+                "Invalid value for APHRODITE_USE_RAY_COMPILED_DAG_CHANNEL_TYPE: "
+                f"{channel_type}. Valid values are: 'auto', 'nccl', or 'shm'.")
+
+        # Enlarge the default value of "RAY_CGRAPH_get_timeout" to 300 seconds
+        # (it is 10 seconds by default). This is a Ray environment variable to
+        # control the timeout of getting result from a compiled graph execution,
+        # i.e., the distributed execution that includes model forward runs and
+        # intermediate tensor communications, in the case of aphrodite.
+        os.environ.setdefault("RAY_CGRAPH_get_timeout", "300")  # noqa: SIM112
+        logger.info("RAY_CGRAPH_get_timeout is set to %s",
+                    os.environ["RAY_CGRAPH_get_timeout"])  # noqa: SIM112
+
         with InputNode() as input_data:
             # Example DAG: PP=2, TP=4
-            # (ExecuteModelReq, None) -> 0 -> (ExecuteModelReq, IntermediateOutput) -> 4 -> SamplerOutput   # noqa: E501
-            #                         -> 1 -> (ExecuteModelReq, IntermediateOutput) -> 5 -> SamplerOutput   # noqa: E501
-            #                         -> 2 -> (ExecuteModelReq, IntermediateOutput) -> 6 -> SamplerOutput   # noqa: E501
-            #                         -> 3 -> (ExecuteModelReq, IntermediateOutput) -> 7 -> SamplerOutput   # noqa: E501
+            #
+            # For V0:
+            # ExecuteModelRequest -> 0 -> (ExecuteModelReq, IntermediateTensors) -> 4 -> SamplerOutput   # noqa: E501
+            # ExecuteModelRequest -> 1 -> (ExecuteModelReq, IntermediateTensors) -> 5 -> SamplerOutput   # noqa: E501
+            # ExecuteModelRequest -> 2 -> (ExecuteModelReq, IntermediateTensors) -> 6 -> SamplerOutput   # noqa: E501
+            # ExecuteModelRequest -> 3 -> (ExecuteModelReq, IntermediateTensors) -> 7 -> SamplerOutput   # noqa: E501
+            #
+            # For V1:
+            # SchedulerOutput -> 0 -> (SchedulerOutput, IntermediateTensors) -> 4 -> ModelRunnerOutput   # noqa: E501
+            # SchedulerOutput -> 1 -> (SchedulerOutput, IntermediateTensors) -> 5 -> ModelRunnerOutput   # noqa: E501
+            # SchedulerOutput -> 2 -> (SchedulerOutput, IntermediateTensors) -> 6 -> ModelRunnerOutput   # noqa: E501
+            # SchedulerOutput -> 3 -> (SchedulerOutput, IntermediateTensors) -> 7 -> ModelRunnerOutput   # noqa: E501
 
             # All workers in the first TP group will take in the
             # ExecuteModelRequest as input.
@@ -479,42 +597,40 @@ class RayGPUExecutor(DistributedGPUExecutor):
             for pp_rank, tp_group in enumerate(self.pp_tp_workers):
                 # Each PP worker takes in the output of the previous PP worker,
                 # and the TP group executes in SPMD fashion.
-                outputs = [
-                    worker.execute_model_spmd.
-                    bind(  # type: ignore[attr-defined]
-                        outputs[i]) for i, worker in enumerate(tp_group)
-                ]
+                if self.use_v1:
+                    outputs = [
+                        worker.execute_model_ray.
+                        bind(  # type: ignore[attr-defined]
+                            outputs[i]) for i, worker in enumerate(tp_group)
+                    ]
+                else:
+                    outputs = [
+                        worker.execute_model_spmd.
+                        bind(  # type: ignore[attr-defined]
+                            outputs[i]) for i, worker in enumerate(tp_group)
+                    ]
 
                 last_pp_rank = len(self.pp_tp_workers) - 1
-                if pp_rank < last_pp_rank:
+                if (pp_rank < last_pp_rank and
+                        envs.APHRODITE_USE_RAY_COMPILED_DAG_CHANNEL_TYPE != "shm"):
                     # Specify how intermediate tensors should be passed
                     # between pp stages, no need to specify for the last
-                    # pp stage.
-                    transport = "nccl" \
-                        if APHRODITE_USE_RAY_COMPILED_DAG_NCCL_CHANNEL \
-                        else "auto"
+                    # pp stage or when using shared memory (the default).
+                    transport = envs.APHRODITE_USE_RAY_COMPILED_DAG_CHANNEL_TYPE
                     outputs = [
-                        output.with_type_hint(
-                            TorchTensorType(transport=transport))
+                        output.with_tensor_transport(transport=transport)
                         for output in outputs
                     ]
 
             forward_dag = MultiOutputNode(outputs)
-        return forward_dag.experimental_compile(enable_asyncio=enable_asyncio)
+
+        return forward_dag.experimental_compile(
+            enable_asyncio=enable_asyncio,
+            _overlap_gpu_communication=envs.
+            APHRODITE_USE_RAY_COMPILED_DAG_OVERLAP_COMM)
 
     def __del__(self):
         self.shutdown()
-
-
-class RayGPUExecutorAsync(RayGPUExecutor, DistributedGPUExecutorAsync):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.pp_locks: Optional[List[asyncio.Lock]] = None
-        self.use_ray_spmd_worker = APHRODITE_USE_RAY_SPMD_WORKER
-        if not self.use_ray_compiled_dag:
-            self.driver_exec_method = make_async(
-                self.driver_worker.execute_method)
 
     async def execute_model_async(
             self,
@@ -527,8 +643,8 @@ class RayGPUExecutorAsync(RayGPUExecutor, DistributedGPUExecutorAsync):
 
         serialized_data = self.input_encoder.encode(execute_model_req)
         dag_future = await self.forward_dag.execute_async(serialized_data)
-        outputs = await dag_future
-        return self.output_decoder.decode(outputs[0])
+        output = await dag_future[0]
+        return self.output_decoder.decode(output)
 
     async def _driver_execute_model_async(
         self,
@@ -576,5 +692,7 @@ class RayGPUExecutorAsync(RayGPUExecutor, DistributedGPUExecutorAsync):
         ]
         return await asyncio.gather(*coros)
 
-    def __del__(self):
-        self.shutdown()
+    def check_health(self) -> None:
+        # Assume that the Ray workers are healthy.
+        # TODO: check the health of the Ray workers
+        return

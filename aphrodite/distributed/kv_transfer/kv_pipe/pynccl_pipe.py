@@ -257,7 +257,9 @@ class PyNcclPipe(KVPipeBase):
         future = self.transport_thread.submit(self._recv_impl)
 
         try:
-KV receiving thread")
+            tensor = future.result()
+        except Exception as e:
+            logger.error("Encountering exception in KV receiving thread")
             logger.error("%s", e)
             logger.error("My device: %s", self.device)
             import traceback

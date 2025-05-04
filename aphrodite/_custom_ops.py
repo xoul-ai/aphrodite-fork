@@ -1,5 +1,6 @@
 import contextlib
 import functools
+import importlib
 from typing import TYPE_CHECKING, List, Optional, Tuple, Type, Union
 
 import torch
@@ -668,7 +669,7 @@ def cutlass_scaled_mm(a: torch.Tensor,
 
     if current_platform.is_rocm():
         triton_scaled_mm_module = importlib.import_module(
-            "vllm.model_executor.layers.quantization.compressed_tensors."
+            "aphrodite.modeling.layers.quantization.compressed_tensors."
             "triton_scaled_mm")
         triton_scaled_mm = triton_scaled_mm_module.triton_scaled_mm
         return triton_scaled_mm(a, b, scale_a, scale_b, out_dtype, bias)

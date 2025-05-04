@@ -56,24 +56,24 @@ class HabanaHighLevelProfiler:
     event_tid = {'counter': 1, 'external': 2, 'internal': 3}
     event_cache: List[Any] = []
 
-    def __init__(self, vllm_instance_id = None):
-        self.enabled = os.getenv('VLLM_PROFILER_ENABLED',
+    def __init__(self, aphrodite_instance_id = None):
+        self.enabled = os.getenv('APHRODITE_PROFILER_ENABLED',
                                  'false').lower() == 'true' and int(
                                      os.getenv('RANK', '0')) == 0
         self.pid = os.getpid()
         if self.enabled:
-            self.vllm_instance_id = vllm_instance_id if vllm_instance_id is not None \
-                else f"vllm-instance-{self.pid}-{str(uuid.uuid4().hex)}"
-            msg = f'Profiler enabled for: {self.vllm_instance_id}'
+            self.aphrodite_instance_id = aphrodite_instance_id if aphrodite_instance_id is not None \
+                else f"aphrodite-instance-{self.pid}-{str(uuid.uuid4().hex)}"
+            msg = f'Profiler enabled for: {self.aphrodite_instance_id}'
             logger.info(msg)
-            self.filename = f'server_events_{self.vllm_instance_id}.json'
+            self.filename = f'server_events_{self.aphrodite_instance_id}.json'
             # initialize the trace file (JSON Array Format)
             with open(self.filename, 'w') as outfile:
                 outfile.write('[')
             file_writer = FileWriter(self.filename,
                                      self.profiling_trace_events)
             file_writer.start()
-        if os.getenv('VLLM_PROFILER_ENABLED') == 'full':
+        if os.getenv('APHRODITE_PROFILER_ENABLED') == 'full':
             self.enabled = True # don't save separate high-level traces
 
     def _dump_with_sep(self, entry):

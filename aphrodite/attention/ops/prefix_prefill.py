@@ -736,7 +736,7 @@ def context_attention_fwd(q,
 
     # Turing does have tensor core for float32 multiplication
     # use ieee as fallback for triton kernels work. There is also
-    # warning on vllm/config.py to inform users this fallback
+    # warning on aphrodite/common/config.py to inform users this fallback
     # implementation
     IN_PRECISION = 'ieee' if IS_TURING and q_dtype_is_f32 else None
 

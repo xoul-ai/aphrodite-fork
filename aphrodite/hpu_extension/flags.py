@@ -150,16 +150,16 @@ def enabled_flags():
         "gaudi2": Hardware("gaudi2"),
         "gaudi3": Hardware("gaudi3"),
         "cpu": Hardware("cpu"),
-        "fp32_softmax": EnvFlag("VLLM_FP32_SOFTMAX", ModelType('qwen2')),
+        "fp32_softmax": EnvFlag("APHRODITE_FP32_SOFTMAX", ModelType('qwen2')),
         "fsdpa": (Not(Hardware("cpu"))
                   & Kernel(fsdpa)
-                  & EnvFlag("VLLM_PROMPT_USE_FUSEDSDPA",
+                  & EnvFlag("APHRODITE_PROMPT_USE_FUSEDSDPA",
                             Not(ModelType('qwen2')) & Not(ModelType('mllama')))),
         "compile_one_hot": (VersionRange(">=1.20.0.370") & Not(EnvFlag("PT_HPU_LAZY_MODE", "1"))),
         "flex_attention": (Not(Hardware("cpu")) & Not(EnvFlag("PT_HPU_LAZY_MODE", "1"))
                            & ModelType("llama")
-                           & Not(EnvFlag("VLLM_PROMPT_USE_FUSEDSDPA", "false"))
-                           & EnvFlag("VLLM_PROMPT_USE_FLEX_ATTENTION", "false")),
+                           & Not(EnvFlag("APHRODITE_PROMPT_USE_FUSEDSDPA", "false"))
+                           & EnvFlag("APHRODITE_PROMPT_USE_FLEX_ATTENTION", "false")),
     }
     environment = get_environment()
     detected = Flags(supported_flags, environment)
