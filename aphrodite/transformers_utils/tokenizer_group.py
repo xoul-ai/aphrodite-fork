@@ -1,16 +1,15 @@
 from typing import List, Optional
 
-from aphrodite.common.config import TokenizerPoolConfig
-from aphrodite.common.utils import LRUCache
+from aphrodite.common.config import LoRAConfig, ModelConfig, SchedulerConfig
 from aphrodite.lora.request import LoRARequest
-from aphrodite.transformers_utils.tokenizer import (get_lora_tokenizer,
-                                                    get_lora_tokenizer_async,
-                                                    get_tokenizer)
+from aphrodite.transformers_utils.tokenizer import (AnyTokenizer, encode_tokens,
+                                               get_lora_tokenizer,
+                                               get_lora_tokenizer_async,
+                                               get_tokenizer)
+from aphrodite.common.utils import LRUCache
 
-from .base_tokenizer_group import AnyTokenizer, BaseTokenizerGroup
 
-
-class TokenizerGroup(BaseTokenizerGroup):
+class TokenizerGroup:
     """A group of tokenizers that can be used for LoRA adapters."""
 
     def __init__(self, tokenizer_id: str, enable_lora: bool, max_num_seqs: int,
@@ -20,17 +19,9 @@ class TokenizerGroup(BaseTokenizerGroup):
         self.enable_lora = enable_lora
         self.max_input_length = max_input_length
         self.tokenizer = get_tokenizer(self.tokenizer_id, **tokenizer_config)
-        self.lora_tokenizers = LRUCache[AnyTokenizer](
-            capacity=max_num_seqs if enable_lora else 0)
-
-    @classmethod
-    def from_config(cls, tokenizer_pool_config: Optional[TokenizerPoolConfig],
-                    **init_kwargs) -> "TokenizerGroup":
-        return cls(**init_kwargs)
-
-    def ping(self) -> bool:
-        """Check if the tokenizer group is alive."""
-        return True
+        max_loras = tokenizer_config.get("max_loras", 0)
+        self.lora_tokenizers = LRUCache[int, AnyTokenizer](
+            capacity=max(max_loras, max_num_seqs) if enable_lora else 0)
 
     def get_max_input_len(self,
                           lora_request: Optional[LoRARequest] = None
@@ -52,20 +43,33 @@ class TokenizerGroup(BaseTokenizerGroup):
 
     def encode(self,
                prompt: str,
-               request_id: Optional[str] = None,
-               lora_request: Optional[LoRARequest] = None) -> List[int]:
+               max_length: Optional[int] = None,
+               truncation: Optional[bool] = None,
+               lora_request: Optional[LoRARequest] = None,
+               add_special_tokens: Optional[bool] = None) -> List[int]:
+
         tokenizer = self.get_lora_tokenizer(lora_request)
-        ret = tokenizer.encode(prompt)
+        ret = encode_tokens(tokenizer,
+                            prompt,
+                            max_length=max_length,
+                            truncation=truncation,
+                            add_special_tokens=add_special_tokens)
         self._raise_if_input_too_long(ret, lora_request)
         return ret
 
     async def encode_async(
             self,
             prompt: str,
-            request_id: Optional[str] = None,
-            lora_request: Optional[LoRARequest] = None) -> List[int]:
+            max_length: Optional[int] = None,
+            truncation: Optional[bool] = None,
+            lora_request: Optional[LoRARequest] = None,
+            add_special_tokens: Optional[bool] = None) -> List[int]:
         tokenizer = await self.get_lora_tokenizer_async(lora_request)
-        ret = tokenizer.encode(prompt)
+        ret = encode_tokens(tokenizer,
+                            prompt,
+                            max_length=max_length,
+                            truncation=truncation,
+                            add_special_tokens=add_special_tokens)
         self._raise_if_input_too_long(ret, lora_request)
         return ret
 
@@ -96,3 +100,18 @@ class TokenizerGroup(BaseTokenizerGroup):
             return tokenizer
         else:
             return self.lora_tokenizers[lora_request.lora_int_id]
+
+
+def init_tokenizer_from_configs(model_config: ModelConfig,
+                                scheduler_config: SchedulerConfig,
+                                lora_config: Optional[LoRAConfig]):
+    return TokenizerGroup(
+        tokenizer_id=model_config.tokenizer,
+        enable_lora=bool(lora_config),
+        max_num_seqs=scheduler_config.max_num_seqs,
+        max_loras=lora_config.max_loras if lora_config else 0,
+        max_input_length=None,
+        tokenizer_mode=model_config.tokenizer_mode,
+        trust_remote_code=model_config.trust_remote_code,
+        revision=model_config.tokenizer_revision,
+        truncation_side=model_config.truncation_side)
