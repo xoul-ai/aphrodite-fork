@@ -2,7 +2,8 @@ from typing import Callable, Union
 
 import torch
 
-from aphrodite.transformers_utils.tokenizer import AnyTokenizer, MistralTokenizer
+from aphrodite.transformers_utils.tokenizer import (AnyTokenizer,
+                                                    MistralTokenizer)
 
 LogitsProcessor = Union[Callable[[list[int], torch.Tensor], torch.Tensor],
                         Callable[[list[int], list[int], torch.Tensor],

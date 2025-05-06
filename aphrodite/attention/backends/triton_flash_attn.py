@@ -625,7 +625,7 @@ class ROCmFlashAttentionImpl(AttentionImpl):
             * ENCODER: no KV caching; pass encoder sequence
                 attributes (encoder_seq_lens/encoder_seq_lens_tensor/
                 max_encoder_seq_len) to kernel, in lieu of decoder
-                sequence attributes (seq_lens/seq_lens_tensor/mAPHRODITEax_seq_len)
+                sequence attributes (seq_lens/seq_lens_tensor/max_seq_len)
             * ENCODER_DECODER: cross-attention behavior;
                 use cross-attention block table for caching KVs derived
                 from encoder hidden states; since KV sequence lengths

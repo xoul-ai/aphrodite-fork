@@ -144,8 +144,10 @@ def _support_torch_compile(
 
     old_init = cls.__init__
 
-    def __init__(self, *, aphrodite_config: AphroditeConfig, prefix: str = '', **kwargs):
-        old_init(self, aphrodite_config=aphrodite_config, prefix=prefix, **kwargs)
+    def __init__(self, *, aphrodite_config: AphroditeConfig,
+                 prefix: str = '', **kwargs):
+        old_init(self, aphrodite_config=aphrodite_config,
+                 prefix=prefix, **kwargs)
         self.aphrodite_config = aphrodite_config
         # for CompilationLevel.DYNAMO_AS_IS , the upper level model runner
         # will handle the compilation, so we don't need to do anything here.

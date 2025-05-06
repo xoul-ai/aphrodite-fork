@@ -566,8 +566,8 @@ def get_ip() -> str:
             "The environment variable HOST_IP is deprecated and ignored, as"
             " it is often used by Docker and other software to"
             " interact with the container's network stack. Please "
-            "use APHRODITE_HOST_IP instead to set the IP address for Aphrodite processes"
-            " to communicate with each other.")
+            "use APHRODITE_HOST_IP instead to set the IP address for Aphrodite"
+            " processes to communicate with each other.")
     if host_ip:
         return host_ip
 
@@ -1071,7 +1071,8 @@ torch.cuda.set_stream = _patched_set_stream
 
 def current_stream() -> torch.cuda.Stream:
     """
-    replace `torch.cuda.current_stream()` with `aphrodite.utils.current_stream()`.
+    replace `torch.cuda.current_stream()` with
+    `aphrodite.utils.current_stream()`.
     it turns out that `torch.cuda.current_stream()` is quite expensive,
     as it will construct a new stream object at each call.
     here we patch `torch.cuda.set_stream` to keep track of the current stream
@@ -1093,7 +1094,8 @@ def current_stream() -> torch.cuda.Stream:
     return _current_stream
 
 
-def enable_trace_function_call_for_thread(aphrodite_config: AphroditeConfig) -> None:
+def enable_trace_function_call_for_thread(
+        aphrodite_config: AphroditeConfig) -> None:
     """Set up function tracing for the current thread,
     if enabled via the APHRODITE_TRACE_FUNCTION environment variable
     """
@@ -1649,7 +1651,8 @@ def get_allowed_kwarg_only_overrides(
     return filtered_overrides
 
 
-# Using dynamo with Aphrodite doesn't really work well with PyTorch versions < 2.4.0.
+# Using dynamo with Aphrodite doesn't really work well with
+# PyTorch versions < 2.4.0.
 # In particular, the FakeScalarType is not supported for earlier versions of
 # PyTorch which breaks dynamo for any ops registered using ScalarType.
 def supports_dynamo() -> bool:
@@ -1992,7 +1995,8 @@ class PlaceholderModule(_PlaceholderBase):
         except ImportError as exc:
             for extra, names in get_aphrodite_optional_dependencies().items():
                 if name in names:
-                    msg = f"Please install aphrodite[{extra}] for {extra} support"
+                    msg = (f"Please install aphrodite[{extra}] for {extra} "
+                           "support")
                     raise ImportError(msg) from exc
 
             raise exc

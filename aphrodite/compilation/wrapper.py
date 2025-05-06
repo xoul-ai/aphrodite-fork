@@ -36,7 +36,8 @@ class TorchCompileWrapperWithCustomDispatcher:
             # default compilation settings
             # compiling the forward method
 
-            backend = aphrodite_config.compilation_config.init_backend(aphrodite_config)
+            backend = aphrodite_config.compilation_config.init_backend(
+                aphrodite_config)
 
             compiled_callable = torch.compile(
                 self.forward,
@@ -84,7 +85,8 @@ class TorchCompileWrapperWithCustomDispatcher:
             return
 
         self.compiled_codes.append(new_code)
-        local_cache_dir = self.aphrodite_config.compilation_config.local_cache_dir
+        local_cache_dir = (self.aphrodite_config.compilation_config
+                           .local_cache_dir)
         if isinstance(local_cache_dir, str):
             decompiled_file = os.path.join(local_cache_dir,
                                            "transformed_code.py")

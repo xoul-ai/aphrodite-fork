@@ -44,7 +44,7 @@ class TpuPlatform(Platform):
 
         if use_v1:
             logger.info("Using Pallas V1 backend.")
-            return "aphrodite.v1.attention.backends.pallas.PallasAttentionBackend"
+            return "aphrodite.v1.attention.backends.pallas.PallasAttentionBackend"  # noqa
         else:
             logger.info("Using Pallas backend.")
             return "aphrodite.attention.backends.pallas.PallasAttentionBackend"
@@ -86,7 +86,8 @@ class TpuPlatform(Platform):
         assert aphrodite_config.speculative_config is None, \
             "TPU does not support speculative decoding"
 
-        if aphrodite_config.model_config.dtype in (torch.float16, torch.float32):
+        if aphrodite_config.model_config.dtype in (torch.float16,
+                                                   torch.float32):
             logger.warning(
                 "The TPU backend currently does not support %s. "
                 "Using bfloat16 instead.", aphrodite_config.model_config.dtype)

@@ -1,6 +1,6 @@
 import torch
 
-from aphrodite.distributed.device_communicators.base_device_communicator import (
+from aphrodite.distributed.device_communicators.base_device_communicator import (  # noqa
     DeviceCommunicatorBase)
 from aphrodite.platforms import current_platform
 

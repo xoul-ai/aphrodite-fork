@@ -52,7 +52,8 @@ class KVConnectorMetadata:
 
 class KVConnectorBase_V1(ABC):
 
-    def __init__(self, aphrodite_config: "AphroditeConfig", role: KVConnectorRole):
+    def __init__(self, aphrodite_config: "AphroditeConfig",
+                 role: KVConnectorRole):
         logger.warning(
             "Initializing KVConnectorBase_V1. This API is experimental and "
             "subject to change in the future as we iterate the design.")

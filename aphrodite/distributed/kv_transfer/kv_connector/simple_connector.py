@@ -1,9 +1,9 @@
 """
 Simple KV Cache Connector for Distributed Machine Learning Inference
 
-The SimpleConnector transfers KV caches between prefill Aphrodite worker (KV cache
-producer) and decode Aphrodite worker (KV cache consumer) using PyNcclPipe or
-MooncakePipe.
+The SimpleConnector transfers KV caches between prefill Aphrodite worker
+(KV cache producer) and decode Aphrodite worker (KV cache consumer) using
+PyNcclPipe or MooncakePipe.
 
 But the logic can be extended to support other pipe and lookup buffer.
 """
@@ -104,8 +104,8 @@ class SimpleConnector(KVConnectorBase):
 
         else:
 
-            # the current Aphrodite instance is KV consumer, so it needs to connect
-            # its recv pipe to the send pipe of KV producder
+            # the current Aphrodite instance is KV consumer, so it needs to
+            # connect its recv pipe to the send pipe of KV producder
             if self.config.kv_connector == "PyNcclConnector":
                 self.consumer_data_pipe = PyNcclPipe(
                     local_rank=local_rank,
@@ -172,7 +172,7 @@ class SimpleConnector(KVConnectorBase):
             end_pos = start_pos + slen
 
             if start_pos >= num_prefill_tokens:
-                # aphrodite/worker/model_runner.py::_prepare_model_input_tensors:
+                # aphrodite/worker/model_runner.py::_prepare_model_input_tensors:  # noqa
                 # - input_tokens[:num_prefill_tokens] contains prefill tokens.
                 # - input_tokens[num_prefill_tokens:] contains decode tokens.
                 logger.warning("You have some decode requests while using "
@@ -237,7 +237,7 @@ class SimpleConnector(KVConnectorBase):
 
             if start_pos >= num_prefill_tokens:
                 # This can happen during inflight batching. See:
-                # aphrodite/worker/model_runner.py::_prepare_model_input_tensors:
+                # aphrodite/worker/model_runner.py::_prepare_model_input_tensors:  # noqa
                 # - input_tokens[:num_prefill_tokens] contains prefill tokens.
                 # - input_tokens[num_prefill_tokens:] contains decode tokens.
                 logger.warning("You should set --enable_chunked_prefill=False "

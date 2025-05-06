@@ -27,7 +27,7 @@ class CudaCommunicator(DeviceCommunicatorBase):
         self.use_custom_allreduce = use_custom_allreduce
 
         # lazy import to avoid documentation build error
-        from aphrodite.distributed.device_communicators.custom_all_reduce import (
+        from aphrodite.distributed.device_communicators.custom_all_reduce import (  # noqa
             CustomAllreduce)
         from aphrodite.distributed.device_communicators.pynccl import (
             PyNcclCommunicator)

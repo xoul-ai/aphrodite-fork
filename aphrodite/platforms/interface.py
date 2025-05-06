@@ -241,9 +241,9 @@ class Platform:
         """
         Do some pre-registration or update action for the current platform.
 
-        This function is called before global AphroditeConfig is initialized or cli
-        arguments are parsed. It's used for out-of-tree platforms to register or
-        update the configuration.
+        This function is called before global AphroditeConfig is initialized or
+        cli arguments are parsed. It's used for out-of-tree platforms to
+        register or update the configuration.
 
         For example, the out-of-tree quantization config can be imported and
         registered here dynamically.

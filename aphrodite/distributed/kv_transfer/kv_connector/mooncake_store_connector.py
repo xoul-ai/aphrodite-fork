@@ -130,7 +130,7 @@ class MooncakeStoreConnector(KVConnectorBase):
 
             if start_pos >= num_prefill_tokens:
                 # This can happen during inflight batching. See:
-                # aphrodite/worker/model_runner.py::_prepare_model_input_tensors:
+                # aphrodite/worker/model_runner.py::_prepare_model_input_tensors:  # noqa
                 # - input_tokens[:num_prefill_tokens] contains prefill tokens.
                 # - input_tokens[num_prefill_tokens:] contains decode tokens.
                 logger.warning("You should set --enable_chunked_prefill=False "

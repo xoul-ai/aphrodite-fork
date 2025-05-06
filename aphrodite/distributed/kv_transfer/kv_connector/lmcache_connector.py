@@ -2,8 +2,8 @@
 LMCache KV Cache Connector for Distributed Machine Learning Inference
 
 The LMCacheConnector can (1) transfer KV caches between prefill Aphrodite worker
-(KV cache producer) and decode Aphrodite worker (KV cache consumer) using LMCache;
-(2) offload and share KV caches.
+(KV cache producer) and decode Aphrodite worker (KV cache consumer) using
+LMCache; (2) offload and share KV caches.
 """
 
 from typing import TYPE_CHECKING, List, Tuple, Union
@@ -35,11 +35,11 @@ class LMCacheConnector(KVConnectorBase):
 
         from lmcache.experimental.cache_engine import LMCacheEngineBuilder
 
-        from aphrodite.distributed.kv_transfer.kv_connector.v1.lmcache_integration.aphrodite_adapter import (
+        from aphrodite.distributed.kv_transfer.kv_connector.v1.lmcache_integration.aphrodite_adapter import (  # noqa
             RetrieveStatus, StoreStatus, init_lmcache_engine,
             lmcache_retrieve_kv, lmcache_should_retrieve, lmcache_should_store,
             lmcache_store_kv)
-        from aphrodite.distributed.kv_transfer.kv_connector.v1.lmcache_integration.utils import (
+        from aphrodite.distributed.kv_transfer.kv_connector.v1.lmcache_integration.utils import (  # noqa
             ENGINE_NAME)
         logger.info("Initializing LMCacheConfig under kv_transfer_config %s",
                     self.transfer_config)

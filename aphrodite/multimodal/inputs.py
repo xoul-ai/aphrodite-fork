@@ -832,7 +832,8 @@ class MultiModalInputs(TypedDict):
 
 class MultiModalEncDecInputs(MultiModalInputs):
     """
-    Represents the outputs of :class:`aphrodite.multimodal.EncDecMultiModalProcessor`
+    Represents the outputs of
+    :class:`aphrodite.multimodal.processing.EncDecMultiModalProcessor`,
     ready to be passed to Aphrodite internals.
     """
 

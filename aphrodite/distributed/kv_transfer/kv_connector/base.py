@@ -97,8 +97,8 @@ class KVConnectorBase(ABC):
 
         This method attempts to retrieve KV caches and hidden states for input
         tokens. If all required KV caches and hidden states are received, it
-        will bypass model input, else it will fall back to normal Aphrodite model 
-        forwarding.
+        will bypass model input, else it will fall back to normal Aphrodite
+        model forwarding.
 
         Args:
             model_executable (torch.nn.Module): 

@@ -169,8 +169,8 @@ def can_actually_p2p(
 # then all the processes can read the cache file to check the p2p access status.
 # Note that the cache file is suffixed by the CUDA_VISIBLE_DEVICES, so that we
 #  can have different cache files for different CUDA_VISIBLE_DEVICES settings,
-#  e.g. used by different aphrodite engines. The device id in the cache file is a
-#  **local** device id, i.e. from 0 to num_dev-1, where num_dev is the number
+#  e.g. used by different aphrodite engines. The device id in the cache file is
+#  a **local** device id, i.e. from 0 to num_dev-1, where num_dev is the number
 #  of visible devices in the aphrodite engine.
 _gpu_p2p_access_cache: Optional[Dict[str, bool]] = None
 

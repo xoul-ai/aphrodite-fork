@@ -49,7 +49,8 @@ class CompilerManager:
     def initialize_cache(self, cache_dir: str, disable_cache: bool = False):
         self.disable_cache = disable_cache
         self.cache_dir = cache_dir
-        self.cache_file_path = os.path.join(cache_dir, "aphrodite_compile_cache.py")
+        self.cache_file_path = os.path.join(cache_dir,
+                                            "aphrodite_compile_cache.py")
 
         if not disable_cache and os.path.exists(self.cache_file_path):
             # load the cache from the file
@@ -227,7 +228,8 @@ class PiecewiseCompileInterpreter(torch.fx.Interpreter):
     """
 
     def __init__(self, module: torch.fx.GraphModule,
-                 compile_submod_names: List[str], aphrodite_config: AphroditeConfig,
+                 compile_submod_names: List[str],
+                 aphrodite_config: AphroditeConfig,
                  graph_pool, aphrodite_backend: "AphroditeBackend"):
         super().__init__(module)
         from torch._guards import detect_fake_mode
@@ -368,8 +370,8 @@ class AphroditeBackend:
             env_hash = envs.compute_hash()
             factors.append(env_hash)
 
-            # 1. factors come from the aphrodite_config (it mainly summarizes how the
-            #    model is created)
+            # 1. factors come from the aphrodite_config (it mainly summarizes
+            #    how the model is created)
             config_hash = aphrodite_config.compute_hash()
             factors.append(config_hash)
 
@@ -428,8 +430,8 @@ class AphroditeBackend:
         if disable_cache:
             logger.info("Aphrodite's torch.compile cache is disabled.")
         else:
-            logger.info("Using cache directory: %s for Aphrodite's torch.compile",
-                        local_cache_dir)
+            logger.info("Using cache directory: %s for Aphrodite's "
+                        "torch.compile", local_cache_dir)
 
         self.compiler_manager.initialize_cache(local_cache_dir, disable_cache)
 

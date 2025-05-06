@@ -476,8 +476,8 @@ class LoRAModelManager(AdapterModelManager):
             # TODO: Remove this restriction
             if self._filter_unsupported_mm_module(module_name):
                 logger.warning(
-                    "Regarding multimodal models, Aphrodite currently only supports "
-                    "adding LoRA to language model, %s will be ignored.",
+                    "Regarding multimodal models, Aphrodite currently only "
+                    "supports adding LoRA to language model, %s will be ignored.",
                     module_name,
                 )
                 continue
@@ -602,9 +602,9 @@ class LoRAModelManager(AdapterModelManager):
 
     def _filter_unsupported_mm_module(self, module_name: str) -> bool:
         """
-        Regarding multimodal models, Aphrodite currently only supports adding LoRA to
-        language model. LoRA for other modules, such as the vision tower, will 
-        be filtered out.
+        Regarding multimodal models, Aphrodite currently only supports adding
+        LoRA to language model. LoRA for other modules, such as the vision
+        tower, will be filtered out.
         """
         if self.supports_mm:
             module_mapping: MultiModelKeys = self.model.get_mm_mapping()

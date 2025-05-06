@@ -7,10 +7,11 @@ import torch
 import aphrodite._custom_ops as ops
 from aphrodite._ipex_ops import ipex_ops
 from aphrodite.attention.backends.abstract import (AttentionBackend,
-                                              AttentionMetadataBuilder,
-                                              AttentionType,
-                                              is_quantized_kv_cache)
-from aphrodite.attention.backends.mla.common import MLACommonImpl, MLACommonState
+                                                   AttentionMetadataBuilder,
+                                                   AttentionType,
+                                                   is_quantized_kv_cache)
+from aphrodite.attention.backends.mla.common import (MLACommonImpl,
+                                                     MLACommonState)
 from aphrodite.attention.backends.torch_sdpa import TorchSDPAMetadata
 from aphrodite.common.utils import make_tensor_with_pad
 from aphrodite.worker.cpu_model_runner import ModelInputForCPUBuilder

@@ -23,7 +23,8 @@ from aphrodite.common.utils import (get_ip, get_open_port,
                                     is_valid_ipv6_address)
 from aphrodite.distributed.utils import StatelessProcessGroup
 
-APHRODITE_RINGBUFFER_WARNING_INTERVAL = envs.APHRODITE_RINGBUFFER_WARNING_INTERVAL
+APHRODITE_RINGBUFFER_WARNING_INTERVAL = (
+    envs.APHRODITE_RINGBUFFER_WARNING_INTERVAL)
 
 
 # We prefer to use os.sched_yield as it results in tighter polling loops,
@@ -261,7 +262,8 @@ class MessageQueue:
             remote_addr_ipv6=remote_addr_ipv6,
         )
 
-        logger.info("Aphrodite message queue communication handle: %s", self.handle)
+        logger.info(
+            "Aphrodite message queue communication handle: %s", self.handle)
 
     def export_handle(self) -> Handle:
         return self.handle
@@ -361,7 +363,8 @@ class MessageQueue:
 
                     # if we wait for a long time, log a message
                     if (time.monotonic() - start_time
-                            > APHRODITE_RINGBUFFER_WARNING_INTERVAL * n_warning):
+                            > APHRODITE_RINGBUFFER_WARNING_INTERVAL *
+                            n_warning):
                         logger.debug(
                             ("No available shared memory broadcast block found"
                              " in %s second."),
@@ -424,7 +427,8 @@ class MessageQueue:
 
                     # if we wait for a long time, log a message
                     if (time.monotonic() - start_time
-                            > APHRODITE_RINGBUFFER_WARNING_INTERVAL * n_warning):
+                            > APHRODITE_RINGBUFFER_WARNING_INTERVAL *
+                            n_warning):
                         logger.debug(
                             ("No available shared memory broadcast block found"
                              "in %s second."),

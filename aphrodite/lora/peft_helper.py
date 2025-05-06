@@ -43,7 +43,8 @@ class PEFTHelper:
         """
         error_msg = []
         if self.modules_to_save:
-            error_msg.append("Aphrodite only supports modules_to_save being None.")
+            error_msg.append("Aphrodite only supports modules_to_save "
+                             "being None.")
         if self.use_dora:
             error_msg.append("Aphrodite does not yet support DoRA.")
         return error_msg
@@ -51,7 +52,8 @@ class PEFTHelper:
     def __post_init__(self):
         if self.use_rslora:
             logger.info_once("Loading LoRA weights trained with rsLoRA.")
-            self.aphrodite_lora_scaling_factor = self.lora_alpha / math.sqrt(self.r)
+            self.aphrodite_lora_scaling_factor = (
+                self.lora_alpha / math.sqrt(self.r))
         else:
             self.aphrodite_lora_scaling_factor = self.lora_alpha / self.r
         if self.context_length:

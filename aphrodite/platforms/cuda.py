@@ -40,9 +40,7 @@ def device_id_to_physical_device_id(device_id: int) -> int:
                 "CUDA_VISIBLE_DEVICES is set to empty string, which means"
                 " GPU support is disabled. If you are using ray, please unset"
                 " the environment variable `CUDA_VISIBLE_DEVICES` inside the"
-                " worker/actor. "
-                "Check https://github.com/aphrodite-project/aphrodite/issues/8402 for"
-                " more information.")
+                " worker/actor.")
             raise RuntimeError(msg)
         physical_device_id = device_ids[device_id]
         return int(physical_device_id)
@@ -104,7 +102,8 @@ class CudaPlatformBase(Platform):
         pass
 
     @classmethod
-    def check_and_update_config(cls, aphrodite_config: "AphroditeConfig") -> None:
+    def check_and_update_config(cls,
+                                aphrodite_config: "AphroditeConfig") -> None:
         parallel_config = aphrodite_config.parallel_config
         scheduler_config = aphrodite_config.scheduler_config
         compilation_config = aphrodite_config.compilation_config
@@ -134,7 +133,7 @@ class CudaPlatformBase(Platform):
                     parallel_config.worker_cls = \
                             "aphrodite.v1.worker.gpu_worker.Worker"
                 else:
-                    parallel_config.worker_cls = "aphrodite.worker.worker.Worker"
+                    parallel_config.worker_cls = "aphrodite.worker.worker.Worker"  # noqa
 
         cache_config = aphrodite_config.cache_config
         if cache_config and cache_config.block_size is None:
@@ -143,9 +142,9 @@ class CudaPlatformBase(Platform):
         # TODO(lucas): handle this more gracefully
         # Note: model_config may be None during testing
         if model_config is not None and model_config.use_mla:
-            # if `APHRODITE_ATTENTION_BACKEND` is not set and we are using MLA, then
-            # we default to FlashMLA backend, so we need to force the blocksize
-            # here
+            # if `APHRODITE_ATTENTION_BACKEND` is not set and we are using MLA,
+            # then we default to FlashMLA backend, so we need to force the
+            # blocksize here
             use_flashmla = (envs.APHRODITE_ATTENTION_BACKEND is None \
                 or envs.APHRODITE_ATTENTION_BACKEND == "FLASHMLA")
             from aphrodite.attention.ops.flashmla import is_flashmla_supported
@@ -184,7 +183,8 @@ class CudaPlatformBase(Platform):
                             "triton_mla.TritonMLABackend")
                 else:
                     logger.info("Using Triton MLA backend.")
-                    return "aphrodite.attention.backends.triton_mla.TritonMLABackend"
+                    return ("aphrodite.attention.backends."
+                            "triton_mla.TritonMLABackend")
             else:
                 from aphrodite.attention.backends.flashmla import (
                     is_flashmla_supported)
@@ -210,7 +210,8 @@ class CudaPlatformBase(Platform):
         if use_v1:
             if selected_backend == _Backend.FLASHINFER:
                 logger.info_once("Using FlashInfer backend on V1 engine.")
-                return "aphrodite.v1.attention.backends.flashinfer.FlashInferBackend"
+                return ("aphrodite.v1.attention.backends."
+                        "flashinfer.FlashInferBackend")
             if selected_backend == _Backend.TRITON_ATTN_APHRODITE_V1:
                 logger.info_once("Using Triton backend on V1 engine.")
                 return ("aphrodite.v1.attention.backends."
@@ -279,8 +280,8 @@ class CudaPlatformBase(Platform):
                 logger.info(
                     "Cannot use FlashAttention-2 backend because the "
                     "aphrodite.aphrodite_flash_attn package is not found. "
-                    "Make sure that aphrodite_flash_attn was built and installed "
-                    "(on by default).")
+                    "Make sure that aphrodite_flash_attn was built and "
+                    "installed (on by default).")
                 target_backend = _Backend.XFORMERS
 
         if target_backend == _Backend.XFORMERS:

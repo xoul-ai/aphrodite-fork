@@ -1183,8 +1183,9 @@ class BaseMultiModalProcessor(ABC, Generic[_I]):
         inputs.
 
         Moreover, this information is critical to determine the token positions
-        in order to construct  :class:`~aphrodite-multimodal.input.PlaceholderRange`
-        for each multi-modal item.
+        in order to construct
+        :class:`~aphrodite-multimodal.input.PlaceholderRange` for each
+        multi-modal item.
         """
         raise NotImplementedError
 

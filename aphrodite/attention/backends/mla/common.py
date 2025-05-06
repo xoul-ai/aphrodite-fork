@@ -1056,8 +1056,8 @@ class MLACommonImpl(MLAAttentionImpl[T], Generic[T]):
 
         self.triton_fa_func = triton_attention
         # Handle the differences between the flash_attn_varlen from flash_attn
-        # and the one from aphrodite_flash_attn. The former is used on RoCM and the
-        # latter has an additional parameter to control FA2 vs FA3
+        # and the one from aphrodite_flash_attn. The former is used on RoCM and
+        # the latter has an additional parameter to control FA2 vs FA3
         self.flash_attn_varlen_func = flash_attn_varlen_func
         self.aphrodite_flash_attn_version = get_flash_attn_version()
         if self.aphrodite_flash_attn_version is not None:

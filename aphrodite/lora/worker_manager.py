@@ -102,7 +102,8 @@ class WorkerLoRAManager(AbstractWorkerManager):
             # loading weights, throwing an exception if validation fails.
             peft_helper.validate_legal(self.lora_config)
 
-            # For some models like Qwen2VL, we need to use hf_to_aphrodite_mapper
+            # For some models like Qwen2VL, we need to use
+            # hf_to_aphrodite_mapper
             # to ensure correct loading of lora weights.
             model = self._adapter_manager.model
             hf_to_aphrodite_mapper = None

@@ -302,8 +302,8 @@ class InductorAdaptor(CompilerInterface):
 
             # Disable remote caching. When these are on, on remote cache-hit,
             # the monkey-patched functions never actually get called.
-            # Aphrodite today assumes and requires the monkey-patched functions to
-            # get hit.
+            # Aphrodite today assumes and requires the monkey-patched functions
+            # to get hit.
             # TODO(zou3519): we're going to replace this all with
             # standalone_compile sometime.
             if is_torch_equal_or_newer("2.6"):
@@ -320,8 +320,8 @@ class InductorAdaptor(CompilerInterface):
                     inner_compile=hijacked_compile_fx_inner,
                     config_patches=current_config)
 
-        # We treat APHRODITE_DISABLE_COMPILE_CACHE as the overall switch for torch
-        # compilation cache. So turn off the checks if we disable the
+        # We treat APHRODITE_DISABLE_COMPILE_CACHE as the overall switch for
+        # torch compilation cache. So turn off the checks if we disable the
         # compilation cache.
         if not envs.APHRODITE_DISABLE_COMPILE_CACHE:
             assert hash_str is not None, (

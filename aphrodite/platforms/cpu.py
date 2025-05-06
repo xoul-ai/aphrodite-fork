@@ -121,7 +121,7 @@ class CpuPlatform(Platform):
                 parallel_config.sd_worker_cls = \
                     "aphrodite.worker.cpu_worker.CPUWorker"
             else:
-                parallel_config.worker_cls = "aphrodite.worker.cpu_worker.CPUWorker"
+                parallel_config.worker_cls = "aphrodite.worker.cpu_worker.CPUWorker"  # noqa
 
         assert aphrodite_config.device_config.device_type == "cpu"
 
@@ -153,10 +153,12 @@ class CpuPlatform(Platform):
             aphrodite_config.parallel_config.tensor_parallel_size)
         if sys.platform == "darwin" and \
                 envs.APHRODITE_WORKER_MULTIPROC_METHOD == "fork":
-            if os.environ.get('APHRODITE_WORKER_MULTIPROC_METHOD', None) is None:
+            if os.environ.get('APHRODITE_WORKER_MULTIPROC_METHOD',
+                              None) is None:
                 logger.warning(
                     "Default to spawn method on MacOS. If this is not desired,"
-                    " set APHRODITE_WORKER_MULTIPROC_METHOD to fork explicitly.")
+                    " set APHRODITE_WORKER_MULTIPROC_METHOD to fork explicitly"
+                    ".")
                 os.environ['APHRODITE_WORKER_MULTIPROC_METHOD'] = 'spawn'
 
     @classmethod

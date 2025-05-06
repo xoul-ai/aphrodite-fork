@@ -240,7 +240,8 @@ class RocmPlatform(Platform):
         return True
 
     @classmethod
-    def check_and_update_config(cls, aphrodite_config: "AphroditeConfig") -> None:
+    def check_and_update_config(cls,
+                                aphrodite_config: "AphroditeConfig") -> None:
         cache_config = aphrodite_config.cache_config
         if cache_config and cache_config.block_size is None:
             cache_config.block_size = 16
@@ -260,7 +261,8 @@ class RocmPlatform(Platform):
             elif aphrodite_config.speculative_config:
                 if envs.APHRODITE_USE_V1:
                     raise NotImplementedError(
-                        "Speculative decoding is not yet supported on Aphrodite V1."
+                        "Speculative decoding is not yet supported on Aphrodite"
+                        " V1."
                     )
                 else:
                     parallel_config.worker_cls = \
@@ -272,7 +274,7 @@ class RocmPlatform(Platform):
                     parallel_config.worker_cls = \
                             "aphrodite.v1.worker.gpu_worker.Worker"
                 else:
-                    parallel_config.worker_cls = "aphrodite.worker.worker.Worker"
+                    parallel_config.worker_cls = "aphrodite.worker.worker.Worker"  # noqa
 
     @classmethod
     def verify_model_arch(cls, model_arch: str) -> None:
