@@ -260,9 +260,8 @@ class LoRAModel(AdapterModel):
                 if part_name not in expected_lora_modules:
                     unexpected_modules.append(module)
             # loaded lora's target modules must be a subset of
-            # expected_lora_modules. It is not reliable. See
-            # https://github.com/aphrodite-project/aphrodite/pull/5909. But there's no
-            # other better mechanism.
+            # expected_lora_modules. It is not reliable.
+            # But there's no other better mechanism.
             if unexpected_modules and not is_regex_target_modules(
                     peft_helper.target_modules, expected_lora_modules):
                 raise ValueError(
@@ -477,9 +476,8 @@ class LoRAModelManager(AdapterModelManager):
             if self._filter_unsupported_mm_module(module_name):
                 logger.warning(
                     "Regarding multimodal models, Aphrodite currently only "
-                    "supports adding LoRA to language model, %s will be ignored.",
-                    module_name,
-                )
+                    "supports adding LoRA to language model, %s will be "
+                    "ignored.", module_name)
                 continue
             parts = module_name.split(".")[-1]
             packed_moduled_lst = self.packed_modules_mapping.get(parts, [])
