@@ -3,16 +3,14 @@ from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import torch
 
-from aphrodite.common.config import (CacheConfig, DeviceConfig, LoadConfig,
-                                     LoRAConfig, ModelConfig, ParallelConfig,
-                                     PromptAdapterConfig, SchedulerConfig)
+from aphrodite.common.config import AphroditeConfig
 from aphrodite.common.pooling_params import PoolingParams
 from aphrodite.common.sequence import (IntermediateTensors, PoolerOutput,
                                        SequenceData, SequenceGroupMetadata)
 from aphrodite.distributed import get_pp_group
 from aphrodite.forward_context import set_forward_context
 from aphrodite.modeling.pooling_metadata import PoolingMetadata
-from aphrodite.multimodal import MultiModalInputs
+from aphrodite.multimodal import MultiModalKwargs
 from aphrodite.worker.model_runner import (GPUModelRunnerBase,
                                            ModelInputForGPU,
                                            ModelInputForGPUBuilder)
@@ -21,12 +19,12 @@ from aphrodite.worker.model_runner import (GPUModelRunnerBase,
 @dataclasses.dataclass(frozen=True)
 class ModelInputForGPUWithPoolingMetadata(ModelInputForGPU):
     """
-    Used by the EmbeddingModelRunner.
+    Used by the PoolingModelRunner.
     """
     pooling_metadata: Optional["PoolingMetadata"] = None
 
 
-class EmbeddingModelRunner(
+class PoolingModelRunner(
         GPUModelRunnerBase[ModelInputForGPUWithPoolingMetadata]):
     _model_input_cls: Type[ModelInputForGPUWithPoolingMetadata] = (
         ModelInputForGPUWithPoolingMetadata)
@@ -34,29 +32,13 @@ class EmbeddingModelRunner(
 
     def __init__(
         self,
-        model_config: ModelConfig,
-        parallel_config: ParallelConfig,
-        scheduler_config: SchedulerConfig,
-        device_config: DeviceConfig,
-        cache_config: CacheConfig,
-        load_config: LoadConfig,
-        lora_config: Optional[LoRAConfig],
+        aphrodite_config: AphroditeConfig,
         kv_cache_dtype: Optional[str] = "auto",
         is_driver_worker: bool = False,
-        prompt_adapter_config: Optional[PromptAdapterConfig] = None,
-        tp_rank: int = 0,
     ):
-        super().__init__(model_config,
-                         parallel_config,
-                         scheduler_config,
-                         device_config,
-                         cache_config,
-                         load_config,
-                         lora_config=lora_config,
+        super().__init__(aphrodite_config=aphrodite_config,
                          kv_cache_dtype=kv_cache_dtype,
-                         is_driver_worker=is_driver_worker,
-                         prompt_adapter_config=prompt_adapter_config,
-                         tp_rank=tp_rank)
+                         is_driver_worker=is_driver_worker)
 
     @torch.inference_mode()
     def execute_model(
@@ -68,7 +50,7 @@ class EmbeddingModelRunner(
     ) -> Optional[Union[List[PoolerOutput], IntermediateTensors]]:
         if num_steps > 1:
             raise ValueError(
-                "EmbeddingModelRunner does not support multi-step execution.")
+                "PoolingModelRunner does not support multi-step execution.")
 
         if self.lora_config:
             assert model_input.lora_requests is not None
@@ -88,41 +70,77 @@ class EmbeddingModelRunner(
         prefill_meta = model_input.attn_metadata.prefill_metadata
         decode_meta = model_input.attn_metadata.decode_metadata
         virtual_engine = model_input.virtual_engine
-        if prefill_meta is None and decode_meta.use_cuda_graph:
-            assert model_input.input_tokens is not None
-            graph_batch_size = model_input.input_tokens.shape[0]
-            model_executable = self.graph_runners[virtual_engine][
-                graph_batch_size]
+        # Pooling models are (ab-)used also to integrate non text models that
+        # are not autoregressive (PrithviGeosaptialMAE).
+        # These model might not use attention and do not really have a prefill
+        # and decode phase. The model input is processed in one shot and both
+        # decode_metadata and prefill_metadata would be None for such models.
+        # See the PlaceholderAttentionMetadata class.
+        # TODO: Figure out if cuda_graph is of any use for these models and
+        #  explore how to leverage it.
+        if (prefill_meta is None and decode_meta is not None
+                and decode_meta.use_cuda_graph):
+            if model_input.inputs_embeds is None:
+                assert model_input.input_tokens is not None
+                graph_batch_size = model_input.input_tokens.shape[0]
+                model_executable = (
+                    self.graph_runners[model_input.virtual_engine][(
+                        graph_batch_size, False)])
+            else:
+                graph_batch_size = model_input.inputs_embeds.shape[0]
+                model_executable = (
+                    self.graph_runners[model_input.virtual_engine][(
+                        graph_batch_size, True)])
         else:
             model_executable = self.model
 
-        num_layers = self.model_config.get_num_layers(self.parallel_config)
-        # use an empty tensor instead of `None`` to force Dynamo to pass
-        # it by reference, rather by specializing on the value ``None``.
-        # the `dtype` argument does not matter, and we use `float32` as
-        # a placeholder (it has wide hardware support).
-        kv_caches = [
-            torch.tensor([], dtype=torch.float32, device=self.device)
-            for _ in range(num_layers)
-        ]
-
         multi_modal_kwargs = model_input.multi_modal_kwargs or {}
+        seqlen_agnostic_kwargs = {
+            "finished_requests_ids": model_input.finished_requests_ids,
+            "request_ids_to_seq_ids": model_input.request_ids_to_seq_ids,
+        } if self.has_inner_state else {}
+        if (self.observability_config is not None
+                and self.observability_config.collect_model_forward_time):
+            model_forward_start = torch.cuda.Event(enable_timing=True)
+            model_forward_end = torch.cuda.Event(enable_timing=True)
+            model_forward_start.record()
 
-        with set_forward_context(model_input.attn_metadata):
+        cross_enc_kwargs = {}
+        if model_input.token_types is not None:
+            cross_enc_kwargs["token_type_ids"] = model_input.token_types
+
+        with set_forward_context(model_input.attn_metadata, self.aphrodite_config,
+                                 virtual_engine):
             hidden_or_intermediate_states = model_executable(
                 input_ids=model_input.input_tokens,
                 positions=model_input.input_positions,
-                kv_caches=kv_caches,
-                attn_metadata=model_input.attn_metadata,
                 intermediate_tensors=intermediate_tensors,
-                **MultiModalInputs.as_kwargs(multi_modal_kwargs,
-                                             device=self.device))
+                **MultiModalKwargs.as_kwargs(multi_modal_kwargs,
+                                             device=self.device),
+                **cross_enc_kwargs,
+                **seqlen_agnostic_kwargs)
+
+        if (self.observability_config is not None
+                and self.observability_config.collect_model_forward_time):
+            model_forward_end.record()
 
         # Only perform pooling in the last pipeline stage.
-        if not get_pp_group().is_last_rank and (self.is_driver_worker
-                and hidden_or_intermediate_states is not None
-                and isinstance(hidden_or_intermediate_states,
-                               IntermediateTensors)):
+        if not get_pp_group().is_last_rank:
+            if (self.is_driver_worker
+                    and hidden_or_intermediate_states is not None
+                    and isinstance(hidden_or_intermediate_states,
+                                   IntermediateTensors)
+                    and self.observability_config is not None
+                    and self.observability_config.collect_model_forward_time):
+                model_forward_end.synchronize()
+                model_forward_time = model_forward_start.elapsed_time(
+                    model_forward_end)
+                orig_model_forward_time = 0.0
+                if intermediate_tensors is not None:
+                    orig_model_forward_time = intermediate_tensors.tensors.get(
+                        "model_forward_time", torch.tensor(0.0)).item()
+                hidden_or_intermediate_states.tensors["model_forward_time"] = (
+                    torch.tensor(model_forward_time + orig_model_forward_time))
             return hidden_or_intermediate_states
 
         # Only perform pooling in the driver worker.

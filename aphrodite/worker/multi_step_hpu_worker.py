@@ -1,3 +1,7 @@
+###############################################################################
+# Copyright (C) 2025 Habana Labs, Ltd. an Intel Company
+###############################################################################
+
 import dataclasses
 from typing import Dict, Optional, Tuple
 
@@ -5,32 +9,37 @@ import torch
 
 from aphrodite.common.sequence import ExecuteModelRequest
 from aphrodite.distributed import broadcast_tensor_dict
-from aphrodite.worker.tpu_model_runner import ModelInputForTPU
-from aphrodite.worker.tpu_worker import TPUWorker
+from aphrodite.worker.hpu_model_runner import ModelInputForHPU
+from aphrodite.worker.hpu_worker import HPUWorker
 from aphrodite.worker.worker_base import WorkerInput
 
 
-class MultiStepTPUWorker(TPUWorker):
+class MultiStepHPUWorker(HPUWorker):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.cached_model_input: Optional[ModelInputForTPU] = None
+        self.cached_model_input: Optional[ModelInputForHPU] = None
 
     def _get_driver_input_and_broadcast(
         self, execute_model_req: ExecuteModelRequest
-    ) -> Tuple[ModelInputForTPU, WorkerInput, Dict[str, torch.Tensor]]:
+    ) -> Tuple[ModelInputForHPU, WorkerInput, Dict[str, torch.Tensor]]:
+        """
+        Get the driver input and broadcast it to other workers.
+        """
         assert self.is_driver_worker
         assert execute_model_req.virtual_engine == 0
 
         is_first_multi_step = execute_model_req.is_first_multi_step
         is_last_step = execute_model_req.is_last_step
+
         if is_first_multi_step:
+            # on first step we prepare the worker input and model input normally
             worker_input: WorkerInput = self.prepare_worker_input(
                 execute_model_req=execute_model_req)
             worker_input = dataclasses.replace(
                 worker_input,
                 num_steps=execute_model_req.num_lookahead_slots + 1)
-            model_input: ModelInputForTPU = (
+            model_input: ModelInputForHPU = (
                 self.model_runner.prepare_model_input(
                     execute_model_req.seq_group_metadata_list,
                     execute_model_req.virtual_engine,
@@ -41,9 +50,11 @@ class MultiStepTPUWorker(TPUWorker):
                     model_input,
                     async_callback=execute_model_req.async_callback)
         else:
+            # on subsequent steps we reuse the worker input and model input
             assert self.cached_model_input is not None
             model_input = self.cached_model_input
             worker_input = WorkerInput()
+
         model_input = dataclasses.replace(
             model_input,
             is_first_multi_step=is_first_multi_step,
@@ -62,21 +73,25 @@ class MultiStepTPUWorker(TPUWorker):
                 }
                 broadcast_tensor_dict(broadcast_data, src=0)
 
-        # Retuning empty dict here to keep this compatible with
+        # Returning empty dict here to keep this compatible with
         # `LocalOrDistributedWorkerBase._get_driver_input_and_broadcast`
         return model_input, worker_input, {}
 
     def prepare_input(
         self,
         execute_model_req: Optional[ExecuteModelRequest] = None,
-    ) -> Optional[Tuple[ModelInputForTPU, WorkerInput, Dict[str,
+    ) -> Optional[Tuple[ModelInputForHPU, WorkerInput, Dict[str,
                                                             torch.Tensor]]]:
         if self.is_driver_worker:
             if execute_model_req is None:
                 if self.do_metadata_broadcast:
+                    # This signals that there's no more requests to process for
+                    # now. All workers are running infinite loop with
+                    # broadcast_tensor_dict, and it stops the loop when the
+                    # driver broadcasts an empty input. Send an empty input to
+                    # notify all other workers to stop their execution loop.
                     broadcast_tensor_dict({}, src=0)
                 return None
-
             model_input, worker_input, _ = self._get_driver_input_and_broadcast(
                 execute_model_req)
             if model_input.is_first_multi_step:
