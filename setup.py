@@ -8,7 +8,6 @@ import sys
 import warnings
 from pathlib import Path
 from shutil import which
-from typing import List
 
 import torch
 from packaging.version import Version, parse
@@ -24,6 +23,7 @@ def load_module_from_path(module_name, path):
     sys.modules[module_name] = module
     spec.loader.exec_module(module)
     return module
+
 
 ROOT_DIR = Path(os.path.dirname(__file__))
 logger = logging.getLogger(__name__)
@@ -56,11 +56,10 @@ def embed_commit_hash():
 
 embed_commit_hash()
 
-
 # cannot import envs directly because it depends on aphrodite,
 #  which is not installed yet
-envs = load_module_from_path('envs', os.path.join(
-    ROOT_DIR, 'aphrodite', 'common', 'envs.py'))
+envs = load_module_from_path(
+    'envs', os.path.join(ROOT_DIR, 'aphrodite', 'common', 'envs.py'))
 
 APHRODITE_TARGET_DEVICE = envs.APHRODITE_TARGET_DEVICE
 
@@ -202,7 +201,9 @@ class cmake_build_ext(build_ext):
 
         # Pass the python executable to cmake so it can find an exact
         # match.
-        cmake_args += ['-DAPHRODITE_PYTHON_EXECUTABLE={}'.format(sys.executable)]
+        cmake_args += [
+            '-DAPHRODITE_PYTHON_EXECUTABLE={}'.format(sys.executable)
+        ]
 
         # Pass the python path to cmake so it can reuse the build dependencies
         # on subsequent calls to python.
@@ -251,7 +252,8 @@ class cmake_build_ext(build_ext):
         targets = []
 
         def target_name(s: str) -> str:
-            return s.removeprefix("aphrodite.").removeprefix("aphrodite_flash_attn.")
+            return s.removeprefix("aphrodite.").removeprefix(
+                "aphrodite_flash_attn.")
 
         # Build all the extensions
         for ext in self.extensions:
@@ -298,6 +300,7 @@ class cmake_build_ext(build_ext):
         # Run the standard build_ext command to compile the extensions
         super().run()
 
+
 def _is_hpu() -> bool:
     # if APHRODITE_TARGET_DEVICE env var was set explicitly, skip HPU autodetection
     if os.getenv("APHRODITE_TARGET_DEVICE", None) == APHRODITE_TARGET_DEVICE:
@@ -320,11 +323,14 @@ def _is_hpu() -> bool:
                 pass
     return is_hpu_available
 
+
 def _no_device() -> bool:
     return APHRODITE_TARGET_DEVICE == "empty"
 
+
 def _is_windows() -> bool:
     return APHRODITE_TARGET_DEVICE == "windows"
+
 
 def _is_cuda() -> bool:
     has_cuda = torch.version.cuda is not None
@@ -548,11 +554,14 @@ if _is_hip():
     ext_modules.append(CMakeExtension(name="aphrodite._rocm_C"))
 
 if _is_cuda():
-    ext_modules.append(CMakeExtension(name="aphrodite.aphrodite_flash_attn._aphrodite_fa2_C"))
-    if envs.APHRODITE_USE_PRECOMPILED or get_nvcc_cuda_version() >= Version("12.3"):
+    ext_modules.append(
+        CMakeExtension(name="aphrodite.aphrodite_flash_attn._aphrodite_fa2_C"))
+    if envs.APHRODITE_USE_PRECOMPILED or get_nvcc_cuda_version() >= Version(
+            "12.3"):
         # FA3 requires CUDA 12.3 or later
         ext_modules.append(
-            CMakeExtension(name="aphrodite.aphrodite_flash_attn._aphrodite_fa3_C"))
+            CMakeExtension(
+                name="aphrodite.aphrodite_flash_attn._aphrodite_fa3_C"))
         # Optional since this doesn't get built (produce an .so file) when
         # not targeting a hopper system
         ext_modules.append(
@@ -589,5 +598,4 @@ setup(
     ext_modules=ext_modules,
     cmdclass={"build_ext": cmake_build_ext} if len(ext_modules) > 0 else {},
     package_data=package_data,
-
 )

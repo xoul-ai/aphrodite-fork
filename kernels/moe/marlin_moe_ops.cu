@@ -487,7 +487,8 @@ torch::Tensor marlin_gemm_moe(
     aphrodite::ScalarTypeId const b_q_type_id, int64_t size_m, int64_t size_n,
     int64_t size_k, bool is_k_full, int64_t num_experts, int64_t topk,
     int64_t moe_block_size, bool replicate_input, bool apply_weights) {
-  aphrodite::ScalarType const b_q_type = aphrodite::ScalarType::from_id(b_q_type_id);
+  aphrodite::ScalarType const b_q_type =
+      aphrodite::ScalarType::from_id(b_q_type_id);
   bool has_zp = b_zeros.size(1) != 0;
   if (has_zp) {
     TORCH_CHECK(

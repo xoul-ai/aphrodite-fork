@@ -2268,7 +2268,8 @@ torch::Tensor gptq_marlin_gemm(torch::Tensor& a, torch::Tensor& b_q_weight,
                                int64_t size_m, int64_t size_n, int64_t size_k,
                                bool is_k_full, bool has_zp, bool use_atomic_add,
                                bool use_fp32_reduce, bool is_zp_float) {
-  aphrodite::ScalarType const b_q_type = aphrodite::ScalarType::from_id(b_q_type_id);
+  aphrodite::ScalarType const b_q_type =
+      aphrodite::ScalarType::from_id(b_q_type_id);
   if (has_zp) {
     TORCH_CHECK(
         b_q_type == aphrodite::kU4 || b_q_type == aphrodite::kU8,

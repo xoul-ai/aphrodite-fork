@@ -437,12 +437,13 @@ MarlinFuncPtr get_marlin_kernel(const aphrodite::ScalarType q_type,
 }
 
 template <typename scalar_t>
-exec_config_t determine_exec_config(const aphrodite::ScalarType& q_type, int prob_m,
-                                    int prob_n, int prob_k, int thread_m_blocks,
-                                    bool m_block_size_8, int num_bits,
-                                    int group_size, bool has_act_order,
-                                    bool is_k_full, bool has_zp,
-                                    bool is_zp_float, int max_shared_mem) {
+exec_config_t determine_exec_config(const aphrodite::ScalarType& q_type,
+                                    int prob_m, int prob_n, int prob_k,
+                                    int thread_m_blocks, bool m_block_size_8,
+                                    int num_bits, int group_size,
+                                    bool has_act_order, bool is_k_full,
+                                    bool has_zp, bool is_zp_float,
+                                    int max_shared_mem) {
   exec_config_t exec_cfg = exec_config_t{1, thread_config_t{-1, -1, -1}};
   thread_config_t* thread_configs = thread_m_blocks > 1
                                         ? large_batch_thread_configs
@@ -684,7 +685,8 @@ torch::Tensor moe_wna16_marlin_gemm(
     aphrodite::ScalarTypeId const& b_q_type_id, int64_t size_m, int64_t size_n,
     int64_t size_k, bool is_k_full, bool use_atomic_add, bool use_fp32_reduce,
     bool is_zp_float) {
-  aphrodite::ScalarType const b_q_type = aphrodite::ScalarType::from_id(b_q_type_id);
+  aphrodite::ScalarType const b_q_type =
+      aphrodite::ScalarType::from_id(b_q_type_id);
   int pack_factor = 32 / b_q_type.size_bits();
 
   if (moe_block_size != 8) {
