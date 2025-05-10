@@ -736,7 +736,7 @@ if (APHRODITE_GPU_LANG STREQUAL "CUDA")
 
         define_gpu_extension_target(
             _aphrodite_fa2_C
-            DESTINATION aphrodite_flash_attn
+            DESTINATION aphrodite
             LANGUAGE ${APHRODITE_GPU_LANG}
             SOURCES
                 kernels/flash_attention/flash_attn/flash_api.cpp
@@ -791,44 +791,49 @@ if (APHRODITE_GPU_LANG STREQUAL "CUDA")
 
         set(FA3_GEN_SRCS ${FA3_BF16_GEN_SRCS} ${FA3_FP16_GEN_SRCS} ${FA3_FP8_GEN_SRCS})
 
-        cuda_archs_loose_intersection(FA3_ARCHS "9.0a;" "${CUDA_ARCHS}")
-        message(STATUS "FA3_ARCHS: ${FA3_ARCHS}")
+        cuda_archs_loose_intersection(FA3_ARCHS "9.0;9.0a;10.0;10.1;12.0" "${CUDA_ARCHS}")
 
-        set_gencode_flags_for_srcs(
-            SRCS "${FA3_GEN_SRCS}"
-            CUDA_ARCHS "${FA3_ARCHS}")
-        set_gencode_flags_for_srcs(
-            SRCS 
-                kernels/flash_attention/hopper/flash_fwd_combine.cu
-                kernels/flash_attention/hopper/flash_prepare_scheduler.cu
-            CUDA_ARCHS "${FA3_ARCHS}")
+        if(FA3_ARCHS)
+            message(STATUS "FA3_ARCHS: ${FA3_ARCHS}")
 
-        define_gpu_extension_target(
-            _aphrodite_fa3_C
-            DESTINATION aphrodite_flash_attn
-            LANGUAGE ${APHRODITE_GPU_LANG}
-            SOURCES
-                kernels/flash_attention/hopper/flash_fwd_combine.cu
-                kernels/flash_attention/hopper/flash_prepare_scheduler.cu
-                kernels/flash_attention/hopper/flash_api.cpp
-                kernels/flash_attention/hopper/flash_api_torch_lib.cpp
-                ${FA3_GEN_SRCS}
-            COMPILE_FLAGS ${APHRODITE_GPU_FLAGS}
-            ARCHITECTURES ${APHRODITE_GPU_ARCHES}
-            USE_SABI 3
-            WITH_SOABI)
+            set_gencode_flags_for_srcs(
+                SRCS "${FA3_GEN_SRCS}"
+                CUDA_ARCHS "${FA3_ARCHS}")
+            set_gencode_flags_for_srcs(
+                SRCS 
+                    kernels/flash_attention/hopper/flash_fwd_combine.cu
+                    kernels/flash_attention/hopper/flash_prepare_scheduler.cu
+                CUDA_ARCHS "${FA3_ARCHS}")
 
-        target_include_directories(_aphrodite_fa3_C PRIVATE
-            kernels/flash_attention/hopper
-            kernels/flash_attention/common
-            ${CUTLASS_INCLUDE_DIR})
+            define_gpu_extension_target(
+                _aphrodite_fa3_C
+                DESTINATION aphrodite
+                LANGUAGE ${APHRODITE_GPU_LANG}
+                SOURCES
+                    kernels/flash_attention/hopper/flash_fwd_combine.cu
+                    kernels/flash_attention/hopper/flash_prepare_scheduler.cu
+                    kernels/flash_attention/hopper/flash_api.cpp
+                    kernels/flash_attention/hopper/flash_api_torch_lib.cpp
+                    ${FA3_GEN_SRCS}
+                COMPILE_FLAGS ${APHRODITE_GPU_FLAGS}
+                ARCHITECTURES ${APHRODITE_GPU_ARCHES}
+                USE_SABI 3
+                WITH_SOABI)
 
-        target_compile_definitions(_aphrodite_fa3_C PRIVATE
-            FLASHATTENTION_DISABLE_BACKWARD
-            FLASHATTENTION_DISABLE_DROPOUT
-            FLASHATTENTION_DISABLE_UNEVEN_K
-            FLASHATTENTION_DISABLE_PYBIND
-            FLASHATTENTION_VARLEN_ONLY)
+            target_include_directories(_aphrodite_fa3_C PRIVATE
+                kernels/flash_attention/hopper
+                kernels/flash_attention/common
+                ${CUTLASS_INCLUDE_DIR})
+
+            target_compile_definitions(_aphrodite_fa3_C PRIVATE
+                FLASHATTENTION_DISABLE_BACKWARD
+                FLASHATTENTION_DISABLE_DROPOUT
+                FLASHATTENTION_DISABLE_UNEVEN_K
+                FLASHATTENTION_DISABLE_PYBIND
+                FLASHATTENTION_VARLEN_ONLY)
+        else()
+            message(STATUS "FA3 is disabled because no compatible Hopper or newer architecture (SM 9.0+) was detected.")
+        endif()
     elseif(FA3_ENABLED AND ${CMAKE_CUDA_COMPILER_VERSION} VERSION_LESS 12.0)
         message(STATUS "FA3 is disabled because CUDA version is not 12.0 or later.")
     endif()

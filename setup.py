@@ -555,17 +555,19 @@ if _is_hip():
 
 if _is_cuda():
     ext_modules.append(
-        CMakeExtension(name="aphrodite.aphrodite_flash_attn._aphrodite_fa2_C"))
+        CMakeExtension(name="aphrodite._aphrodite_fa2_C"))
+    major, minor = torch.cuda.get_device_capability()
     if envs.APHRODITE_USE_PRECOMPILED or get_nvcc_cuda_version() >= Version(
             "12.3"):
-        # FA3 requires CUDA 12.3 or later
-        ext_modules.append(
-            CMakeExtension(
-                name="aphrodite.aphrodite_flash_attn._aphrodite_fa3_C"))
-        # Optional since this doesn't get built (produce an .so file) when
-        # not targeting a hopper system
-        ext_modules.append(
-            CMakeExtension(name="aphrodite._flashmla_C", optional=True))
+        if major >= 9:
+            # FA3 requires CUDA 12.3 or later
+            ext_modules.append(
+                CMakeExtension(
+                    name="aphrodite._aphrodite_fa3_C"))
+            # Optional since this doesn't get built (produce an .so file) when
+            # not targeting a hopper system
+            ext_modules.append(
+                CMakeExtension(name="aphrodite._flashmla_C", optional=True))
     ext_modules.append(CMakeExtension(name="aphrodite.cumem_allocator"))
 
 if _build_custom_ops():

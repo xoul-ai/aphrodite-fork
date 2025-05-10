@@ -9,7 +9,7 @@ import torch
 # Use relative import to support build-from-source installation in Aphrodite
 
 try:
-    from . import _aphrodite_fa2_C  # noqa: F401
+    from aphrodite import _aphrodite_fa2_C  # noqa: F401
     FA2_UNAVAILABLE_REASON = None
     FA2_AVAILABLE = True
 except ImportError as e:
@@ -17,7 +17,7 @@ except ImportError as e:
     FA2_AVAILABLE = False
 
 try:
-    from . import _aphrodite_fa3_C  # noqa: F401
+    from aphrodite import _aphrodite_fa3_C  # noqa: F401
     FA3_UNAVAILABLE_REASON = None
     FA3_AVAILABLE = True
 except ImportError as e:
