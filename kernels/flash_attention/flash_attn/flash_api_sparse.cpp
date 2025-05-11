@@ -275,7 +275,7 @@ mha_fwd_sparse(at::Tensor &q,         // batch_size x seqlen_q x num_heads x hea
         params, batch_size, num_heads, head_size, seqlen_k, seqlen_q,
         head_size_rounded, p_dropout, /*num_splits*/ 1, get_num_sm(get_current_device()), opts);
 
-    // NOTE(woosuk): Commented out because they are not used in inference.
+    // NOTE: Commented out because they are not used in inference.
     // // number of times random will be generated per thread, to offset philox counter in thc random
     // // state
     // // We use a custom RNG that increases the offset by batch_size * nheads * 32.
@@ -485,7 +485,7 @@ mha_varlen_fwd_sparse(at::Tensor &q,  // total_q x num_heads x head_size, total_
     // Keep references to these tensors to extend their lifetime
     at::Tensor softmax_lse_accum, out_accum;
 
-    // NOTE(woosuk): Commented out because they are not used in inference.
+    // NOTE: Commented out because they are not used in inference.
     // number of times random will be generated per thread, to offset philox counter in thc random
     // state
     // We use a custom RNG that increases the offset by batch_size * nheads * 32.

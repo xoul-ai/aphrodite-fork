@@ -1,18 +1,15 @@
-
 from typing import Callable, List, Optional, Set
 
 import torch
-
 from loguru import logger
-from vllm.model_executor.layers.quantization.kernels.scaled_mm import (
-    ScaledMMLinearLayerConfig, choose_scaled_mm_linear_kernel)
-from vllm.model_executor.layers.quantization.quark.schemes import QuarkScheme
-from vllm.model_executor.parameter import (BasevLLMParameter,
-                                           ChannelQuantScaleParameter,
-                                           ModelWeightParameter,
-                                           PerTensorScaleParameter)
 
-logger = init_logger(__name__)
+from aphrodite.modeling.parameter import (BaseAphroditeParameter,
+                                          ChannelQuantScaleParameter,
+                                          ModelWeightParameter,
+                                          PerTensorScaleParameter)
+from aphrodite.quantization.kernels.scaled_mm import (
+    ScaledMMLinearLayerConfig, choose_scaled_mm_linear_kernel)
+from aphrodite.quantization.quark.schemes import QuarkScheme
 
 
 class QuarkW8A8Int8(QuarkScheme):
@@ -87,12 +84,12 @@ class QuarkW8A8Int8(QuarkScheme):
 
         # INPUT SCALE
         if self.is_static_input_scheme:
-            input_scale = BasevLLMParameter(data=torch.empty(
+            input_scale = BaseAphroditeParameter(data=torch.empty(
                 1, dtype=torch.float32),
                                             weight_loader=weight_loader)
             layer.register_parameter("input_scale", input_scale)
 
-            input_zero_point = BasevLLMParameter(data=torch.empty(
+            input_zero_point = BaseAphroditeParameter(data=torch.empty(
                 1, dtype=torch.int8),
                                                  weight_loader=weight_loader)
             layer.register_parameter("input_zero_point", input_zero_point)

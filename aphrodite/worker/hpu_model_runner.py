@@ -721,7 +721,7 @@ class HPUModelRunnerBase(ModelRunnerBase[TModelInputForHPU]):
             context_lens.append(context_len)
             query_lens.append(seq_len - context_len)
             input_tokens.append(prompt_tokens)
-            # NOTE(woosuk): Here we assume that the first token in the prompt
+            # NOTE: Here we assume that the first token in the prompt
             # is always the first token in the sequence.
             input_positions.append(list(range(context_len, seq_len)))
 

@@ -25,7 +25,6 @@ from aphrodite.common.utils import get_kv_cache_torch_dtype
 
 from .utils import ENGINE_NAME, lmcache_get_config
 
-logger = init_logger(__name__)
 
 LMCACHE_CUDA_STREAM = torch.cuda.Stream()
 

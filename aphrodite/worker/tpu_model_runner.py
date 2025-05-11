@@ -632,7 +632,7 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         is_prompt = model_input.attn_metadata.num_prefills > 0
         if is_prompt:
             assert num_steps == 1
-            # NOTE(woosuk): Since the FlashAttention kernel does not support
+            # NOTE: Since the FlashAttention kernel does not support
             # ragged inputs, we split the prompts into different batches and
             # process them separately. This is a temporary hack that should be
             # optimized by using SplashAttention.
@@ -800,7 +800,7 @@ class ModelWrapper(nn.Module):
         logits_indices = start_indicies + input_lens - 1
         attn_metadata = get_forward_context().attn_metadata
 
-        # FIXME(woosuk): This is a temporary hack to avoid using the existing
+        # FIXME: This is a temporary hack to avoid using the existing
         # sampler and sampling metadata.
         sampling_metadata = SamplingMetadata(
             seq_groups=[],

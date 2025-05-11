@@ -5,14 +5,12 @@ from typing import Dict, Optional, Tuple
 
 import torch
 import torch.jit
-
-import vllm.envs as envs
 from loguru import logger
-from vllm.model_executor.layers.spec_decode_base_sampler import (
-    SpecDecodeStochasticBaseSampler)
-from vllm.platforms import current_platform
 
-logger = init_logger(__name__)
+import aphrodite.common.envs as envs
+from aphrodite.modeling.layers.spec_decode_base_sampler import (
+    SpecDecodeStochasticBaseSampler)
+from aphrodite.platforms import current_platform
 
 if find_spec("flashinfer"):
     """
@@ -48,7 +46,7 @@ class RejectionSampler(SpecDecodeStochasticBaseSampler):
         """
         super().__init__(strict_mode=strict_mode)
         if use_flashinfer is None:
-            self.use_flashinfer = envs.VLLM_USE_FLASHINFER_SAMPLER and (
+            self.use_flashinfer = envs.APHRODITE_USE_FLASHINFER_SAMPLER and (
                 chain_speculative_sampling is not None)
         else:
             self.use_flashinfer = use_flashinfer
@@ -324,7 +322,7 @@ class RejectionSampler(SpecDecodeStochasticBaseSampler):
         .. math::
             (f(x))_+ = \frac{\max(0, f(x))}{\sum_x \max(0, f(x))}
 
-        See https://github.com/vllm-project/vllm/pull/2336 for a visualization
+        See https://github.com/aphrodite-project/aphrodite/pull/2336 for a visualization
         of the draft, target, and recovered probability distributions.
 
         Returns a tensor of shape [batch_size, k, vocab_size].

@@ -642,7 +642,7 @@ class FusedMoE(torch.nn.Module):
             return
 
         # compressed-tensors checkpoints with packed weights are stored flipped
-        # TODO (mgoin): check self.quant_method.quant_config.quant_format
+        # TODO: check self.quant_method.quant_config.quant_format
         # against known CompressionFormat enum values that have this quality
         if self.quant_method.__class__.__name__ in (
                 "CompressedTensorsWNA16MarlinMoEMethod",

@@ -869,7 +869,7 @@ def fused_topk(
                                         dtype=torch.int32,
                                         device=hidden_states.device)
 
-    gating_output_float = gating_output.float()  # TODO(woosuk): Optimize this.
+    gating_output_float = gating_output.float()  # TODO: Optimize this.
 
     topk_func = dispatch_topk_func()
     topk_weights, topk_ids = topk_func(topk_weights, topk_ids,

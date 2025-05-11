@@ -164,7 +164,7 @@ class AiterMLAMetadataBuilder(MLACommonMetadataBuilder[AiterMLAMetadata]):
                 self.curr_seq_lens.append(curr_seq_len)
 
             # Compute block table.
-            # TODO(sang): Combine chunked prefill and prefix caching by
+            # TODO: Combine chunked prefill and prefix caching by
             # only allowing multiple of block_size chunk size.
             # NOTE: This only works for oooooooxxx style attention.
             block_table = []

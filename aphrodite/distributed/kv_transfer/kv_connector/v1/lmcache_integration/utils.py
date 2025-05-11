@@ -7,7 +7,6 @@ from lmcache.experimental.config import \
     LMCacheEngineConfig as ExperimentalConfig  # type: ignore[assignment]
 from lmcache.logging import init_logger
 
-logger = init_logger(__name__)
 ENGINE_NAME = "aphrodite-instance"
 
 

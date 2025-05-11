@@ -39,7 +39,6 @@ if TYPE_CHECKING:
                                                 NewRequestData)
     from aphrodite.v1.request import Request
 
-logger = init_logger(__name__)
 
 
 def get_zmq_rpc_path_lmcache(

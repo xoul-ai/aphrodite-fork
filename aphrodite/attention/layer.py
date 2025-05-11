@@ -106,7 +106,7 @@ class Attention(nn.Module):
         if quant_method is not None and not isinstance(
                 quant_method, UnquantizedLinearMethod):
             assert isinstance(quant_method, BaseKVCacheMethod)
-            # TODO (mgoin): kv cache dtype should be specified in the FP8
+            # TODO: kv cache dtype should be specified in the FP8
             # checkpoint config and become the "auto" behavior
             if self.kv_cache_dtype == "fp8_e5m2":
                 raise ValueError("fp8_e5m2 kv-cache is not supported with "

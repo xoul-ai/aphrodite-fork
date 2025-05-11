@@ -110,7 +110,7 @@ class XPUWorker(LoRANotSupportedWorkerBase, Worker):
             self.local_rank).total_memory
         free_gpu_memory = total_gpu_memory - used_memory
 
-        # NOTE(woosuk): Here we assume that the other processes using the same
+        # NOTE: Here we assume that the other processes using the same
         # GPU did not change their memory usage during the profiling.
         peak_memory = self.init_gpu_memory - free_gpu_memory
         assert peak_memory > 0, (

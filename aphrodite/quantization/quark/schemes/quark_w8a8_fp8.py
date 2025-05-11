@@ -4,13 +4,13 @@ from typing import Callable, List, Optional
 import torch
 from torch.nn import Parameter
 
-from vllm.model_executor.layers.quantization.quark.schemes import QuarkScheme
-from vllm.model_executor.layers.quantization.utils.w8a8_utils import (
+from aphrodite.modeling.parameter import (ChannelQuantScaleParameter,
+                                          ModelWeightParameter,
+                                          PerTensorScaleParameter)
+from aphrodite.platforms import current_platform
+from aphrodite.quantization.quark.schemes import QuarkScheme
+from aphrodite.quantization.utils.w8a8_utils import (
     Fp8LinearOp, normalize_e4m3fn_to_e4m3fnuz, requantize_with_max_scale)
-from vllm.model_executor.parameter import (ChannelQuantScaleParameter,
-                                           ModelWeightParameter,
-                                           PerTensorScaleParameter)
-from vllm.platforms import current_platform
 
 __all__ = ["QuarkW8A8Fp8"]
 

@@ -132,7 +132,7 @@ class ROCmFlashAttentionMetadata(AttentionMetadata, PagedAttentionMetadata):
     # TODO: Move `use_cuda_graph` out since it's unrelated to attention.
     use_cuda_graph: bool
 
-    # NOTE(sang): Definition of context_len, query_len, and seq_len.
+    # NOTE: Definition of context_len, query_len, and seq_len.
     # |---------- N-1 iteration --------|
     # |---------------- N iteration ---------------------|
     # |- tokenA -|......................|-- newTokens ---|

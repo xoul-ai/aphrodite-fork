@@ -299,7 +299,7 @@ class Fp8LinearMethod(LinearMethodBase):
         return weight
 
     def process_weights_after_loading(self, layer: Module) -> None:
-        # TODO(rob): refactor block quant into separate class.
+        # TODO: refactor block quant into separate class.
         if self.block_quant:
             assert self.quant_config.activation_scheme == "dynamic"
             if current_platform.is_fp8_fnuz():

@@ -461,7 +461,7 @@ class MLACommonMetadata(AttentionMetadata):
     # position embeddings are applied inside the attention backend
     input_positions: torch.Tensor
 
-    # NOTE(sang): Definition of context_len, query_len, and seq_len.
+    # NOTE: Definition of context_len, query_len, and seq_len.
     # |---------- N-1 iteration --------|
     # |---------------- N iteration ---------------------|
     # |- tokenA -|......................|-- newTokens ---|
@@ -803,7 +803,7 @@ class MLACommonMetadataBuilder(AttentionMetadataBuilder[T], Generic[T]):
                 self.curr_seq_lens.append(curr_seq_len)
 
             # Compute block table.
-            # TODO(sang): Combine chunked prefill and prefix caching by
+            # TODO: Combine chunked prefill and prefix caching by
             # only allowing multiple of block_size chunk size.
             # NOTE: This only works for oooooooxxx style attention.
             block_table = []

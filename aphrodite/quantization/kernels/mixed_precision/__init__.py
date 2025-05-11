@@ -1,20 +1,20 @@
 
 from typing import List, Optional, Type
 
-import vllm.envs as envs
-from vllm.model_executor.layers.quantization.kernels.mixed_precision.allspark import (  # noqa: E501
+import aphrodite.common.envs as envs
+from aphrodite.platforms import current_platform
+from aphrodite.quantization.kernels.mixed_precision.allspark import (
     AllSparkLinearKernel)
-from vllm.model_executor.layers.quantization.kernels.mixed_precision.bitblas import (  # noqa: E501
+from aphrodite.quantization.kernels.mixed_precision.bitblas import (
     BitBLASLinearKernel)
-from vllm.model_executor.layers.quantization.kernels.mixed_precision.exllama import (  # noqa: E501
+from aphrodite.quantization.kernels.mixed_precision.exllama import (
     ExllamaLinearKernel)
-from vllm.model_executor.layers.quantization.kernels.mixed_precision.machete import (  # noqa: E501
+from aphrodite.quantization.kernels.mixed_precision.machete import (
     MacheteLinearKernel)
-from vllm.model_executor.layers.quantization.kernels.mixed_precision.marlin import (  # noqa: E501
+from aphrodite.quantization.kernels.mixed_precision.marlin import (
     MarlinLinearKernel)
-from vllm.model_executor.layers.quantization.kernels.mixed_precision.MPLinearKernel import (  # noqa: E501
+from aphrodite.quantization.kernels.mixed_precision.MPLinearKernel import (
     MPLinearKernel, MPLinearLayerConfig)
-from vllm.platforms import current_platform
 
 # in priority/performance order (when available)
 _POSSIBLE_KERNELS: List[Type[MPLinearKernel]] = [
@@ -55,7 +55,7 @@ def choose_mp_linear_kernel(
 
     failure_reasons = []
     for kernel in _POSSIBLE_KERNELS:
-        if kernel.__name__ in envs.VLLM_DISABLED_KERNELS:
+        if kernel.__name__ in envs.APHRODITE_DISABLED_KERNELS:
             failure_reasons.append(
                 f' {kernel.__name__} disabled by environment variable')
             continue

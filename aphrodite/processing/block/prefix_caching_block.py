@@ -1059,7 +1059,7 @@ class ComputedBlocksTracker:
         num_computed_tokens_prev = self._seq_id_to_num_tokens_computed.get(
             seq.seq_id, None)
 
-        # TODO(rickyx): This hack could be removed once we mark blocks as
+        # TODO: This hack could be removed once we mark blocks as
         # computed correctly with chunked prefills.
         if num_computed_tokens_prev is not None and seq.is_prefill():
             # For a sequence that is still in prefill, we don't

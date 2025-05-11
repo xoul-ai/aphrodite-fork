@@ -152,7 +152,7 @@ class BlocksparseFlashAttentionMetadata(AttentionMetadata):
     # seq_lens stored as a tensor.
     seq_lens_tensor: Optional[torch.Tensor]
 
-    # NOTE(sang): Definition of context_len, query_len, and seq_len.
+    # NOTE: Definition of context_len, query_len, and seq_len.
     # |---------- N-1 iteration --------|
     # |---------------- N iteration ---------------------|
     # |- tokenA -|......................|-- newTokens ---|

@@ -292,7 +292,7 @@ class SharedStorageConnector(KVConnectorBase_V1):
             else:
                 # NOTE: here, we set the store and load being exclusive,
                 # but a single request can have both store and load.
-                # NOTE(rob): for this debug implementation, we only cache
+                # NOTE: for this debug implementation, we only cache
                 # the original prompt tokens.
                 if not self._found_match_for_request(new_req):
                     meta.add_request(token_ids=new_req.prompt_token_ids,
@@ -301,12 +301,12 @@ class SharedStorageConnector(KVConnectorBase_V1):
                                      is_store=True)
 
         for cached_req in scheduler_output.scheduled_cached_reqs:
-            # NOTE(rob): here we rely on the resumed requests being
+            # NOTE: here we rely on the resumed requests being
             # the first N requests in the list scheduled_cache_reqs.
             if not cached_req.resumed_from_preemption:
                 break
             if cached_req.req_id in self._requests_need_load:
-                # NOTE(rob): cached_req_data does not have the full
+                # NOTE: cached_req_data does not have the full
                 # list of token ids (only new tokens). So we look it
                 # up in the actual request object.
                 request = self._requests_need_load[cached_req.req_id]
@@ -314,7 +314,7 @@ class SharedStorageConnector(KVConnectorBase_V1):
                                 cached_req.num_computed_tokens)
                 token_ids = request.all_token_ids[:total_tokens]
 
-                # NOTE(rob): For resumed req, new_block_ids is all
+                # NOTE: For resumed req, new_block_ids is all
                 # of the block_ids for the request.
                 block_ids = cached_req.new_block_ids
 

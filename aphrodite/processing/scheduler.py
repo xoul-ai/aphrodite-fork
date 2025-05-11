@@ -1952,7 +1952,7 @@ class Scheduler:
         for seq in seqs:
             if not seq.is_prefill():
                 # Decode sequences should always just have 1 uncached token
-                # TODO(rickyx): Actually is this still correct for multi-step?
+                # TODO: Actually is this still correct for multi-step?
                 num_uncached_new_tokens += 1
                 continue
 

@@ -702,7 +702,7 @@ class MiniCPMV2_0(MiniCPMVBaseModel):
         config: PretrainedConfig,
         quant_config: Optional[QuantizationConfig],
     ) -> nn.Module:
-        # TODO :refactor this vision model
+        # TODO:refactor this vision model
         try:
             import timm
         except ImportError:

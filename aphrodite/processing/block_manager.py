@@ -322,7 +322,7 @@ class SelfAttnBlockSpaceManager(BlockSpaceManager):
             computed_block_ids = all_blocks[:num_cached_blocks]
             computed_seq_block_ids.append(computed_block_ids)
 
-        # NOTE(sang): This assumes seq_block_ids doesn't contain any None.
+        # NOTE: This assumes seq_block_ids doesn't contain any None.
         return self.block_allocator.get_common_computed_block_ids(
             computed_seq_block_ids)  # type: ignore
 

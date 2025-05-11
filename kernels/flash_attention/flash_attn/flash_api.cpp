@@ -474,7 +474,7 @@ mha_fwd(at::Tensor &q,         // batch_size x seqlen_q x num_heads x round_mult
         params, batch_size, num_heads, head_size, seqlen_k, seqlen_q,
         head_size_rounded, p_dropout, /*num_splits*/ 0, get_num_sm(get_current_device()), opts);
 
-    // NOTE(woosuk): Commented out because they are not used in inference.
+    // NOTE: Commented out because they are not used in inference.
     // // number of times random will be generated per thread, to offset philox counter in thc random
     // // state
     // // We use a custom RNG that increases the offset by batch_size * nheads * 32.
@@ -638,7 +638,7 @@ mha_varlen_fwd(at::Tensor &q,  // total_q x num_heads x head_size, total_q := \s
         TORCH_CHECK(out.stride(-1) == 1, "Output tensor must have contiguous last dimension");
         CHECK_SHAPE(out, sizes[0], sizes[1], head_size);
         if (seqlenq_ngroups_swapped) {
-            // NOTE(woosuk): We create a temporary buffer and copy the result to the `out_` tensor eventually.
+            // NOTE: We create a temporary buffer and copy the result to the `out_` tensor eventually.
             // This is because we reshaped the `q` tensor for the splik-KV optimization, and the `out_` tensor
             // has the same shape as the original `q` tensor, not the reshaped one.
             out = torch::empty_like(q);
@@ -719,7 +719,7 @@ mha_varlen_fwd(at::Tensor &q,  // total_q x num_heads x head_size, total_q := \s
         params.leftpad_k = static_cast<int *>(leftpad_k.data_ptr());
     }
 
-    // NOTE(woosuk): Commented out because they are not used in inference.
+    // NOTE: Commented out because they are not used in inference.
     // number of times random will be generated per thread, to offset philox counter in thc random
     // state
     // We use a custom RNG that increases the offset by batch_size * nheads * 32.
@@ -753,14 +753,14 @@ mha_varlen_fwd(at::Tensor &q,  // total_q x num_heads x head_size, total_q := \s
         int64_t size_after[] = {batch_size, num_heads_k * max_seqlen_q, head_size};
         out = out.reshape(size_before).transpose(1, 2);
         if (out_.has_value()) {
-            // NOTE(woosuk): In this case, we should avoid `out.reshape(size_after)` because it causes
+            // NOTE: In this case, we should avoid `out.reshape(size_after)` because it causes
             // a redundant clone operation. Instead, we directly copy the result to the `out_` tensor.
             out_.value().view({batch_size, num_heads_k, max_seqlen_q, head_size}).copy_(out);
             out = out_.value();
         } else {
             out = out.reshape(size_after);
         }
-        // NOTE(woosuk): The two lines are not needed because out_padded and q_padded are not used.
+        // NOTE: The two lines are not needed because out_padded and q_padded are not used.
         // out_padded = out_padded.reshape(size_before).transpose(1, 2).reshape(size_after);
         // q_padded = q_padded.reshape(size_before).transpose(1, 2).reshape(size_after);
         int64_t lse_size_before[] = {num_heads, batch_size, max_seqlen_q};

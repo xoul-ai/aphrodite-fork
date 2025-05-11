@@ -1,18 +1,17 @@
-
 import os
 from typing import Dict, List, Optional, Type
 
-from vllm.model_executor.layers.quantization.kernels.scaled_mm.aiter import (
+from aphrodite.platforms import PlatformEnum, current_platform
+from aphrodite.quantization.kernels.scaled_mm.aiter import (
     AiterScaledMMLinearKernel)
-from vllm.model_executor.layers.quantization.kernels.scaled_mm.cutlass import (
+from aphrodite.quantization.kernels.scaled_mm.cutlass import (
     CutlassScaledMMLinearKernel)
-from vllm.model_executor.layers.quantization.kernels.scaled_mm.ScaledMMLinearKernel import (  # noqa: E501
+from aphrodite.quantization.kernels.scaled_mm.ScaledMMLinearKernel import (
     ScaledMMLinearKernel, ScaledMMLinearLayerConfig)
-from vllm.model_executor.layers.quantization.kernels.scaled_mm.triton import (
+from aphrodite.quantization.kernels.scaled_mm.triton import (
     TritonScaledMMLinearKernel)
-from vllm.model_executor.layers.quantization.kernels.scaled_mm.xla import (
+from aphrodite.quantization.kernels.scaled_mm.xla import (
     XLAScaledMMLinearKernel)
-from vllm.platforms import PlatformEnum, current_platform
 
 # in priority/performance order (when available)
 _POSSIBLE_KERNELS: Dict[PlatformEnum, List[Type[ScaledMMLinearKernel]]] = {
@@ -53,7 +52,7 @@ def choose_scaled_mm_linear_kernel(
 
     failure_reasons = []
     for kernel in _POSSIBLE_KERNELS[current_platform._enum]:
-        if kernel.__name__ in os.environ.get("VLLM_DISABLED_KERNELS", "")\
+        if kernel.__name__ in os.environ.get("APHRODITE_DISABLED_KERNELS", "")\
             .split(","):
             failure_reasons.append(
                 f' {kernel.__name__} disabled by environment variable')

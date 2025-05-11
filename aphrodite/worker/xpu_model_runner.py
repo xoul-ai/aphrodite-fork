@@ -181,7 +181,7 @@ class ModelInputForXPUBuilder(ModelRunnerInputBuilderBase[ModelInputForXPU]):
             input_tokens.extend(prompt_tokens)  # Token ids
 
             # Token position ids
-            # NOTE(woosuk): Here we assume that the first token in the prompt
+            # NOTE: Here we assume that the first token in the prompt
             # is always the first token in the sequence.
             positions_range = range(computed_len, seq_len)
             input_positions.extend(list(positions_range))

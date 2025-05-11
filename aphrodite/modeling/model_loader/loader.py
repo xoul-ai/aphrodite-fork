@@ -487,7 +487,7 @@ class DummyModelLoader(BaseModelLoader):
         with set_default_torch_dtype(model_config.dtype):
             with target_device:
                 model = _initialize_model(aphrodite_config=aphrodite_config)
-            # NOTE(woosuk): For accurate performance evaluation, we assign
+            # NOTE: For accurate performance evaluation, we assign
             # random values to the weights.
             initialize_dummy_weights(model)
 
