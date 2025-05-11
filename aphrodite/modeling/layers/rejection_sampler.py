@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: Apache-2.0
 
 from functools import cached_property
 from importlib.util import find_spec
@@ -8,7 +7,7 @@ import torch
 import torch.jit
 
 import vllm.envs as envs
-from vllm.logger import init_logger
+from loguru import logger
 from vllm.model_executor.layers.spec_decode_base_sampler import (
     SpecDecodeStochasticBaseSampler)
 from vllm.platforms import current_platform

@@ -24,17 +24,14 @@ class MacheteLinearKernel(MPLinearKernel):
     @classmethod
     def can_implement(cls,
                       c: MPLinearLayerConfig) -> Tuple[bool, Optional[str]]:
+
         if c.has_g_idx and\
             c.partition_weight_shape[0] != c.full_weight_shape[0]:
             return False, "Act reordering currently not supported by Machete, "\
                           "when the input features are partitioned across "\
                           "devices"
-
         if c.zero_points:
-            return False, "Zero points currently not supported by "\
-                          " Compressed Tensors + Machete. (Kernel supports it"\
-                          " but CompressedTensorsWNA16 does not so support has"\
-                          " not been added to MacheteWNA16Kernel yet"
+            return False, "Zero points currently not supported by Machete"
 
         if c.weight_type not in query_machete_supported_quant_types(
                 c.zero_points):
@@ -79,7 +76,9 @@ class MacheteLinearKernel(MPLinearKernel):
                                                           c.weight_type,
                                                           packed_dim=0)
             x.data = ops.machete_prepack_B(x.data.t().contiguous().t(),
-                                           self.config.weight_type)
+                                           a_type=c.act_type,
+                                           b_type=c.weight_type,
+                                           group_scales_type=c.act_type)
             return x
 
         def transform_w_s(x):
@@ -105,12 +104,12 @@ class MacheteLinearKernel(MPLinearKernel):
         if c.has_g_idx:
             x_2d = self.act_perm(x_2d)
 
-        output = ops.machete_gemm(a=x_2d,
-                                  b_q=w_q,
-                                  b_type=c.weight_type,
-                                  b_zeros=None,
-                                  b_scales=w_s,
-                                  b_group_size=c.group_size)
+        output = ops.machete_mm(a=x_2d,
+                                b_q=w_q,
+                                b_type=c.weight_type,
+                                b_group_zeros=None,
+                                b_group_scales=w_s,
+                                b_group_size=c.group_size)
 
         if bias is not None:
             output.add_(bias)  # In-place add

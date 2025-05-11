@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: Apache-2.0
 """A XPU worker class."""
 import gc
 import os
@@ -9,19 +8,17 @@ import oneccl_bindings_for_pytorch  # noqa: F401
 import torch
 import torch.distributed
 
-from vllm.config import VllmConfig
-from vllm.distributed import (ensure_model_parallel_initialized,
+from aphrodite.common.config import AphroditeConfig
+from aphrodite.distributed import (ensure_model_parallel_initialized,
                               init_distributed_environment)
-from vllm.distributed.parallel_state import get_pp_group
-from vllm.logger import init_logger
-from vllm.model_executor import set_random_seed
-from vllm.platforms import current_platform
-from vllm.worker.cache_engine import CacheEngine
-from vllm.worker.worker import Worker
-from vllm.worker.worker_base import LoRANotSupportedWorkerBase, WorkerBase
-from vllm.worker.xpu_model_runner import XPUModelRunner
+from aphrodite.distributed.parallel_state import get_pp_group
+from aphrodite.modeling import set_random_seed
+from aphrodite.platforms import current_platform
+from aphrodite.worker.cache_engine import CacheEngine
+from aphrodite.worker.worker import Worker
+from aphrodite.worker.worker_base import LoRANotSupportedWorkerBase, WorkerBase
+from aphrodite.worker.xpu_model_runner import XPUModelRunner
 
-logger = init_logger(__name__)
 
 
 class XPUWorker(LoRANotSupportedWorkerBase, Worker):
@@ -35,13 +32,13 @@ class XPUWorker(LoRANotSupportedWorkerBase, Worker):
 
     def __init__(
         self,
-        vllm_config: VllmConfig,
+        aphrodite_config: AphroditeConfig,
         local_rank: int,
         rank: int,
         distributed_init_method: str,
         is_driver_worker: bool = False,
     ) -> None:
-        WorkerBase.__init__(self, vllm_config=vllm_config)
+        WorkerBase.__init__(self, aphrodite_config=aphrodite_config)
         device_config = self.device_config
         parallel_config = self.parallel_config
         assert device_config.device_type == "xpu"
@@ -58,7 +55,7 @@ class XPUWorker(LoRANotSupportedWorkerBase, Worker):
                    "Driver worker should be rank 0 of tensor parallel group."
 
         self.model_runner = XPUModelRunner(  # type: ignore
-            vllm_config=vllm_config,
+            aphrodite_config=aphrodite_config,
             kv_cache_dtype=self.cache_config.cache_dtype,
             is_driver_worker=is_driver_worker,
         )
@@ -120,7 +117,7 @@ class XPUWorker(LoRANotSupportedWorkerBase, Worker):
             "Error in memory profiling. "
             f"Initial free memory {self.init_gpu_memory}, current free memory"
             f" {free_gpu_memory}. This happens when the GPU memory was "
-            "not properly cleaned up before initializing the vLLM instance.")
+            "not properly cleaned up before initializing the Aphrodite instance.")
 
         cache_block_size = self.get_cache_block_size_bytes()
         num_gpu_blocks = int(

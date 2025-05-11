@@ -8,6 +8,7 @@ from aphrodite import _custom_ops as ops
 from aphrodite.distributed import get_tensor_model_parallel_rank
 from aphrodite.modeling.layers.linear import LinearBase, LinearMethodBase
 from aphrodite.modeling.utils import set_weight_attrs
+from aphrodite.quantization import QuantizationMethods
 from aphrodite.quantization.base_config import QuantizationConfig
 from aphrodite.quantization.utils.fp6_utils import (_SPLIT_K_MAP,
                                                     from_scaled_tc_fpx,
@@ -30,6 +31,7 @@ class QuantLLMFPConfig(QuantizationConfig):
         weight_bits: int = 6,
         exp_bits: int = 2,
     ) -> None:
+        super().__init__()
         self.weight_bits = weight_bits
         self.exponent_bits = exp_bits
 
@@ -53,7 +55,7 @@ class QuantLLMFPConfig(QuantizationConfig):
                 f"exponent_bits={self.exponent_bits}")
 
     @classmethod
-    def get_name(cls) -> str:
+    def get_name(cls) -> QuantizationMethods:
         return "QuantLLMFP"
 
     @classmethod
@@ -65,8 +67,6 @@ class QuantLLMFPConfig(QuantizationConfig):
     def get_linear_method(self) -> "QuantLLMFPLinearMethod":
         return QuantLLMFPLinearMethod(self)
 
-    def get_scaled_act_names(self) -> List[str]:
-        return []
 
     @classmethod
     def get_supported_act_dtypes(cls) -> List[torch.dtype]:
