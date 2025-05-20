@@ -15,8 +15,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "aphrodite-engine"
 authors = [{name = "PygmalionAI"}]
-license = "AGPL-3.0"
-license-files = ["LICENSE"]
+license = { file = "LICENSE" }
 readme = "README.md"
 description = "Serving LLMs at Scale"
 classifiers = [

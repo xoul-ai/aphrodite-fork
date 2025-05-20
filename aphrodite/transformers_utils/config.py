@@ -630,7 +630,7 @@ def maybe_register_config_serialize_by_value() -> None:
         import multiprocessing
         import pickle
 
-        from aphrodite.config import AphroditeConfig
+        from aphrodite.common.config import AphroditeConfig
 
         def _reduce_config(config: AphroditeConfig):
             return (pickle.loads, (cloudpickle.dumps(config), ))

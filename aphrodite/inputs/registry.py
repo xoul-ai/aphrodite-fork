@@ -192,7 +192,7 @@ class InputRegistry:
         The model is identified by ``model_config``.
         """
         # Avoid circular import
-        from aphrodite.sequence import SequenceData
+        from aphrodite.common.sequence import SequenceData
 
         if not model_config.is_multimodal_model:
             seq_data = SequenceData.from_prompt_token_counts((0, seq_len))

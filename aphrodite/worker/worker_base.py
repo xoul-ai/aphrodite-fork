@@ -518,7 +518,7 @@ class WorkerWrapperBase:
             trust_remote_code = aphrodite_config.model_config.trust_remote_code
             if trust_remote_code:
                 # note: lazy import to avoid importing torch before initializing
-                from aphrodite.utils import init_cached_hf_modules
+                from aphrodite.common.utils import init_cached_hf_modules
                 init_cached_hf_modules()
 
     def adjust_rank(self, rank_mapping: Dict[int, int]) -> None:

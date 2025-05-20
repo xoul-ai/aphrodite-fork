@@ -867,7 +867,7 @@ def init_distributed_environment(
         "world_size=%d rank=%d local_rank=%d "
         "distributed_init_method=%s backend=%s", world_size, rank, local_rank,
         distributed_init_method, backend)
-    from aphrodite.config import get_current_aphrodite_config
+    from aphrodite.common.config import get_current_aphrodite_config
     config = get_current_aphrodite_config()
     if config is not None and config.parallel_config.data_parallel_size > 1:
         parallel_config = config.parallel_config
@@ -946,7 +946,7 @@ def initialize_model_parallel(
         get_world_group().device_group)
 
     data_parallel_size = 1
-    from aphrodite.config import get_current_aphrodite_config
+    from aphrodite.common.config import get_current_aphrodite_config
     config = get_current_aphrodite_config()
     if config is not None:
         data_parallel_size = config.parallel_config.data_parallel_size

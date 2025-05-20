@@ -10,7 +10,7 @@ import aphrodite.common.envs as envs
 from .interface import DeviceCapability, Platform, PlatformEnum, _Backend
 
 if TYPE_CHECKING:
-    from aphrodite.config import AphroditeConfig, ModelConfig
+    from aphrodite.common.config import AphroditeConfig, ModelConfig
 
 
 try:

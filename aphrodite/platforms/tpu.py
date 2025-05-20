@@ -67,7 +67,7 @@ class TpuPlatform(Platform):
 
     @classmethod
     def check_and_update_config(cls, aphrodite_config: AphroditeConfig) -> None:
-        from aphrodite.config import CompilationLevel
+        from aphrodite.common.config import CompilationLevel
 
         cache_config = aphrodite_config.cache_config
         if cache_config and cache_config.block_size is None:
