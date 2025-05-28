@@ -11,9 +11,10 @@ do this in Python code and lazily import prometheus_client.
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Protocol
+from typing import List, Optional
 
 import aphrodite.common.envs as envs
+from aphrodite.common.config import AphroditeConfig, SupportsMetricsInfo
 from aphrodite.spec_decode.metrics import SpecDecodeWorkerMetrics
 
 
@@ -35,16 +36,26 @@ class Stats:
     # Iteration stats (should have _iter suffix)
     num_prompt_tokens_iter: int
     num_generation_tokens_iter: int
+    num_tokens_iter: int
     time_to_first_tokens_iter: List[float]
     time_per_output_tokens_iter: List[float]
     num_preemption_iter: int
     # Request stats (should have _requests suffix)
     #   Latency
     time_e2e_requests: List[float]
+    time_queue_requests: List[float]
+    time_inference_requests: List[float]
+    time_prefill_requests: List[float]
+    time_decode_requests: List[float]
+    time_in_queue_requests: List[float]
+    model_forward_time_requests: List[float]
+    model_execute_time_requests: List[float]
     #   Metadata
     num_prompt_tokens_requests: List[int]
     num_generation_tokens_requests: List[int]
     n_requests: List[int]
+    max_num_generation_tokens_requests: List[int]
+    max_tokens_requests: List[int]
     finished_reason_requests: List[str]
     waiting_lora_adapters: List[str]
     running_lora_adapters: List[str]
@@ -53,14 +64,10 @@ class Stats:
     spec_decode_metrics: Optional["SpecDecodeWorkerMetrics"] = None
 
 
-class SupportsMetricsInfo(Protocol):
-    def metrics_info(self) -> Dict[str, str]:
-        ...
-
 
 class StatLoggerBase(ABC):
     """Base class for StatLogger."""
-    def __init__(self, local_interval: float) -> None:
+    def __init__(self, local_interval: float, aphrodite_config: AphroditeConfig) -> None:
         self.request_level_metrics = envs.APHRODITE_REQUEST_LEVEL_METRICS
         # Only initialize these if not using request-level metrics
         if not self.request_level_metrics:
@@ -68,7 +75,7 @@ class StatLoggerBase(ABC):
             self.num_generation_tokens: List[int] = []
             self.last_local_log = time.time()
         self.local_interval = local_interval
-        self.spec_decode_metrics: Optional["SpecDecodeWorkerMetrics"] = None
+        self.spec_decode_metrics: Optional[SpecDecodeWorkerMetrics] = None
     @abstractmethod
     def log(self, stats: Stats) -> None:
         raise NotImplementedError

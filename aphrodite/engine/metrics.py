@@ -7,8 +7,8 @@ import prometheus_client
 from loguru import logger
 
 import aphrodite.common.envs as envs
-from aphrodite.engine.metrics_types import (StatLoggerBase, Stats,
-                                            SupportsMetricsInfo)
+from aphrodite.common.config import AphroditeConfig, SupportsMetricsInfo
+from aphrodite.engine.metrics_types import StatLoggerBase, Stats
 from aphrodite.executor.ray_utils import ray
 
 if ray is not None:
@@ -45,9 +45,11 @@ class Metrics:
     _counter_cls = prometheus_client.Counter
     _histogram_cls = prometheus_client.Histogram
 
-    def __init__(self, labelnames: List[str], max_model_len: int):
+    def __init__(self, labelnames: List[str], aphrodite_config: AphroditeConfig):
         # Unregister any existing Aphrodite collectors (for CI/CD)
         self._unregister_aphrodite_metrics()
+
+        max_model_leb = aphrodite_config.model_config.max_model_len
 
         # Add finish_reason to labelnames for request-level metrics
         request_labelnames = labelnames + [self.labelname_finish_reason]
@@ -139,7 +141,31 @@ class Metrics:
             name="aphrodite:e2e_request_latency_seconds",
             documentation="Histogram of end to end request latency in seconds.",
             labelnames=request_labelnames,
-            buckets=[1.0, 2.5, 5.0, 10.0, 15.0, 20.0, 30.0, 40.0, 50.0, 60.0])
+            buckets=[
+                0.3, 0.5, 0.8, 1.0, 1.5, 2.0, 2.5, 5.0, 10.0, 15.0, 20.0, 30.0,
+                40.0, 50.0, 60.0
+            ])
+        self.histogram_time_in_queue_request = self._histogram_cls(
+            name="aphrodite:time_in_queue_requests",
+            documentation=
+            "Histogram of time the request spent in the queue in seconds.",
+            labelnames=labelnames,
+            buckets=[
+                0.3, 0.5, 0.8, 1.0, 1.5, 2.0, 2.5, 5.0, 10.0, 15.0, 20.0, 30.0,
+                40.0, 50.0, 60.0
+            ])
+        self.histogram_model_forward_time_request = self._histogram_cls(
+            name="aphrodite:model_forward_time_milliseconds",
+            documentation=
+            "Histogram of time spent in the model forward pass in ms.",
+            labelnames=labelnames,
+            buckets=build_1_2_3_5_8_buckets(3000))
+        self.histogram_model_execute_time_request = self._histogram_cls(
+            name="aphrodite:model_execute_time_milliseconds",
+            documentation=
+            "Histogram of time spent in the model execute function in ms.",
+            labelnames=labelnames,
+            buckets=build_1_2_3_5_8_buckets(3000))
         #   Metadata
         self.histogram_num_prompt_tokens_request = self._histogram_cls(
             name="aphrodite:request_prompt_tokens",
@@ -301,16 +327,11 @@ class RayMetrics(Metrics):
         pass
 
 
-def build_1_2_5_buckets(max_value: int) -> List[int]:
+def build_buckets(mantissa_lst: List[int], max_value: int) -> List[int]:
     """
     Builds a list of buckets with increasing powers of 10 multiplied by
-    mantissa values (1, 2, 5) until the value exceeds the specified maximum.
-
-    Example:
-    >>> build_1_2_5_buckets(100)
-    [1, 2, 5, 10, 20, 50, 100]
+    mantissa values until the value exceeds the specified maximum.
     """
-    mantissa_lst = [1, 2, 5]
     exponent = 0
     buckets: List[int] = []
     while True:
@@ -321,6 +342,24 @@ def build_1_2_5_buckets(max_value: int) -> List[int]:
             else:
                 return buckets
         exponent += 1
+
+
+def build_1_2_5_buckets(max_value: int) -> List[int]:
+    """
+    Example:
+    >>> build_1_2_5_buckets(100)
+    [1, 2, 5, 10, 20, 50, 100]
+    """
+    return build_buckets([1, 2, 5], max_value)
+
+
+def build_1_2_3_5_8_buckets(max_value: int) -> List[int]:
+    """
+    Example:
+    >>> build_1_2_3_5_8_buckets(100)
+    [1, 2, 3, 5, 8, 10, 20, 30, 50, 80, 100]
+    """
+    return build_buckets([1, 2, 3, 5, 8], max_value)
 
 
 def local_interval_elapsed(now: float, last_log: float,
@@ -482,6 +521,11 @@ class PrometheusStatLogger(StatLoggerBase):
 
     def _log_counter(self, counter, data: Union[int, float]) -> None:
         # Convenience function for logging to counter.
+        # Prevent ValueError from negative increment
+        if data < 0:
+            logger.warning("Skipping negative increment of %g to %s", data,
+                           counter)
+            return
         counter.labels(**self.labels).inc(data)
 
     def _log_counter_labels(self, counter, data: CollectionsCounter,
@@ -555,6 +599,18 @@ class PrometheusStatLogger(StatLoggerBase):
                 self._log_histogram(
                     self.metrics.histogram_e2e_time_request,
                     [e2e_time],
+                    request_labels)
+                self._log_histogram(
+                    self.metrics.histogram_time_in_queue_request,
+                    [stats.time_in_queue_requests[i]],
+                    request_labels)
+                self._log_histogram(
+                    self.metrics.histogram_model_forward_time_request,
+                    [stats.model_forward_time_requests[i]],
+                    request_labels)
+                self._log_histogram(
+                    self.metrics.histogram_model_execute_time_request,
+                    [stats.model_execute_time_requests[i]],
                     request_labels)
                 self._log_histogram(
                     self.metrics.histogram_num_prompt_tokens_request,
