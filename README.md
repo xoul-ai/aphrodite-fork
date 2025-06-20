@@ -10,7 +10,7 @@ Aphrodite is an inference engine that optimizes the serving of HuggingFace-compa
 Aphrodite builds upon and integrates the exceptional work from [various projects](#acknowledgements), primarily [vLLM](https://vllm.ai).
 
 > [!CAUTION]
-> This project is not, and will never be, associated with any cryptocurrencies. Please do not fall for scams.
+> Development is currently happening in [#1388](https://github.com/aphrodite-engine/aphrodite-engine/pull/1388).
 
 
 ## 🔥 News
