@@ -69,8 +69,8 @@ if TYPE_CHECKING:
     APHRODITE_TEST_ENABLE_ARTIFICIAL_PREEMPT: bool = False
     APHRODITE_REQUEST_LEVEL_METRICS: bool = False
     APHRODITE_TORCH_COMPILE_LEVEL: int = 0
-    APHRODITE_CUSTOM_OPS: List[str] = []
-    APHRODITE_DISABLED_KERNELS: List[str] = []
+    APHRODITE_CUSTOM_OPS: list[str] = []
+    APHRODITE_DISABLED_KERNELS: list[str] = []
     APHRODITE_FLASHINFER_FORCE_TENSOR_CORES: bool = False
     APHRODITE_USE_V1: bool = False
     APHRODITE_ROCM_USE_AITER: bool = False
@@ -109,6 +109,10 @@ if TYPE_CHECKING:
     APHRODITE_USE_DEEP_GEMM: bool = False
     APHRODITE_XGRAMMAR_CACHE_MB: int = 0
     APHRODITE_MSGPACK_ZERO_COPY_THRESHOLD: int = 256
+    APHRODITE_USAGE_STATS_SERVER: str = ""
+    APHRODITE_NO_USAGE_STATS: bool = True
+    APHRODITE_DO_NOT_TRACK: bool = True
+    APHRODITE_USAGE_SOURCE: str = ""
 
 
 def get_default_cache_root():
@@ -488,7 +492,7 @@ environment_variables: dict[str, Callable[[], Any]] = {
     "APHRODITE_REQUEST_LEVEL_METRICS":
     lambda: bool(int(os.getenv("APHRODITE_REQUEST_LEVEL_METRICS", "0"))),
 
-    # List of quantization kernels that should be disabled, used for testing
+    # list of quantization kernels that should be disabled, used for testing
     # and performance comparisons. Currently only affects MPLinearKernel
     # selection
     # (kernels: MacheteLinearKernel, MarlinLinearKernel, ExllamaLinearKernel)
@@ -704,6 +708,17 @@ environment_variables: dict[str, Callable[[], Any]] = {
     # limit will actually be zero-copy decoded.
     "APHRODITE_MSGPACK_ZERO_COPY_THRESHOLD":
     lambda: int(os.getenv("APHRODITE_MSGPACK_ZERO_COPY_THRESHOLD", "256")),
+
+    # Usage stats collection
+    "APHRODITE_USAGE_STATS_SERVER":
+    lambda: os.environ.get("APHRODITE_USAGE_STATS_SERVER", ""),
+    "APHRODITE_NO_USAGE_STATS": 
+    lambda: os.environ.get("APHRODITE_NO_USAGE_STATS", "1") == "1",
+    "APHRODITE_DO_NOT_TRACK":
+    lambda: (os.environ.get("APHRODITE_DO_NOT_TRACK", "1") or os.environ.get(
+        "DO_NOT_TRACK", "1") or "1") == "1",
+    "APHRODITE_USAGE_SOURCE":
+    lambda: os.environ.get("APHRODITE_USAGE_SOURCE", ""),
 }
 
 # end-env-vars-definition
