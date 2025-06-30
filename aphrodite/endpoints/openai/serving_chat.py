@@ -9,12 +9,15 @@ from typing import Callable, Final, Optional, Union
 import jinja2
 import partial_json_parser
 from fastapi import Request
+from loguru import logger
 from pydantic import TypeAdapter
 
 from aphrodite.common.config import ModelConfig
-from aphrodite.engine.protocol import EngineClient
+from aphrodite.common.outputs import CompletionOutput, RequestOutput
+from aphrodite.common.sampling_params import BeamSearchParams, SamplingParams
+from aphrodite.common.sequence import Logprob
 from aphrodite.endpoints.chat_utils import (ChatTemplateContentFormatOption,
-                                         ConversationMessage)
+                                            ConversationMessage)
 from aphrodite.endpoints.logger import RequestLogger
 from aphrodite.endpoints.openai.protocol import (
     ChatCompletionLogProb, ChatCompletionLogProbs,
@@ -25,20 +28,19 @@ from aphrodite.endpoints.openai.protocol import (
     DeltaToolCall, ErrorResponse, FunctionCall, FunctionDefinition,
     PromptTokenUsageInfo, RequestResponseMetadata, ToolCall, UsageInfo)
 from aphrodite.endpoints.openai.serving_engine import (OpenAIServing,
-                                                    clamp_prompt_logprobs)
+                                                       clamp_prompt_logprobs)
 from aphrodite.endpoints.openai.serving_models import OpenAIServingModels
-from aphrodite.endpoints.openai.tool_parsers import ToolParser, ToolParserManager
+from aphrodite.endpoints.openai.tool_parsers import (ToolParser,
+                                                     ToolParserManager)
 from aphrodite.endpoints.openai.tool_parsers.mistral_tool_parser import (
     MistralToolCall)
-from loguru import logger
-from aphrodite.common.outputs import CompletionOutput, RequestOutput
+from aphrodite.engine.protocol import EngineClient
 from aphrodite.reasoning import ReasoningParser, ReasoningParserManager
-from aphrodite.common.sampling_params import BeamSearchParams, SamplingParams
-from aphrodite.common.sequence import Logprob
-from aphrodite.transformers_utils.tokenizer import AnyTokenizer, MistralTokenizer
-from aphrodite.transformers_utils.tokenizers import (maybe_serialize_tool_calls,
-                                                truncate_tool_call_ids,
-                                                validate_request_params)
+from aphrodite.transformers_utils.tokenizer import (AnyTokenizer,
+                                                    MistralTokenizer)
+from aphrodite.transformers_utils.tokenizers import (
+    maybe_serialize_tool_calls, truncate_tool_call_ids,
+    validate_request_params)
 
 
 class OpenAIServingChat(OpenAIServing):

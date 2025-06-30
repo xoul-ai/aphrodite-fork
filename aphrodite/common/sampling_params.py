@@ -12,6 +12,7 @@ from typing_extensions import Annotated, deprecated
 
 import aphrodite.common.envs as envs
 from aphrodite.common.config import SchedulerConfig
+from aphrodite.transformers_utils.tokenizer import AnyTokenizer, MistralTokenizer
 
 _SAMPLING_EPS = 1e-5
 _MAX_TEMP = 1e-2
@@ -390,6 +391,141 @@ class SamplingParams(
     extra_args: Optional[dict[str, Any]] = None
     bad_words: Optional[List[str]] = None
 
+    @staticmethod
+    def from_optional(
+        n: Optional[int] = None,
+        best_of: Optional[int] = None,
+        presence_penalty: Optional[float] = None,
+        frequency_penalty: Optional[float] = None,
+        repetition_penalty: Optional[float] = None,
+        no_repeat_ngram_size: Optional[int] = None,
+        temperature: Optional[float] = None,
+        dynatemp_min: Optional[float] = None,
+        dynatemp_max: Optional[float] = None,
+        dynatemp_exponent: Optional[float] = None,
+        temperature_last: Optional[bool] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        top_a: Optional[float] = None,
+        min_p: Optional[float] = None,
+        tfs: Optional[float] = None,
+        eta_cutoff: Optional[float] = None,
+        epsilon_cutoff: Optional[float] = None,
+        typical_p: Optional[float] = None,
+        smoothing_factor: Optional[float] = None,
+        smoothing_curve: Optional[float] = None,
+        seed: Optional[int] = None,
+        use_beam_search: Optional[bool] = None,
+        length_penalty: Optional[float] = None,
+        early_stopping: Optional[Union[bool, str]] = None,
+        stop: Optional[Union[None, str, List[str]]] = None,
+        stop_token_ids: Optional[List[int]] = None,
+        include_stop_str_in_output: Optional[bool] = None,
+        ignore_eos: Optional[bool] = None,
+        max_tokens: Optional[int] = None,
+        min_tokens: Optional[int] = None,
+        logprobs: Optional[int] = None,
+        prompt_logprobs: Optional[int] = None,
+        detokenize: Optional[bool] = None,
+        custom_token_bans: Optional[List[int]] = None,
+        token_ban_ranges: Optional[List[Tuple[List[int], int, int]]] = None,
+        skip_special_tokens: Optional[bool] = None,
+        spaces_between_special_tokens: Optional[bool] = None,
+        logits_processors: Optional[Any] = None,
+        truncate_prompt_tokens: Optional[int] = None,
+        xtc_threshold: Optional[float] = None,
+        xtc_probability: Optional[float] = None,
+        nsigma: Optional[float] = None,
+        dry_multiplier: Optional[float] = None,
+        dry_base: Optional[float] = None,
+        dry_allowed_length: Optional[int] = None,
+        dry_sequence_breaker_ids: Optional[List[int]] = None,
+        dry_range: Optional[int] = None,
+        dry_max_ngram: Optional[int] = None,
+        dry_max_occurrences: Optional[int] = None,
+        dry_early_exit_match_len: Optional[int] = None,
+        skew: Optional[float] = None,
+        sampler_priority: Optional[List[int]] = None,
+        output_kind: Optional[RequestOutputKind] = None,
+        guided_decoding: Optional[GuidedDecodingParams] = None,
+        logit_bias: Optional[Dict[int, float]] = None,
+        allowed_token_ids: Optional[List[int]] = None,
+        extra_args: Optional[dict[str, Any]] = None,
+        bad_words: Optional[List[str]] = None,
+    ) -> "SamplingParams":
+        if logit_bias is not None:
+            # Convert token_id to integer
+            # Clamp the bias between -100 and 100 per OpenAI API spec
+            logit_bias = {
+                int(token): min(100.0, max(-100.0, bias))
+                for token, bias in logit_bias.items()
+            }
+        
+        return SamplingParams(
+            n=1 if n is None else n,
+            best_of=best_of,
+            presence_penalty=0.0
+            if presence_penalty is None else presence_penalty,
+            frequency_penalty=0.0
+            if frequency_penalty is None else frequency_penalty,
+            repetition_penalty=1.0
+            if repetition_penalty is None else repetition_penalty,
+            no_repeat_ngram_size=no_repeat_ngram_size,
+            temperature=1.0 if temperature is None else temperature,
+            dynatemp_min=dynatemp_min,
+            dynatemp_max=dynatemp_max,
+            dynatemp_exponent=dynatemp_exponent,
+            temperature_last=temperature_last,
+            top_p=1.0 if top_p is None else top_p,
+            top_k=top_k,
+            top_a=top_a,
+            min_p=min_p,
+            tfs=tfs,
+            eta_cutoff=eta_cutoff,
+            epsilon_cutoff=epsilon_cutoff,
+            typical_p=typical_p,
+            smoothing_factor=smoothing_factor,
+            smoothing_curve=smoothing_curve,
+            seed=seed,
+            use_beam_search=use_beam_search,
+            length_penalty=length_penalty,
+            early_stopping=early_stopping,
+            stop=stop,
+            stop_token_ids=stop_token_ids,
+            include_stop_str_in_output=include_stop_str_in_output,
+            ignore_eos=ignore_eos,
+            max_tokens=max_tokens,
+            min_tokens=min_tokens,
+            logprobs=logprobs,
+            prompt_logprobs=prompt_logprobs,
+            detokenize=detokenize,
+            custom_token_bans=custom_token_bans,
+            token_ban_ranges=token_ban_ranges,
+            skip_special_tokens=skip_special_tokens,
+            spaces_between_special_tokens=spaces_between_special_tokens,
+            logits_processors=logits_processors,
+            truncate_prompt_tokens=truncate_prompt_tokens,
+            xtc_threshold=xtc_threshold,
+            xtc_probability=xtc_probability,
+            nsigma=nsigma,
+            dry_multiplier=dry_multiplier,
+            dry_base=dry_base,
+            dry_allowed_length=dry_allowed_length,
+            dry_sequence_breaker_ids=dry_sequence_breaker_ids,
+            dry_range=dry_range,
+            dry_max_ngram=dry_max_ngram,
+            dry_max_occurrences=dry_max_occurrences,
+            dry_early_exit_match_len=dry_early_exit_match_len,
+            skew=skew,
+            sampler_priority=sampler_priority,
+            output_kind=output_kind,
+            guided_decoding=guided_decoding,
+            logit_bias=logit_bias,
+            allowed_token_ids=allowed_token_ids,
+            extra_args=extra_args,
+            bad_words=bad_words,
+        )
+
 
     default_values = {
         "n": 1,
@@ -746,6 +882,47 @@ class SamplingParams(
                     eos_ids.update(self.stop_token_ids)
                     self.stop_token_ids = list(eos_ids)
 
+    def update_from_tokenizer(self, tokenizer: AnyTokenizer) -> None:
+        if not self.bad_words:
+            return
+        self._bad_words_token_ids = []
+        for bad_word in self.bad_words:
+            # To prohibit words both at the beginning
+            # and in the middle of text
+            # (related to add_prefix_space tokenizer parameter)
+            for add_prefix_space in [False, True]:
+                prefix = " " if add_prefix_space else ""
+                prompt = prefix + bad_word.lstrip()
+
+                if isinstance(tokenizer, MistralTokenizer):
+                    # Mistral tokenizers should not add special tokens
+                    prompt_token_ids = tokenizer.encode(text=prompt)
+                else:
+                    prompt_token_ids = tokenizer.encode(
+                        text=prompt, add_special_tokens=False)
+
+                # If no space at the beginning
+                # or if prefix space produces a new word token
+                if (not add_prefix_space) or (
+                        add_prefix_space and prompt_token_ids[0]
+                        != self._bad_words_token_ids[-1][0]
+                        and len(prompt_token_ids) == len(
+                            self._bad_words_token_ids[-1])):
+                    self._bad_words_token_ids.append(prompt_token_ids)
+
+        invalid_token_ids = [
+            token_id for bad_words_token_ids in self._bad_words_token_ids
+            for token_id in bad_words_token_ids
+            if token_id < 0 or token_id > tokenizer.max_token_id
+        ]
+        if len(invalid_token_ids) > 0:
+            raise ValueError(
+                f"The model vocabulary size is {tokenizer.max_token_id+1},"
+                f" but the following tokens"
+                f" were specified as bad: {invalid_token_ids}."
+                f" All token id values should be integers satisfying:"
+                f" 0 <= token_id <= {tokenizer.max_token_id}.")
+
     @cached_property
     def sampling_type(self) -> SamplingType:
         if self.use_beam_search:
@@ -759,6 +936,11 @@ class SamplingParams(
     @property
     def all_stop_token_ids(self) -> Set[int]:
         return self._all_stop_token_ids
+
+    @property
+    def bad_words_token_ids(self) -> Optional[list[list[int]]]:
+        # For internal use only. Backward compatibility not guaranteed
+        return self._bad_words_token_ids
 
     def clone(self) -> "SamplingParams":
         """Deep copy, but maybe not the LogitsProcessor objects.

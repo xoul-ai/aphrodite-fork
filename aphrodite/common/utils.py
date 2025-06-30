@@ -1336,12 +1336,12 @@ class FlexibleArgumentParser(ArgumentParser):
             args = sys.argv[1:]
 
         # Check for --model in command line arguments first
-        if args and args[0] == "serve":
+        if args and args[0] == "run":
             model_in_cli_args = any(arg == '--model' for arg in args)
 
             if model_in_cli_args:
                 raise ValueError(
-                    "With `aphrodite serve`, you should provide the model as a "
+                    "With `aphrodite run`, you should provide the model as a "
                     "positional argument or in a config file instead of via "
                     "the `--model` option.")
 
@@ -1393,16 +1393,16 @@ class FlexibleArgumentParser(ArgumentParser):
             tensor-parallel-size: 4
         ```
         ```python
-        $: aphrodite {serve,chat,complete} "facebook/opt-12B" \
+        $: aphrodite {run,chat,complete} "facebook/opt-12B" \
             --config config.yaml -tp 2
         $: args = [
-            "serve,chat,complete",
+            "run,chat,complete",
             "facebook/opt-12B",
             '--config', 'config.yaml',
             '-tp', '2'
         ]
         $: args = [
-            "serve,chat,complete",
+            "run,chat,complete",
             "facebook/opt-12B",
             '--port', '12323',
             '--tensor-parallel-size', '4',
@@ -1426,13 +1426,13 @@ class FlexibleArgumentParser(ArgumentParser):
 
         config_args = self._load_config_file(file_path)
 
-        # 0th index is for {serve,chat,complete}
-        # optionally followed by model_tag (only for serve)
+        # 0th index is for {run,chat,complete}
+        # optionally followed by model_tag (only for run)
         # followed by config args
         # followed by rest of cli args.
         # maintaining this order will enforce the precedence
         # of cli > config > defaults
-        if args[0] == "serve":
+        if args[0] == "run":
             model_in_cli = len(args) > 1 and not args[1].startswith('-')
             model_in_config = any(arg == '--model' for arg in config_args)
 

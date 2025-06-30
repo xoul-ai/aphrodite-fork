@@ -117,6 +117,7 @@ if TYPE_CHECKING:
     APHRODITE_NO_USAGE_STATS: bool = True
     APHRODITE_DO_NOT_TRACK: bool = True
     APHRODITE_USAGE_SOURCE: str = ""
+    APHRODITE_ALLOW_RUNTIME_LORA_UPDATING: bool = False
 
 
 def get_default_cache_root():
@@ -755,6 +756,17 @@ environment_variables: dict[str, Callable[[], Any]] = {
         "DO_NOT_TRACK", "1") or "1") == "1",
     "APHRODITE_USAGE_SOURCE":
     lambda: os.environ.get("APHRODITE_USAGE_SOURCE", ""),
+
+    # If set, allow loading or unloading lora adapters in runtime,
+    "APHRODITE_ALLOW_RUNTIME_LORA_UPDATING":
+    lambda:
+    (os.environ.get("APHRODITE_ALLOW_RUNTIME_LORA_UPDATING", "0").strip().lower() in
+     ("1", "true")),
+
+    # Whether to log responses from API Server for debugging
+    "APHRODITE_DEBUG_LOG_API_SERVER_RESPONSE":
+    lambda: os.environ.get("APHRODITE_DEBUG_LOG_API_SERVER_RESPONSE", "False").
+    lower() == "true",
 }
 
 # end-env-vars-definition
