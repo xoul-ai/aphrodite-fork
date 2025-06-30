@@ -1,27 +1,30 @@
 """
-These types are defined in this file to avoid importing
-aphrodite.engine.metrics and therefore importing prometheus_client.
-This is required due to usage of Prometheus multiprocess mode to enable
+These types are defined in this file to avoid importing aphrodite.engine.metrics
+and therefore importing prometheus_client.
+
+This is required due to usage of Prometheus multiprocess mode to enable 
 metrics after splitting out the uvicorn process from the engine process.
+
 Prometheus multiprocess mode requires setting PROMETHEUS_MULTIPROC_DIR
 before prometheus_client is imported. Typically, this is done by setting
 the env variable before launch, but since we are a library, we need to
 do this in Python code and lazily import prometheus_client.
 """
+
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List, Optional
 
-import aphrodite.common.envs as envs
 from aphrodite.common.config import AphroditeConfig, SupportsMetricsInfo
 from aphrodite.spec_decode.metrics import SpecDecodeWorkerMetrics
 
 
 @dataclass
 class Stats:
-    """Created by AphroditeEngine for use by StatLogger."""
+    """Created by LLMEngine for use by StatLogger."""
     now: float
+
     # System stats (should have _sys suffix)
     #   Scheduler State
     num_running_sys: int
@@ -33,6 +36,7 @@ class Stats:
     #   Prefix caching block hit rate
     cpu_prefix_cache_hit_rate: float
     gpu_prefix_cache_hit_rate: float
+
     # Iteration stats (should have _iter suffix)
     num_prompt_tokens_iter: int
     num_generation_tokens_iter: int
@@ -40,6 +44,7 @@ class Stats:
     time_to_first_tokens_iter: List[float]
     time_per_output_tokens_iter: List[float]
     num_preemption_iter: int
+
     # Request stats (should have _requests suffix)
     #   Latency
     time_e2e_requests: List[float]
@@ -60,28 +65,29 @@ class Stats:
     waiting_lora_adapters: List[str]
     running_lora_adapters: List[str]
     max_lora: str
-    request_ids: List[str]
-    spec_decode_metrics: Optional["SpecDecodeWorkerMetrics"] = None
 
+    spec_decode_metrics: Optional["SpecDecodeWorkerMetrics"] = None
 
 
 class StatLoggerBase(ABC):
     """Base class for StatLogger."""
+
     def __init__(self, local_interval: float, aphrodite_config: AphroditeConfig) -> None:
-        self.request_level_metrics = envs.APHRODITE_REQUEST_LEVEL_METRICS
-        # Only initialize these if not using request-level metrics
-        if not self.request_level_metrics:
-            self.num_prompt_tokens: List[int] = []
-            self.num_generation_tokens: List[int] = []
-            self.last_local_log = time.time()
+        # Tracked stats over current local logging interval.
+        self.num_prompt_tokens: List[int] = []
+        self.num_generation_tokens: List[int] = []
+        self.last_local_log = time.time()
         self.local_interval = local_interval
         self.spec_decode_metrics: Optional[SpecDecodeWorkerMetrics] = None
+
     @abstractmethod
     def log(self, stats: Stats) -> None:
         raise NotImplementedError
+
     @abstractmethod
     def info(self, type: str, obj: SupportsMetricsInfo) -> None:
         raise NotImplementedError
+
     def maybe_update_spec_decode_metrics(self, stats: Stats):
         """Save spec decode metrics (since they are unlikely
         to be emitted at same time as log interval)."""
