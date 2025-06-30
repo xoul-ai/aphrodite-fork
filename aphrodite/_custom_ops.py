@@ -1,38 +1,27 @@
 import contextlib
-import functools
 import importlib
-from typing import TYPE_CHECKING, List, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import torch
 import torch.library
 from loguru import logger
 
 import aphrodite.common.envs as envs
-from aphrodite.common.utils import is_hip, print_warning_once
 from aphrodite.platforms import current_platform
 from aphrodite.scalar_type import ScalarType
 
-if not current_platform.is_tpu():
+if not current_platform.is_tpu() and not current_platform.is_hpu():
     try:
         import aphrodite._C
     except ImportError as e:
-        if current_platform.is_cuda() or current_platform.is_rocm():
-            print_warning_once(f"Failed to import from aphrodite._C with {e}")
-
-if current_platform.is_rocm():
-    import aphrodite._rocm_C  # noqa: F401
+        logger.warning("Failed to import from aphrodite._C with %r", e)
 
 supports_moe_ops = False
 with contextlib.suppress(ImportError):
     import aphrodite._moe_C  # noqa: F401
-supports_moe_ops = True
+    supports_moe_ops = True
 
-with contextlib.suppress(ImportError):
-    # ruff: noqa: F401
-    import aphrodite._xqa_C
-
-
-if TYPE_CHECKING or current_platform.is_neuron():
+if TYPE_CHECKING:
 
     def register_fake(fn):
         return lambda name: fn
@@ -41,33 +30,6 @@ else:
         from torch.library import register_fake
     except ImportError:
         from torch.library import impl_abstract as register_fake
-
-
-def hint_on_error(fn):
-
-    @functools.wraps(fn)
-    def wrapper(*args, **kwargs):
-        try:
-            return fn(*args, **kwargs)
-        except NotImplementedError as e:
-            msg = (
-                f"Error in calling custom op {fn.__name__}: {e}\n"
-                "Not implemented or built, mostly likely because the current current device "
-                "does not support this kernel (less likely TORCH_CUDA_ARCH_LIST was set "
-                "incorrectly while building)")
-            logger.error(msg)
-            raise NotImplementedError(msg) from e
-        except AttributeError as e:
-            msg = (
-                f"Error in calling custom op {fn.__name__}: {e}\n"
-                f"Possibly you have built or installed an obsolete version of aphrodite.\n"
-                f"Please try a clean build and install of aphrodite,"
-                f"or remove old built files such as aphrodite/*.so and build/ ."
-            )
-            logger.error(msg)
-            raise e
-
-    return wrapper
 
 
 # activation ops
@@ -576,7 +538,7 @@ if hasattr(torch.ops._C, "vptq_gemm"):
     @register_fake("_C::vptq_gemm")
     def _vptq_gemm_fake(input: torch.Tensor, indices: torch.Tensor,
                         codebooks: torch.Tensor, weight_scale: torch.Tensor,
-                        weight_bias: torch.Tensor, g_i_o: List[int],
+                        weight_bias: torch.Tensor, g_i_o: list[int],
                         res: torch.Tensor, res_codebooks: torch.Tensor,
                         oi: torch.Tensor, oc: torch.Tensor,
                         invperm: torch.Tensor,
@@ -595,7 +557,7 @@ if hasattr(torch.ops._C, "vptq_gemm"):
     @register_fake("_C::vptq_dequant")
     def _vptq_dequant_fake(indices: torch.Tensor, codebooks: torch.Tensor,
                            weight_scale: torch.Tensor,
-                           weight_bias: torch.Tensor, g_i_o: List[int],
+                           weight_bias: torch.Tensor, g_i_o: list[int],
                            res: torch.Tensor, res_codebooks: torch.Tensor,
                            oi: torch.Tensor, oc: torch.Tensor,
                            invperm: torch.Tensor) -> torch.Tensor:
@@ -860,14 +822,14 @@ def cutlass_moe_mm(out_tensors: torch.Tensor, a_tensors: torch.Tensor,
 # aqlm
 def aqlm_gemm(input: torch.Tensor, codes: torch.Tensor,
               codebooks: torch.Tensor, scales: torch.Tensor,
-              codebook_partition_sizes: List[int],
+              codebook_partition_sizes: list[int],
               bias: Optional[torch.Tensor]) -> torch.Tensor:
     return torch.ops._C.aqlm_gemm(input, codes, codebooks, scales,
                                   codebook_partition_sizes, bias)
 
 
 def aqlm_dequant(codes: torch.Tensor, codebooks: torch.Tensor,
-                 codebook_partition_sizes: List[int]) -> torch.Tensor:
+                 codebook_partition_sizes: list[int]) -> torch.Tensor:
     return torch.ops._C.aqlm_dequant(codes, codebooks,
                                      codebook_partition_sizes)
 
@@ -875,7 +837,7 @@ def aqlm_dequant(codes: torch.Tensor, codebooks: torch.Tensor,
 # vptq
 def vptq_gemm(input: torch.Tensor, indices: torch.Tensor,
               codebooks: torch.Tensor, weight_scale: torch.Tensor,
-              weight_bias: torch.Tensor, g_i_o: List[int], res: torch.Tensor,
+              weight_bias: torch.Tensor, g_i_o: list[int], res: torch.Tensor,
               res_codebooks: torch.Tensor, oi: torch.Tensor, oc: torch.Tensor,
               invperm: torch.Tensor, bias: torch.Tensor) -> torch.Tensor:
     return torch.ops._C.vptq_gemm(input, indices, codebooks, weight_scale,
@@ -888,7 +850,7 @@ def vptq_dequant(
     codebooks: torch.Tensor,
     weight_scale: torch.Tensor,
     weight_bias: torch.Tensor,
-    g_i_o: List[int],
+    g_i_o: list[int],
     res: torch.Tensor,
     res_codebooks: torch.Tensor,
     oi: torch.Tensor,
@@ -1689,7 +1651,7 @@ def top_p_sampling_from_probs(
         uniform_samples: torch.Tensor,
         top_p: Union[torch.Tensor, float],
         deterministic: bool = True,
-        check_nan: bool = False) -> Tuple[torch.Tensor, torch.Tensor]:
+        check_nan: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
     if check_nan and torch.any(torch.isnan(probs)):
         raise ValueError("NaN detected in probs")
     return torch.ops._C.top_p_sampling_from_probs(
@@ -1700,7 +1662,7 @@ def top_k_sampling_from_probs(
         uniform_samples: torch.Tensor,
         top_k: Union[torch.Tensor, int],
         deterministic: bool = True,
-        check_nan: bool = False) -> Tuple[torch.Tensor, torch.Tensor]:
+        check_nan: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
     if check_nan and torch.any(torch.isnan(probs)):
         raise ValueError("NaN detected in probs")
     return torch.ops._C.top_k_sampling_from_probs(
@@ -1711,7 +1673,7 @@ def min_p_sampling_from_probs(
         uniform_samples: torch.Tensor,
         min_p: Union[torch.Tensor, float],
         deterministic: bool = True,
-        check_nan: bool = False) -> Tuple[torch.Tensor, torch.Tensor]:
+        check_nan: bool = False) -> tuple[torch.Tensor, torch.Tensor]:
     if check_nan and torch.any(torch.isnan(probs)):
         raise ValueError("NaN detected in probs")
     return torch.ops._C.min_p_sampling_from_probs(
@@ -1746,7 +1708,7 @@ def top_k_top_p_sampling_from_logits(
     filter_apply_order: str = "top_k_first",
     deterministic: bool = True,
     check_nan: bool = False,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     if filter_apply_order == "top_k_first":
         masked_logits = top_k_mask_logits(probs, top_k)
         probs = torch.softmax(masked_logits, dim=-1)
@@ -1770,7 +1732,7 @@ def top_k_top_p_sampling_from_probs(
     filter_apply_order: str = "top_k_first",
     deterministic: bool = True,
     check_nan: bool = False,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     if filter_apply_order == "top_k_first":
         renorm_probs = top_k_renorm_prob(probs, top_k)
         return top_p_sampling_from_probs(renorm_probs, uniform_samples, top_p,
@@ -1905,24 +1867,3 @@ def fwd_kvcache(
         rotary_interleaved,
         num_splits,
     )
-
-
-# TODO: remove this later
-names_and_values = globals()
-names_and_values_to_update = {}
-# prepare variables to avoid dict size change during iteration
-k, v, arg = None, None, None
-fn_type = type(lambda x: x)
-for k, v in names_and_values.items():
-    # find functions that are defined in this file and have torch.Tensor
-    # in their annotations. `arg == "torch.Tensor"` is used to handle
-    # the case when users use `import __annotations__` to turn type
-    # hints into strings.
-    if isinstance(v, fn_type) \
-        and v.__code__.co_filename == __file__ \
-        and any(arg is torch.Tensor or arg == "torch.Tensor"
-                for arg in v.__annotations__.values()):
-        names_and_values_to_update[k] = hint_on_error(v)
-
-names_and_values.update(names_and_values_to_update)
-del names_and_values_to_update, names_and_values, v, k, fn_type

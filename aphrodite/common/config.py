@@ -26,7 +26,7 @@ from torch.distributed import ProcessGroup, ReduceOp
 from transformers import PretrainedConfig
 from typing_extensions import deprecated
 
-import aphrodite.envs as envs
+import aphrodite.common.envs as envs
 from aphrodite import version
 from aphrodite.common.utils import (GiB_bytes, LayerBlockType,
                                     cuda_device_count_stateless,
@@ -3169,7 +3169,7 @@ def _get_and_verify_max_len(
     hf_config: PretrainedConfig,
     max_model_len: Optional[int],
     disable_sliding_window: bool,
-    sliding_window_len: Optional[Union[int, List[Optional[int]]]],
+    sliding_window_len: Optional[Union[int, list[Optional[int]]]],
     spec_target_max_model_len: Optional[int] = None,
     encoder_config: Optional[Any] = None,
 ) -> int:

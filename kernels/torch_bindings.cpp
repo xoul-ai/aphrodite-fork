@@ -249,7 +249,9 @@ TORCH_LIBRARY_EXPAND(TORCH_EXTENSION_NAME, ops) {
   ops.impl("vptq_dequant", torch::kCUDA, &vptq_dequant);
 
   // Dequantization for GGML.
-  ops.def("ggml_dequantize(Tensor W, int type, SymInt m, SymInt n) -> Tensor");
+  ops.def(
+      "ggml_dequantize(Tensor W, int type, SymInt m, SymInt n, ScalarType? "
+      "dtype) -> Tensor");
   ops.impl("ggml_dequantize", torch::kCUDA, &ggml_dequantize);
 
   // mmvq kernel for GGML.
@@ -262,6 +264,16 @@ TORCH_LIBRARY_EXPAND(TORCH_EXTENSION_NAME, ops) {
   ops.def(
       "ggml_mul_mat_a8(Tensor W, Tensor X, int type, SymInt row) -> Tensor");
   ops.impl("ggml_mul_mat_a8", torch::kCUDA, &ggml_mul_mat_a8);
+
+  // moe kernel for GGML.
+  ops.def(
+      "ggml_moe_a8(Tensor X, Tensor W, "
+      "Tensor sorted_token_ids, Tensor expert_ids, Tensor "
+      "num_tokens_post_padded, "
+      "int type, SymInt row, SymInt top_k, SymInt tokens) -> Tensor");
+  ops.impl("ggml_moe_a8", torch::kCUDA, &ggml_moe_a8);
+
+  ops.def("ggml_moe_get_block_size", &ggml_moe_get_block_size);
 
   // Note about marlin kernel 'workspace' arguments:
   // Technically these should be mutable since they are modified by the kernel.
@@ -297,8 +309,10 @@ TORCH_LIBRARY_EXPAND(TORCH_EXTENSION_NAME, ops) {
       "Tensor b_zeros, Tensor g_idx, Tensor perm, Tensor workspace, "
       "int b_q_type, "
       "SymInt size_m, SymInt size_n, SymInt size_k, bool is_k_full, "
-      "bool has_zp, bool use_fp32_reduce) -> Tensor");
-  // conditionally compiled so impl in source file
+      "bool has_zp, bool use_atomic_add, bool use_fp32_reduce, "
+      "bool is_zp_float) -> Tensor",
+      {stride_tag});
+  // conditionally compiled so impl registration is in source file
 
   // gptq_marlin repack from GPTQ.
   ops.def(
@@ -351,13 +365,37 @@ TORCH_LIBRARY_EXPAND(TORCH_EXTENSION_NAME, ops) {
   ops.impl("cutlass_scaled_mm_azp", torch::kCUDA, &cutlass_scaled_mm_azp);
 
   // Machete (Dense) Optimized Mixed Precision GEMM for Hopper.
-  ops.def("machete_supported_schedules(int btype) -> str[]");
   ops.def(
-      "machete_gemm(Tensor A, Tensor B, int btype, "
-      "             Tensor? scales, Tensor? zeros, int? group_size, "
-      "             Tensor? C, float? alpha, float? beta, str? schedule)"
-      "-> Tensor");
-  ops.def("machete_prepack_B(Tensor B, int btype) -> Tensor");
+      "machete_supported_schedules("
+      "   ScalarType a_type,"
+      "   int b_type,"
+      "   ScalarType? maybe_group_scales_type,"
+      "   ScalarType? maybe_group_zeros_type,"
+      "   ScalarType? maybe_channel_scales_type,"
+      "   ScalarType? maybe_token_scales_type,"
+      "   ScalarType? maybe_out_type"
+      ") -> str[]");
+  ops.def(
+      "machete_mm("
+      "   Tensor A,"
+      "   Tensor B,"
+      "   int b_type,"
+      "   ScalarType? out_type,"
+      "   Tensor? group_scales,"
+      "   Tensor? group_zeros,"
+      "   int?    group_size,"
+      "   Tensor? channel_scales,"
+      "   Tensor? token_scales,"
+      "   str?    schedule"
+      ") -> Tensor",
+      {stride_tag});
+  ops.def(
+      "machete_prepack_B("
+      "   Tensor B,"
+      "   ScalarType a_type,"
+      "   int b_type,"
+      "   ScalarType? group_scales_type"
+      ") -> Tensor");
   // conditionally compiled so impl registration is in source file
 
   ops.def("permute_cols(Tensor A, Tensor perm) -> Tensor");
