@@ -338,6 +338,8 @@ class ModelConfig:
     quant_llm_fp_bits: Optional[int] = None
     """Number of bits to use for QuantLLM FP quantization. Supported number
     of bits are: 5, 6, 7."""
+    quant_llm_exp_bits: Optional[int] = None
+    """Number of exponent bits to use for QuantLLM FP quantization."""
     enforce_eager: bool = False
     """Whether to always use eager-mode PyTorch. If True, we will disable CUDA
     graph and always execute the model in eager mode. If False, we will use
@@ -2099,10 +2101,10 @@ class SchedulerConfig:
     some image tokens can be scheduled (like TTTTIIIII, leaving IIIII),
     it will be scheduled as TTTT in one step and IIIIIIIIII in the next."""
 
-    # scheduler class or path. "aphrodite.core.scheduler.Scheduler" (default)
+    # scheduler class or path. "aphrodite.processing.scheduler.Scheduler" (default)
     # or "mod.custom_class".
-    scheduler_cls: Union[str, type[object]] = "aphrodite.core.scheduler.Scheduler"
-    """The scheduler class to use. "aphrodite.core.scheduler.Scheduler" is the
+    scheduler_cls: Union[str, type[object]] = "aphrodite.processing.scheduler.Scheduler"
+    """The scheduler class to use. "aphrodite.processing.scheduler.Scheduler" is the
     default scheduler. Can be a class directly or the path to a class of form
     "mod.custom_class"."""
 

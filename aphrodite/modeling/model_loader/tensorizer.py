@@ -17,7 +17,7 @@ import aphrodite.common.envs as envs
 from aphrodite.common.config import (ModelConfig, ParallelConfig,
                                      set_current_aphrodite_config)
 from aphrodite.common.utils import FlexibleArgumentParser, PlaceholderModule
-from aphrodite.engine.aphrodite_engine import LLMEngine
+from aphrodite.engine.aphrodite_engine import AphroditeEngine
 from aphrodite.engine.args_tools import EngineArgs
 from aphrodite.modeling.layers.vocab_parallel_embedding import (
     VocabParallelEmbedding)
@@ -459,7 +459,7 @@ def tensorize_aphrodite_model(engine_args: EngineArgs,
         ) as stream:
             stream.write(encryption_params.key)
 
-    engine = LLMEngine.from_engine_args(engine_args)
+    engine = AphroditeEngine.from_engine_args(engine_args)
     engine.model_executor.collective_rpc(
         "save_tensorized_model",
         kwargs=dict(tensorizer_config=tensorizer_config),

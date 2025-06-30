@@ -77,6 +77,9 @@ class ModelList(OpenAIBaseModel):
     object: str = "list"
     data: List[ModelCard] = Field(default_factory=list)
 
+class PromptTokenUsageInfo(OpenAIBaseModel):
+    cached_tokens: Optional[int] = None
+
 
 class UsageInfo(OpenAIBaseModel):
     prompt_tokens: int = 0

@@ -27,6 +27,8 @@ if TYPE_CHECKING:
     APHRODITE_CONFIGURE_LOGGING: int = 1
     APHRODITE_LOGGING_LEVEL: str = "INFO"
     APHRODITE_LOGGING_CONFIG_PATH: Optional[str] = None
+    APHRODITE_LOGITS_PROCESSOR_THREADS: Optional[int] = None
+    APHRODITE_FLASH_ATTN_VERSION: Optional[int] = None
     APHRODITE_TRACE_FUNCTION: int = 0
     APHRODITE_ATTENTION_BACKEND: Optional[str] = None
     APHRODITE_USE_SAMPLING_KERNELS: bool = False
@@ -58,6 +60,7 @@ if TYPE_CHECKING:
     APHRODITE_DYNAMIC_ROPE_SCALING: bool = False
     APHRODITE_TEST_FORCE_FP8_MARLIN: bool = False
     APHRODITE_PLUGINS: Optional[list[str]] = None
+    APHRODITE_TORCH_PROFILER_DIR: Optional[str] = None
     APHRODITE_RPC_TIMEOUT: int = 20000
     APHRODITE_FORCE_SINGLE_USER_PREFIX_CACHE: bool = False
     APHRODITE_TEST_DYNAMO_GRAPH_CAPTURE: int = 0
@@ -71,6 +74,7 @@ if TYPE_CHECKING:
     APHRODITE_TORCH_COMPILE_LEVEL: int = 0
     APHRODITE_CUSTOM_OPS: list[str] = []
     APHRODITE_DISABLED_KERNELS: list[str] = []
+    APHRODITE_SKIP_P2P_CHECK: bool = False
     APHRODITE_FLASHINFER_FORCE_TENSOR_CORES: bool = False
     APHRODITE_USE_V1: bool = False
     APHRODITE_ROCM_USE_AITER: bool = False
@@ -127,6 +131,12 @@ def get_default_config_root():
         "XDG_CONFIG_HOME",
         os.path.join(os.path.expanduser("~"), ".config"),
     )
+
+
+def maybe_convert_int(value: Optional[str]) -> Optional[int]:
+    if value is None:
+        return None
+    return int(value)
 
 
 # The begin-* and end* here are used by the documentation generator
@@ -247,6 +257,11 @@ environment_variables: dict[str, Callable[[], Any]] = {
     lambda: (os.environ.get(
         "APHRODITE_USE_TRITON_FLASH_ATTN", "True").lower() in ("true", "1")),
 
+    # Force aphrodite to use a specific flash-attention version (2 or 3), only valid
+    # when using the flash-attention backend.
+    "APHRODITE_FLASH_ATTN_VERSION":
+    lambda: maybe_convert_int(os.environ.get("APHRODITE_FLASH_ATTN_VERSION", None)),
+
     # Internal flag to enable Dynamo fullgraph capture
     "APHRODITE_TEST_DYNAMO_FULLGRAPH_CAPTURE":
     lambda: bool(
@@ -309,6 +324,14 @@ environment_variables: dict[str, Callable[[], Any]] = {
     # this is used for configuring the default logging level
     "APHRODITE_LOGGING_LEVEL":
     lambda: os.getenv("APHRODITE_LOGGING_LEVEL", "INFO"),
+
+    # if set, aphrodite will call logits processors in a thread pool with this many
+    # threads. This is useful when using custom logits processors that either
+    # (a) launch additional CUDA kernels or (b) do significant CPU-bound work
+    # while not holding the python GIL, or both.
+    "APHRODITE_LOGITS_PROCESSOR_THREADS":
+    lambda: int(os.getenv("APHRODITE_LOGITS_PROCESSOR_THREADS", "0"))
+    if "APHRODITE_LOGITS_PROCESSOR_THREADS" in os.environ else None,
 
     # Trace function calls
     # If set to 1, aphrodite will trace function calls
@@ -464,6 +487,12 @@ environment_variables: dict[str, Callable[[], Any]] = {
     lambda: None if "APHRODITE_PLUGINS" not in os.environ else os.environ[
         "APHRODITE_PLUGINS"].split(","),
 
+    # Enables torch profiler if set. Path to the directory where torch profiler
+    # traces are saved. Note that it must be an absolute path.
+    "APHRODITE_TORCH_PROFILER_DIR":
+    lambda: (None if os.getenv("APHRODITE_TORCH_PROFILER_DIR", None) is None else os
+             .path.expanduser(os.getenv("APHRODITE_TORCH_PROFILER_DIR", "."))),
+
     # If set, forces prefix cache in single user mode
     "APHRODITE_FORCE_SINGLE_USER_PREFIX_CACHE":
     lambda: bool(int(os.getenv("APHRODITE_FORCE_SINGLE_USER_PREFIX_CACHE",
@@ -500,6 +529,13 @@ environment_variables: dict[str, Callable[[], Any]] = {
     lambda: [
     ] if "APHRODITE_DISABLED_KERNELS" not in os.environ else os.environ[
         "APHRODITE_DISABLED_KERNELS"].split(","),
+
+    # By default, Aphrodite will check the peer-to-peer capability itself,
+    # in case of broken drivers.
+    # If this env var is set to 1, Aphrodite will skip the peer-to-peer check,
+    # and trust the driver's peer-to-peer capability report.
+    "APHRODITE_SKIP_P2P_CHECK":
+    lambda: os.getenv("APHRODITE_SKIP_P2P_CHECK", "0") == "1",
 
     # If set, Aphrodite will force flashinfer to use tensor cores;
     # otherwise will use heuristic based on model architecture.

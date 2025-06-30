@@ -5,7 +5,7 @@ from typing import Any, Optional, Union, cast
 from loguru import logger
 from typing_extensions import assert_never
 
-from aphrodite import envs
+from aphrodite.common import envs
 from aphrodite.common.config import ModelConfig
 from aphrodite.lora.request import LoRARequest
 from aphrodite.multimodal import MULTIMODAL_REGISTRY, MultiModalRegistry

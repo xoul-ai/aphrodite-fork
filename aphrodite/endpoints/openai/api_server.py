@@ -15,6 +15,7 @@ from functools import partial
 from http import HTTPStatus
 from typing import AsyncGenerator, AsyncIterator, List, Optional, Set, Tuple
 
+import uvloop
 import yaml
 from fastapi import APIRouter, FastAPI, Form, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
@@ -30,8 +31,7 @@ from aphrodite.common.config import ModelConfig
 from aphrodite.common.outputs import RequestOutput
 from aphrodite.common.sampling_params import _SAMPLING_EPS, SamplingParams
 from aphrodite.common.utils import (FlexibleArgumentParser,
-                                    get_open_zmq_ipc_path, in_windows,
-                                    random_uuid)
+                                    get_open_zmq_ipc_path, random_uuid)
 from aphrodite.endpoints.logger import RequestLogger
 from aphrodite.endpoints.openai.args import make_arg_parser
 from aphrodite.endpoints.openai.protocol import (BatchTokenizeRequest,
@@ -66,11 +66,6 @@ from aphrodite.modeling.model_loader.weight_utils import get_model_config_yaml
 from aphrodite.server import serve_http
 from aphrodite.transformers_utils.tokenizer import get_tokenizer
 from aphrodite.version import __version__ as APHRODITE_VERSION
-
-if in_windows():
-    import winloop as uvloop
-else:
-    import uvloop
 
 TIMEOUT_KEEP_ALIVE = 5  # seconds
 SERVE_KOBOLD_LITE_UI = strtobool(os.getenv("SERVE_KOBOLD_LITE_UI", "1"))

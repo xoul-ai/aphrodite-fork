@@ -152,6 +152,7 @@ def configure_quant_config(quant_config: QuantizationConfig,
     """
     Pass packed_modules_mapping by reference to quant_config so that
     quant_config can properly match fused modules
+    """
 
     packed_mapping = getattr(model_class, "packed_modules_mapping", None)
     if packed_mapping is not None:

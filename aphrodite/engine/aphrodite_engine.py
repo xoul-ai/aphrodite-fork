@@ -508,7 +508,7 @@ class AphroditeEngine:
         engine_cls = cls
         if envs.APHRODITE_USE_V1:
             from aphrodite.v1.engine.llm_engine import (
-                AphroditeEngine as V1AphroditeEngine)
+                LLMEngine as V1AphroditeEngine)
             engine_cls = V1AphroditeEngine
 
         return engine_cls.from_aphrodite_config(
@@ -891,8 +891,8 @@ class AphroditeEngine:
 
         Details:
             - Refer to the
-              :meth:`~aphrodite.core.scheduler.Scheduler.abort_seq_group`
-              from class :class:`~aphrodite.core.scheduler.Scheduler`.
+              :meth:`~aphrodite.processing.scheduler.Scheduler.abort_seq_group`
+              from class :class:`~aphrodite.processing.scheduler.Scheduler`.
 
         Example:
             >>> # initialize engine and add a request with request_id

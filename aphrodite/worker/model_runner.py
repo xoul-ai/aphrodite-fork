@@ -37,7 +37,7 @@ from aphrodite.inputs import INPUT_REGISTRY, InputRegistry
 from aphrodite.lora.layers import LoRAMapping
 from aphrodite.lora.request import LoRARequest
 from aphrodite.lora.worker_manager import LRUCacheWorkerLoRAManager
-from aphrodite.modeling import SamplingMetadata, SamplingMetadataCache
+from aphrodite.modeling.sampling_metadata import SamplingMetadata, SamplingMetadataCache
 from aphrodite.modeling.layers.rotary_embedding import MRotaryEmbedding
 from aphrodite.modeling.layers.sampler import (Sampler, SamplerOutput,
                                                get_sampler)

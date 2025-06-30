@@ -8,14 +8,14 @@ from typing import List, Optional, Tuple
 import torch
 import uvloop
 from tqdm import tqdm
-from transformers import (AutoModelForCausalLM, AutoTokenizer,
-                          PreTrainedTokenizerBase)
+from transformers import (AutoModelForCausalLM, AutoTokenizer)
+from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
 from aphrodite.common.utils import (FlexibleArgumentParser,
                                     merge_async_iterators)
-from aphrodite.endpoints.openai.api_server import (
-    build_engine_client_from_engine_args)
-from aphrodite.engine.args_tools import (DEVICE_OPTIONS, AsyncEngineArgs,
+# from aphrodite.endpoints.openai.api_server import (
+#     build_engine_client_from_engine_args)
+from aphrodite.engine.args_tools import (
                                          EngineArgs)
 from aphrodite.quantization import QUANTIZATION_METHODS
 
@@ -80,7 +80,6 @@ def run_aphrodite(
     max_model_len: Optional[int],
     enforce_eager: bool,
     kv_cache_dtype: str,
-    quantization_param_path: Optional[str],
     device: str,
     enable_prefix_caching: bool,
     enable_chunked_prefill: bool,
@@ -105,7 +104,6 @@ def run_aphrodite(
         gpu_memory_utilization=gpu_memory_utilization,
         enforce_eager=enforce_eager,
         kv_cache_dtype=kv_cache_dtype,
-        quantization_param_path=quantization_param_path,
         device=device,
         enable_prefix_caching=enable_prefix_caching,
         download_dir=download_dir,
@@ -138,87 +136,87 @@ def run_aphrodite(
     return end - start
 
 
-async def run_aphrodite_async(
-    requests: List[Tuple[str, int, int]],
-    model: str,
-    tokenizer: str,
-    quantization: Optional[str],
-    tensor_parallel_size: int,
-    seed: int,
-    n: int,
-    use_beam_search: bool,
-    trust_remote_code: bool,
-    dtype: str,
-    max_model_len: Optional[int],
-    enforce_eager: bool,
-    kv_cache_dtype: str,
-    quantization_param_path: Optional[str],
-    device: str,
-    enable_prefix_caching: bool,
-    enable_chunked_prefill: bool,
-    max_num_batched_tokens: int,
-    distributed_executor_backend: Optional[str],
-    gpu_memory_utilization: float = 0.9,
-    num_scheduler_steps: int = 1,
-    download_dir: Optional[str] = None,
-    load_format: str = EngineArgs.load_format,
-    disable_async_output_proc: bool = False,
-    disable_frontend_multiprocessing: bool = False,
-) -> float:
-    from aphrodite import SamplingParams
-    engine_args = AsyncEngineArgs(
-        model=model,
-        tokenizer=tokenizer,
-        quantization=quantization,
-        tensor_parallel_size=tensor_parallel_size,
-        seed=seed,
-        trust_remote_code=trust_remote_code,
-        dtype=dtype,
-        max_model_len=max_model_len,
-        gpu_memory_utilization=gpu_memory_utilization,
-        enforce_eager=enforce_eager,
-        kv_cache_dtype=kv_cache_dtype,
-        quantization_param_path=quantization_param_path,
-        device=device,
-        enable_prefix_caching=enable_prefix_caching,
-        download_dir=download_dir,
-        enable_chunked_prefill=enable_chunked_prefill,
-        max_num_batched_tokens=max_num_batched_tokens,
-        distributed_executor_backend=distributed_executor_backend,
-        load_format=load_format,
-        num_scheduler_steps=num_scheduler_steps,
-        disable_async_output_proc=disable_async_output_proc,
-        disable_log_requests=True,
-    )
+# async def run_aphrodite_async(
+#     requests: List[Tuple[str, int, int]],
+#     model: str,
+#     tokenizer: str,
+#     quantization: Optional[str],
+#     tensor_parallel_size: int,
+#     seed: int,
+#     n: int,
+#     use_beam_search: bool,
+#     trust_remote_code: bool,
+#     dtype: str,
+#     max_model_len: Optional[int],
+#     enforce_eager: bool,
+#     kv_cache_dtype: str,
+#     quantization_param_path: Optional[str],
+#     device: str,
+#     enable_prefix_caching: bool,
+#     enable_chunked_prefill: bool,
+#     max_num_batched_tokens: int,
+#     distributed_executor_backend: Optional[str],
+#     gpu_memory_utilization: float = 0.9,
+#     num_scheduler_steps: int = 1,
+#     download_dir: Optional[str] = None,
+#     load_format: str = EngineArgs.load_format,
+#     disable_async_output_proc: bool = False,
+#     disable_frontend_multiprocessing: bool = False,
+# ) -> float:
+#     from aphrodite import SamplingParams
+#     engine_args = AsyncEngineArgs(
+#         model=model,
+#         tokenizer=tokenizer,
+#         quantization=quantization,
+#         tensor_parallel_size=tensor_parallel_size,
+#         seed=seed,
+#         trust_remote_code=trust_remote_code,
+#         dtype=dtype,
+#         max_model_len=max_model_len,
+#         gpu_memory_utilization=gpu_memory_utilization,
+#         enforce_eager=enforce_eager,
+#         kv_cache_dtype=kv_cache_dtype,
+#         quantization_param_path=quantization_param_path,
+#         device=device,
+#         enable_prefix_caching=enable_prefix_caching,
+#         download_dir=download_dir,
+#         enable_chunked_prefill=enable_chunked_prefill,
+#         max_num_batched_tokens=max_num_batched_tokens,
+#         distributed_executor_backend=distributed_executor_backend,
+#         load_format=load_format,
+#         num_scheduler_steps=num_scheduler_steps,
+#         disable_async_output_proc=disable_async_output_proc,
+#         disable_log_requests=True,
+#     )
 
-    async with build_engine_client_from_engine_args(
-            engine_args, disable_frontend_multiprocessing) as llm:
+#     async with build_engine_client_from_engine_args(
+#             engine_args, disable_frontend_multiprocessing) as llm:
 
-        # Add the requests to the engine.
-        prompts: List[str] = []
-        sampling_params: List[SamplingParams] = []
-        for prompt, _, output_len in requests:
-            prompts.append(prompt)
-            sampling_params.append(
-                SamplingParams(
-                    n=n,
-                    temperature=0.0 if use_beam_search else 1.0,
-                    top_p=1.0,
-                    use_beam_search=use_beam_search,
-                    ignore_eos=True,
-                    max_tokens=output_len,
-                ))
+#         # Add the requests to the engine.
+#         prompts: List[str] = []
+#         sampling_params: List[SamplingParams] = []
+#         for prompt, _, output_len in requests:
+#             prompts.append(prompt)
+#             sampling_params.append(
+#                 SamplingParams(
+#                     n=n,
+#                     temperature=0.0 if use_beam_search else 1.0,
+#                     top_p=1.0,
+#                     use_beam_search=use_beam_search,
+#                     ignore_eos=True,
+#                     max_tokens=output_len,
+#                 ))
 
-        generators = []
-        start = time.perf_counter()
-        for i, (prompt, sp) in enumerate(zip(prompts, sampling_params)):
-            generator = llm.generate(prompt, sp, request_id=f"test{i}")
-            generators.append(generator)
-        all_gens = merge_async_iterators(*generators)
-        async for i, res in all_gens:
-            pass
-        end = time.perf_counter()
-        return end - start
+#         generators = []
+#         start = time.perf_counter()
+#         for i, (prompt, sp) in enumerate(zip(prompts, sampling_params)):
+#             generator = llm.generate(prompt, sp, request_id=f"test{i}")
+#             generators.append(generator)
+#         all_gens = merge_async_iterators(*generators)
+#         async for i, res in all_gens:
+#             pass
+#         end = time.perf_counter()
+#         return end - start
 
 
 def run_hf(
@@ -321,7 +319,7 @@ def main(args: argparse.Namespace):
             args.tensor_parallel_size, args.seed, args.n, args.use_beam_search,
             args.trust_remote_code, args.dtype, args.max_model_len,
             args.enforce_eager, args.kv_cache_dtype,
-            args.quantization_param_path, args.device,
+            args.device,
             args.enable_prefix_caching, args.enable_chunked_prefill,
             args.max_num_batched_tokens, args.distributed_executor_backend,
             args.gpu_memory_utilization, args.num_scheduler_steps,
@@ -330,8 +328,9 @@ def main(args: argparse.Namespace):
         ]
 
         if args.async_engine:
-            run_args.append(args.disable_frontend_multiprocessing)
-            elapsed_time = uvloop.run(run_aphrodite_async(*run_args))
+            # run_args.append(args.disable_frontend_multiprocessing)
+            # elapsed_time = uvloop.run(run_aphrodite_async(*run_args))
+            pass
         else:
             elapsed_time = run_aphrodite(*run_args)
     elif args.backend == "hf":
@@ -438,20 +437,10 @@ if __name__ == "__main__":
         'data type. CUDA 11.8+ supports fp8 (=fp8_e4m3) and fp8_e5m2. '
         'ROCm (AMD GPU) supports fp8 (=fp8_e4m3)')
     parser.add_argument(
-        '--quantization-param-path',
-        type=str,
-        default=None,
-        help='Path to the JSON file containing the KV cache scaling factors. '
-        'This should generally be supplied, when KV cache dtype is FP8. '
-        'Otherwise, KV cache scaling factors default to 1.0, which may cause '
-        'accuracy issues. FP8_E5M2 (without scaling) is only supported on '
-        'cuda version greater than 11.8. On ROCm (AMD GPU), FP8_E4M3 is '
-        'instead supported for common inference criteria.')
-    parser.add_argument(
         "--device",
         type=str,
         default="auto",
-        choices=DEVICE_OPTIONS,
+        choices="cuda",
         help='device type for Aphrodite execution, supporting CUDA, OpenVINO '
         'and CPU.')
     parser.add_argument(
@@ -535,7 +524,11 @@ if __name__ == "__main__":
         assert args.input_len is not None
         assert args.output_len is not None
     else:
-        assert args.input_len is None
+        # When using a dataset, input_len is ignored since it comes from the dataset
+        # Only output_len is used to override the dataset's output length
+        if args.input_len is not None:
+            print("Warning: --input-len is ignored when using --dataset")
+        args.input_len = None
 
     if args.backend == "aphrodite":
         if args.hf_max_batch_size is not None:

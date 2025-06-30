@@ -11,7 +11,7 @@ import torch
 import zmq
 from msgspec import msgpack
 
-from aphrodite import envs
+from aphrodite.common import envs
 from aphrodite.multimodal.inputs import (BaseMultiModalField,
                                          MultiModalBatchedField,
                                          MultiModalFieldConfig,
