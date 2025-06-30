@@ -382,7 +382,7 @@ class OlmoeModel(nn.Module):
                             ".kv_scale", ".attn.kv_scale")
                         if remapped_kv_scale_name not in params_dict:
                             logger.warning_once(
-                                "Found kv scale in the checkpoint (e.g. %s), but not found the expected name in the model (e.g. %s). kv-scale is not loaded.",  # noqa: E501
+                                "Found kv scale in the checkpoint (e.g. {}), but not found the expected name in the model (e.g. {}). kv-scale is not loaded.",  # noqa: E501
                                 name,
                                 remapped_kv_scale_name,
                             )

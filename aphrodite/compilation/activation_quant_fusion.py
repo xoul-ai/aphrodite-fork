@@ -77,7 +77,7 @@ class ActivationQuantFusionPass(AphroditeInductorPass):
         self.dump_graph(graph, "before_act_quant_fusion")
 
         count = self.patterns.apply(graph)
-        logger.debug("Replaced %s patterns in ActivationQuantFusionPass",
+        logger.debug("Replaced {} patterns in ActivationQuantFusionPass",
                      count)
 
         self.dump_graph(graph, "after_act_quant_fusion")

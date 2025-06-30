@@ -153,7 +153,7 @@ def can_actually_p2p(
         if a != b:
             logger.warning(
                 "Two processes do not agree on the P2P access"
-                " status on %d -> %d, treat as disabled.", src, tgt)
+                " status on {} -> {}, treat as disabled.", src, tgt)
             result.append(False)
         else:
             result.append(a)
@@ -200,7 +200,7 @@ def gpu_p2p_access_check(src: int, tgt: int) -> bool:
             and (not os.path.exists(path))):
         # only the local master process (with local_rank == 0) can
         #  enter this block to calculate the cache
-        logger.info("generating GPU P2P access cache in %s", path)
+        logger.info("generating GPU P2P access cache in {}", path)
         cache: Dict[str, bool] = {}
         ids = list(range(num_dev))
         # batch of all pairs of GPUs
@@ -238,7 +238,7 @@ def gpu_p2p_access_check(src: int, tgt: int) -> bool:
             json.dump(cache, f, indent=4)
     if is_distributed:
         get_world_group().barrier()
-    logger.info("reading GPU P2P access cache from %s", path)
+    logger.info("reading GPU P2P access cache from {}", path)
     with open(path) as f:
         cache = json.load(f)
     _gpu_p2p_access_cache = cache

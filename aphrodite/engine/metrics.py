@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 from typing import Counter as CollectionsCounter
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Type, cast
 
 import numpy as np
 import prometheus_client
@@ -48,8 +48,6 @@ class Metrics:
     def __init__(self, labelnames: List[str], aphrodite_config: AphroditeConfig):
         # Unregister any existing Aphrodite collectors (for CI/CD)
         self._unregister_aphrodite_metrics()
-
-        max_model_leb = aphrodite_config.model_config.max_model_len
 
         # Add finish_reason to labelnames for request-level metrics
         request_labelnames = labelnames + [self.labelname_finish_reason]
@@ -167,19 +165,6 @@ class Metrics:
             labelnames=labelnames,
             buckets=build_1_2_3_5_8_buckets(3000))
         #   Metadata
-        self.histogram_num_prompt_tokens_request = self._histogram_cls(
-            name="aphrodite:request_prompt_tokens",
-            documentation="Number of prefill tokens processed.",
-            labelnames=request_labelnames,
-            buckets=build_1_2_5_buckets(max_model_len),
-        )
-        self.histogram_num_generation_tokens_request = \
-            self._histogram_cls(
-                name="aphrodite:request_generation_tokens",
-                documentation="Number of generation tokens processed.",
-                labelnames=request_labelnames,
-                buckets=build_1_2_5_buckets(max_model_len),
-            )
         self.histogram_n_request = self._histogram_cls(
             name="aphrodite:request_params_n",
             documentation="Histogram of the n request parameter.",
@@ -313,14 +298,17 @@ class RayMetrics(Metrics):
     RayMetrics is used by RayPrometheusStatLogger to log to Ray metrics.
     Provides the same metrics as Metrics but uses Ray's util.metrics library.
     """
-    _gauge_cls = _RayGaugeWrapper
-    _counter_cls = _RayCounterWrapper
-    _histogram_cls = _RayHistogramWrapper
+    _gauge_cls: Type[prometheus_client.Gauge] = cast(
+        Type[prometheus_client.Gauge], _RayGaugeWrapper)
+    _counter_cls: Type[prometheus_client.Counter] = cast(
+        Type[prometheus_client.Counter], _RayCounterWrapper)
+    _histogram_cls: Type[prometheus_client.Histogram] = cast(
+        Type[prometheus_client.Histogram], _RayHistogramWrapper)
 
-    def __init__(self, labelnames: List[str], max_model_len: int):
+    def __init__(self, labelnames: List[str], aphrodite_config: AphroditeConfig):
         if ray_metrics is None:
             raise ImportError("RayMetrics requires Ray to be installed.")
-        super().__init__(labelnames, max_model_len)
+        super().__init__(labelnames, aphrodite_config)
 
     def _unregister_aphrodite_metrics(self) -> None:
         # No-op on purpose
@@ -376,8 +364,8 @@ def get_throughput(tracked_stats: List[int], now: float,
 class LoggingStatLogger(StatLoggerBase):
     """LoggingStatLogger is used in LLMEngine to log to Stdout."""
 
-    def __init__(self, local_interval: float):
-        super().__init__(local_interval)
+    def __init__(self, local_interval: float, aphrodite_config: AphroditeConfig):
+        super().__init__(local_interval, aphrodite_config)
         self.request_level_metrics = envs.APHRODITE_REQUEST_LEVEL_METRICS
         if self.request_level_metrics:
             self.log_queue: queue.Queue = queue.Queue()
@@ -508,12 +496,12 @@ class PrometheusStatLogger(StatLoggerBase):
     _gauge_cls = prometheus_client.Gauge
 
     def __init__(self, local_interval: float, labels: Dict[str, str],
-                 max_model_len: int) -> None:
-        super().__init__(local_interval)
+                 aphrodite_config: AphroditeConfig) -> None:
+        super().__init__(local_interval, aphrodite_config)
         # Prometheus metrics
         self.labels = labels
         self.metrics = self._metrics_cls(labelnames=list(labels.keys()),
-                                         max_model_len=max_model_len)
+                                         aphrodite_config=aphrodite_config)
 
     def _log_gauge(self, gauge, data: Union[int, float]) -> None:
         # Convenience function for logging to gauge.
@@ -523,7 +511,7 @@ class PrometheusStatLogger(StatLoggerBase):
         # Convenience function for logging to counter.
         # Prevent ValueError from negative increment
         if data < 0:
-            logger.warning("Skipping negative increment of %g to %s", data,
+            logger.warning("Skipping negative increment of %g to {}", data,
                            counter)
             return
         counter.labels(**self.labels).inc(data)

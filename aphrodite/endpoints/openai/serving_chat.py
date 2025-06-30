@@ -111,7 +111,7 @@ class OpenAIServingChat(OpenAIServing):
         if self.default_sampling_params:
             source = self.model_config.generation_config
             source = "model" if source == "auto" else source
-            logger.info("Using default chat sampling params from %s: %s",
+            logger.info("Using default chat sampling params from {}: {}",
                         source, self.default_sampling_params)
 
     async def create_chat_completion(
@@ -129,7 +129,7 @@ class OpenAIServingChat(OpenAIServing):
         """
         error_check_ret = await self._check_model(request)
         if error_check_ret is not None:
-            logger.error("Error with model %s", error_check_ret)
+            logger.error("Error with model {}", error_check_ret)
             return error_check_ret
 
         # If the engine is dead, raise the engine's DEAD_ERROR.
@@ -215,6 +215,7 @@ class OpenAIServingChat(OpenAIServing):
                         default_max_tokens, self.default_sampling_params)
                 else:
                     sampling_params = request.to_sampling_params(
+                        tokenizer,
                         default_max_tokens,
                         self.model_config.logits_processor_pattern,
                         self.default_sampling_params)

@@ -863,7 +863,7 @@ class Scheduler:
                 break
             elif alloc_status == AllocStatus.NEVER:
                 logger.warning(
-                    "Failing the request %s because there's not enough kv "
+                    "Failing the request {} because there's not enough kv "
                     "cache blocks to run the entire sequence.",
                     seq_group.request_id,
                 )
@@ -1103,8 +1103,8 @@ class Scheduler:
             prompt_limit = self._get_prompt_limit(seq_group)
             if num_new_tokens > prompt_limit:
                 logger.warning(
-                    "Input prompt (%d tokens) is too long"
-                    " and exceeds limit of %d",
+                    "Input prompt ({} tokens) is too long"
+                    " and exceeds limit of {}",
                     num_new_tokens,
                     prompt_limit,
                 )
@@ -1126,7 +1126,7 @@ class Scheduler:
                 break
             elif can_allocate == AllocStatus.NEVER:
                 logger.warning(
-                    "Input prompt (%d tokens) + lookahead slots (%d) is "
+                    "Input prompt ({} tokens) + lookahead slots ({}) is "
                     "too long and exceeds the capacity of block_manager",
                     num_new_tokens,
                     num_lookahead_slots,
@@ -1796,11 +1796,11 @@ class Scheduler:
 
         if self.num_cumulative_preemption % 50 == 0:
             logger.warning(
-                "Sequence group %s is preempted by %s mode because there is "
+                "Sequence group {} is preempted by {} mode because there is "
                 "not enough KV cache space. This can affect the end-to-end "
                 "performance. Increase gpu_memory_utilization or "
                 "tensor_parallel_size to provide more KV cache memory. "
-                "total_num_cumulative_preemption=%d",
+                "total_num_cumulative_preemption={}",
                 seq_group.request_id,
                 preemption_mode,
                 self.num_cumulative_preemption + 1,

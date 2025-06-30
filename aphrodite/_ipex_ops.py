@@ -7,7 +7,7 @@ from loguru import logger
 try:
     import intel_extension_for_pytorch as ipex
 except ImportError as e:
-    logger.warning("Import error msg: %s", e.msg)
+    logger.warning("Import error msg: {}", e.msg)
 
 
 class ipex_ops:

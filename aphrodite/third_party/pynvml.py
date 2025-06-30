@@ -1006,13 +1006,13 @@ class NVMLError(Exception):
                 NVMLError._errcode_to_string[self.value] = str(nvmlErrorString(self.value))
             return NVMLError._errcode_to_string[self.value]
         except NVMLError:
-            return "NVML Error with code %d" % self.value
+            return "NVML Error with code {}" % self.value
     def __eq__(self, other):
         return self.value == other.value
 
 def nvmlExceptionClass(nvmlErrorCode):
     if nvmlErrorCode not in NVMLError._valClassMapping:
-        raise ValueError('nvmlErrorCode %s is not valid' % nvmlErrorCode)
+        raise ValueError('nvmlErrorCode {} is not valid' % nvmlErrorCode)
     return NVMLError._valClassMapping[nvmlErrorCode]
 
 def _extractNVMLErrorsAsClasses():
@@ -1121,8 +1121,8 @@ class _PrintableStructure(Structure):
       _fmt_ = {"hex_value" : "%08X"}
     to produce nicer output.
     Default formatting string for all fields can be set with key "<default>" like:
-      _fmt_ = {"<default>" : "%d MHz"} # e.g all values are numbers in MHz.
-    If not set it's assumed to be just "%s"
+      _fmt_ = {"<default>" : "{} MHz"} # e.g all values are numbers in MHz.
+    If not set it's assumed to be just "{}"
 
     Exact format of returned str from this class is subject to change in the future.
     """
@@ -1132,12 +1132,12 @@ class _PrintableStructure(Structure):
         for x in self._fields_:
             key = x[0]
             value = getattr(self, key)
-            fmt = "%s"
+            fmt = "{}"
             if key in self._fmt_:
                 fmt = self._fmt_[key]
             elif "<default>" in self._fmt_:
                 fmt = self._fmt_["<default>"]
-            result.append(("%s: " + fmt) % (key, value))
+            result.append(("{}: " + fmt) % (key, value))
         return self.__class__.__name__ + "(" +  ", ".join(result) + ")"
 
     def __getattribute__(self, name):
@@ -1303,7 +1303,7 @@ class c_nvmlMemory_t(_PrintableStructure):
         ('free', c_ulonglong),
         ('used', c_ulonglong),
     ]
-    _fmt_ = {'<default>': "%d B"}
+    _fmt_ = {'<default>': "{} B"}
 
 class c_nvmlMemory_v2_t(_PrintableStructure):
     _fields_ = [
@@ -1313,7 +1313,7 @@ class c_nvmlMemory_v2_t(_PrintableStructure):
         ('free', c_ulonglong),
         ('used', c_ulonglong),
     ]
-    _fmt_ = {'<default>': "%d B"}
+    _fmt_ = {'<default>': "{} B"}
 
 nvmlMemory_v2 = 0x02000028
 
@@ -1323,7 +1323,7 @@ class c_nvmlBAR1Memory_t(_PrintableStructure):
         ('bar1Free', c_ulonglong),
         ('bar1Used', c_ulonglong),
     ]
-    _fmt_ = {'<default>': "%d B"}
+    _fmt_ = {'<default>': "{} B"}
 
 class nvmlClkMonFaultInfo_t(Structure):
     _fields_ = [("clkApiDomain", c_uint),
@@ -1345,7 +1345,7 @@ class nvmlClkMonStatus_t(Structure):
 #     # TODO handle the error
 #     pass
 # else:
-#    print("Using %d MiB of memory" % (info.usedGpuMemory / 1024 / 1024))
+#    print("Using {} MiB of memory" % (info.usedGpuMemory / 1024 / 1024))
 # endif
 #
 # See NVML documentation for more information
@@ -1356,7 +1356,7 @@ class c_nvmlProcessInfo_v2_t(_PrintableStructure):
         ('gpuInstanceId', c_uint),
         ('computeInstanceId', c_uint),
     ]
-    _fmt_ = {'usedGpuMemory': "%d B"}
+    _fmt_ = {'usedGpuMemory': "{} B"}
 
 c_nvmlProcessInfo_v3_t = c_nvmlProcessInfo_v2_t
 
@@ -1383,7 +1383,7 @@ class c_nvmlProcessDetailList_v1_t(_PrintableStructure):
         ('numProcArrayEntries', c_uint),
         ('procArray', POINTER(c_nvmlProcessDetail_v1_t)),
     ]
-    _fmt_ = {'numProcArrayEntries': "%d B"}
+    _fmt_ = {'numProcArrayEntries': "{} B"}
 
 c_nvmlProcessDetailList_t = c_nvmlProcessDetailList_v1_t
 
@@ -1414,7 +1414,7 @@ class c_nvmlUtilization_t(_PrintableStructure):
         ('gpu', c_uint),
         ('memory', c_uint),
     ]
-    _fmt_ = {'<default>': "%d %%"}
+    _fmt_ = {'<default>': "{} %%"}
 
 # Added in 2.285
 class c_nvmlHwbcEntry_t(_PrintableStructure):
@@ -5868,7 +5868,7 @@ class c_nvmlPowerValue_v2_t(_PrintableStructure):
         ('powerScope', _nvmlPowerScopeType_t),
         ('powerValueMw', c_uint),
     ]
-    _fmt_ = {'<default>': "%d B"}
+    _fmt_ = {'<default>': "{} B"}
 
 nvmlPowerValue_v2 = 0x0200000C
 

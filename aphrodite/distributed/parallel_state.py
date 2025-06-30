@@ -864,8 +864,8 @@ def init_distributed_environment(
     backend: str = "nccl",
 ):
     logger.debug(
-        "world_size=%d rank=%d local_rank=%d "
-        "distributed_init_method=%s backend=%s", world_size, rank, local_rank,
+        "world_size={} rank={} local_rank={} "
+        "distributed_init_method={} backend={}", world_size, rank, local_rank,
         distributed_init_method, backend)
     from aphrodite.common.config import get_current_aphrodite_config
     config = get_current_aphrodite_config()
@@ -880,7 +880,7 @@ def init_distributed_environment(
         port = parallel_config.get_next_dp_init_port()
         distributed_init_method = f"tcp://{ip}:{port}"  # noqa
         logger.info(
-            "Adjusting world_size=%d rank=%d distributed_init_method=%s for DP",
+            "Adjusting world_size={} rank={} distributed_init_method={} for DP",
             world_size, rank, distributed_init_method)
     if not torch.distributed.is_initialized():
         assert distributed_init_method is not None, (
@@ -1001,8 +1001,8 @@ def initialize_model_parallel(
                                     group_name="dp")
 
     logger.info(
-        "rank %s in world size %s is assigned as "
-        "DP rank %s, PP rank %s, TP rank %s", rank, world_size,
+        "rank {} in world size {} is assigned as "
+        "DP rank {}, PP rank {}, TP rank {}", rank, world_size,
         _DP.rank_in_group, _PP.rank_in_group, _TP.rank_in_group)
 
 
@@ -1181,7 +1181,7 @@ def in_the_same_node_as(pg: Union[ProcessGroup, StatelessProcessGroup],
                 if shm.buf[:len(magic_message)] == magic_message:
                     is_in_the_same_node[rank] = 1
     except Exception as e:
-        logger.error("Error ignored in is_in_the_same_node: %s", e)
+        logger.error("Error ignored in is_in_the_same_node: {}", e)
     finally:
         if shm:
             shm.close()

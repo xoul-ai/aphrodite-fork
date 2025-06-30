@@ -408,7 +408,7 @@ class Platform:
         if device is not None and hasattr(device, key):
             return getattr(device, key)
         else:
-            logger.warning("Current platform %s does not have '%s'" \
+            logger.warning("Current platform {} does not have '{}'" \
             " attribute.", self.device_name, key)
             return None
 

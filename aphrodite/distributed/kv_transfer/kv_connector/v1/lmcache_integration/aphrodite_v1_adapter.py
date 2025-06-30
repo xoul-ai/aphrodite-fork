@@ -51,7 +51,7 @@ def get_zmq_rpc_path_lmcache(
     if aphrodite_config is not None:
         rpc_port = aphrodite_config.kv_transfer_config.get_from_extra_config(
             "lmcache_rpc_port", 0)
-    logger.debug("Base URL: %s, RPC Port: %s", base_url, rpc_port)
+    logger.debug("Base URL: {}, RPC Port: {}", base_url, rpc_port)
     return f"ipc://{base_url}/lmcache_rpc_port_{rpc_port}"
 
 
@@ -106,7 +106,7 @@ class LMCacheLookupServer:
                     response = result.to_bytes(4, "big")
                     self.socket.send(response)
                 except Exception as e:
-                    logger.error("Error in LMCache lookup server: %s", e)
+                    logger.error("Error in LMCache lookup server: {}", e)
                     break
                 #continue
 
@@ -259,7 +259,7 @@ class ReqMeta:
             logger.error(
                 "The number of tokens is more than the number of blocks."
                 "Something might be wrong in scheduling logic!")
-            logger.error("Num tokens: %d, num blocks: %d, block size: %d",
+            logger.error("Num tokens: {}, num blocks: {}, block size: {}",
                          len(token_ids), num_blocks, block_size)
 
         block_offsets = torch.arange(0, block_size, dtype=torch.long)
@@ -271,7 +271,7 @@ class ReqMeta:
 
         # For load operation: check whether the request is scheduled to load
         if load_spec is not None and load_spec.can_load:
-            logger.debug("Scheduled to load %d tokens for request %s",
+            logger.debug("Scheduled to load {} tokens for request {}",
                          load_spec.lmcache_cached_tokens, tracker.req_id)
         else:
             # Do not load if not in `can_load` state
@@ -351,7 +351,7 @@ class LMCacheConnectorV1Impl:
         for layer_name in forward_context.no_compile_layers:
             attn_layer = forward_context.no_compile_layers[layer_name]
             if not hasattr(attn_layer, "kv_cache"):
-                logger.debug("The layer %s does not have kv_cache, skip it",
+                logger.debug("The layer {} does not have kv_cache, skip it",
                              layer_name)
                 continue
 
@@ -434,7 +434,7 @@ class LMCacheConnectorV1Impl:
                     "The number of retrieved tokens is less than the "
                     "expected number of tokens! This should not happen!")
                 logger.error(
-                    "Num retrieved tokens: %d, num expected tokens: %d",
+                    "Num retrieved tokens: {}, num expected tokens: {}",
                     num_retrieved_tokens, num_expected_tokens)
 
     def wait_for_layer_load(self, layer_name: str) -> None:
@@ -510,7 +510,7 @@ class LMCacheConnectorV1Impl:
             store_mask[:skip_leading_tokens] = False
 
             logger.info(
-                "Storing KV cache for %d out of %d tokens for request %s",
+                "Storing KV cache for {} out of {} tokens for request {}",
                 len(token_ids) - skip_leading_tokens, len(token_ids),
                 request.req_id)
             self.lmcache_engine.store(token_ids,
@@ -560,8 +560,8 @@ class LMCacheConnectorV1Impl:
         need_to_allocate = num_external_hit_tokens - num_computed_tokens
 
         logger.info(
-            "Reqid: %s, Total tokens %d, LMCache hit tokens: %d, "
-            "need to load: %d", request.request_id, request.num_tokens,
+            "Reqid: {}, Total tokens {}, LMCache hit tokens: {}, "
+            "need to load: {}", request.request_id, request.num_tokens,
             num_external_hit_tokens, need_to_allocate)
 
         if need_to_allocate <= 0:

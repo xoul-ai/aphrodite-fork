@@ -28,7 +28,7 @@ def maybe_backend_fallback(
         if guided_params.disable_fallback:
             raise ValueError(message)
 
-        logger.warning("%s Falling back to use %s instead.", message, fallback)
+        logger.warning("{} Falling back to use {} instead.", message, fallback)
         guided_params.backend = fallback
 
     # `auto` was added for V1 to explicitly declare a mode that has fallbacks

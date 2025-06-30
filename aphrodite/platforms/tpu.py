@@ -40,7 +40,7 @@ class TpuPlatform(Platform):
                              use_mla: bool) -> str:
         if (selected_backend != _Backend.PALLAS
                 and selected_backend != _Backend.PALLAS_APHRODITE_V1):
-            logger.info("Cannot use %s backend on TPU.", selected_backend)
+            logger.info("Cannot use {} backend on TPU.", selected_backend)
 
         if use_v1:
             logger.info("Using Pallas V1 backend.")
@@ -89,7 +89,7 @@ class TpuPlatform(Platform):
         if aphrodite_config.model_config.dtype in (torch.float16,
                                                    torch.float32):
             logger.warning(
-                "The TPU backend currently does not support %s. "
+                "The TPU backend currently does not support {}. "
                 "Using bfloat16 instead.", aphrodite_config.model_config.dtype)
             aphrodite_config.model_config.dtype = torch.bfloat16
 
@@ -100,7 +100,7 @@ class TpuPlatform(Platform):
                 aphrodite_config)
             if min_page_size > aphrodite_config.cache_config.block_size:
                 logger.warning(
-                    "Increase the page size from %s to %s to make sure there's"
+                    "Increase the page size from {} to {} to make sure there's"
                     "no SMEM OOM",
                     aphrodite_config.cache_config.block_size,
                     min_page_size,

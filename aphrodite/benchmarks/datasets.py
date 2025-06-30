@@ -191,7 +191,7 @@ class BenchmarkDataset(ABC):
             additional = random.choices(requests,
                                         k=num_requests - len(requests))
             requests.extend(additional)
-            logger.info("Oversampled requests to reach %d total samples.",
+            logger.info("Oversampled requests to reach {} total samples.",
                         num_requests)
 
 
@@ -325,8 +325,8 @@ class RandomDataset(BenchmarkDataset):
         output_high = int(output_len * (1 + range_ratio))
 
         # Add logging for debugging
-        logger.info("Sampling input_len from [%s, %s]", input_low, input_high)
-        logger.info("Sampling output_len from [%s, %s]", output_low,
+        logger.info("Sampling input_len from [{}, {}]", input_low, input_high)
+        logger.info("Sampling output_len from [{}, {}]", output_low,
                     output_high)
 
         input_lens = np.random.randint(input_low,

@@ -35,7 +35,7 @@ class AphroditeInductorPass(InductorPass):
             rank = f"-{get_tp_rank()}" if parallel else ""
             filepath = self.pass_config.dump_graph_dir / f"{stage}{rank}.py"
 
-            logger.info("%s printing graph to %s", self.pass_name, filepath)
+            logger.info("{} printing graph to {}", self.pass_name, filepath)
             with open(filepath, "w") as f:
                 src = graph.python_code(root_module="self", verbose=True).src
                 # Add imports so it's not full of errors
@@ -48,7 +48,7 @@ class AphroditeInductorPass(InductorPass):
     def end_and_log(self):
         self._end_time = time.perf_counter_ns()
         duration_ms = float(self._end_time - self._start_time) / 1.0e6
-        logger.debug("%s completed in %.1f ms", self.pass_name, duration_ms)
+        logger.debug("{} completed in %.1f ms", self.pass_name, duration_ms)
 
 
 class PrinterInductorPass(AphroditeInductorPass):

@@ -217,7 +217,7 @@ class MessageQueue:
             # see http://api.zeromq.org/3-3:zmq-setsockopt for more details
             self.local_socket.setsockopt(XPUB_VERBOSE, True)
             local_subscribe_addr = get_open_zmq_ipc_path()
-            logger.debug("Binding to %s", local_subscribe_addr)
+            logger.debug("Binding to {}", local_subscribe_addr)
             self.local_socket.bind(local_subscribe_addr)
 
             self.current_idx = 0
@@ -263,7 +263,7 @@ class MessageQueue:
         )
 
         logger.info(
-            "Aphrodite message queue communication handle: %s", self.handle)
+            "Aphrodite message queue communication handle: {}", self.handle)
 
     def export_handle(self) -> Handle:
         return self.handle
@@ -287,7 +287,7 @@ class MessageQueue:
             self.local_socket = context.socket(SUB)
             self.local_socket.setsockopt_string(SUBSCRIBE, "")
             socket_addr = handle.local_subscribe_addr
-            logger.debug("Connecting to %s", socket_addr)
+            logger.debug("Connecting to {}", socket_addr)
             self.local_socket.connect(socket_addr)
 
             self.remote_socket = None
@@ -305,7 +305,7 @@ class MessageQueue:
             if handle.remote_addr_ipv6:
                 self.remote_socket.setsockopt(IPV6, 1)
             socket_addr = handle.remote_subscribe_addr
-            logger.debug("Connecting to %s", socket_addr)
+            logger.debug("Connecting to {}", socket_addr)
             self.remote_socket.connect(socket_addr)
 
         return self
@@ -367,7 +367,7 @@ class MessageQueue:
                             n_warning):
                         logger.debug(
                             ("No available shared memory broadcast block found"
-                             " in %s second."),
+                             " in {} second."),
                             APHRODITE_RINGBUFFER_WARNING_INTERVAL,
                         )
                         n_warning += 1
@@ -431,7 +431,7 @@ class MessageQueue:
                             n_warning):
                         logger.debug(
                             ("No available shared memory broadcast block found"
-                             "in %s second."),
+                             "in {} second."),
                             APHRODITE_RINGBUFFER_WARNING_INTERVAL,
                         )
                         n_warning += 1

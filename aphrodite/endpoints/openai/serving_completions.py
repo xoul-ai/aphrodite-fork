@@ -50,7 +50,7 @@ class OpenAIServingCompletion(OpenAIServing):
         if self.default_sampling_params:
             source = self.model_config.generation_config
             source = "model" if source == "auto" else source
-            logger.info("Using default completion sampling params from %s: %s",
+            logger.info("Using default completion sampling params from {}: {}",
                         source, self.default_sampling_params)
 
     async def create_completion(
@@ -129,6 +129,7 @@ class OpenAIServingCompletion(OpenAIServing):
                         default_max_tokens, self.default_sampling_params)
                 else:
                     sampling_params = request.to_sampling_params(
+                        tokenizer,
                         default_max_tokens,
                         self.model_config.logits_processor_pattern,
                         self.default_sampling_params)

@@ -32,7 +32,7 @@ class CpuPlatform(Platform):
                              block_size: int, use_v1: bool,
                              use_mla: bool) -> str:
         if selected_backend and selected_backend != _Backend.TORCH_SDPA:
-            logger.info("Cannot use %s backend on CPU.", selected_backend)
+            logger.info("Cannot use {} backend on CPU.", selected_backend)
         if use_mla:
             logger.info("Using CPU MLA backend.")
             return "aphrodite.attention.backends.cpu_mla.CPUMLABackend"
@@ -110,7 +110,7 @@ class CpuPlatform(Platform):
         parallel_config = aphrodite_config.parallel_config
         if (parallel_config.distributed_executor_backend is not None
                 and parallel_config.distributed_executor_backend != "mp"):
-            logger.warning(("%s is not supported on CPU, fallback to mp "
+            logger.warning(("{} is not supported on CPU, fallback to mp "
                             "distributed executor backend."),
                            parallel_config.distributed_executor_backend)
             parallel_config.distributed_executor_backend = "mp"

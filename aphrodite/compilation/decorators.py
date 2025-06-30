@@ -104,7 +104,7 @@ def support_torch_compile(
                     inferred_dynamic_arg_dims[k] = 0
 
             logger.debug(("Inferred dynamic dimensions for "
-                          "forward method of %s: %s"), cls,
+                          "forward method of {}: {}"), cls,
                          list(inferred_dynamic_arg_dims.keys()))
 
         if len(inferred_dynamic_arg_dims) == 0:
@@ -199,7 +199,7 @@ def _support_torch_compile(
                             f" {dims} for argument {k} with type {type(arg)}.")
             # here, it is the starting point of the `torch.compile` process
             start_monitoring_torch_compile(self.aphrodite_config)
-            logger.debug("Start compiling function %s",
+            logger.debug("Start compiling function {}",
                          self.original_code_object)
 
         # if we don't use custom dispatcher, we can directly call the

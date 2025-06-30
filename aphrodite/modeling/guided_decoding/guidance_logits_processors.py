@@ -69,7 +69,7 @@ class GuidanceLogitsProcessor:
             self.ll_matcher.consume_token(input_ids[-1])
             err = self.ll_matcher.get_error()
             if err:
-                logger.warning("Error in LLMatcher: %s", err)
+                logger.warning("Error in LLMatcher: {}", err)
 
         llguidance.torch.fill_next_token_bitmask(self.ll_matcher, self.bitmask,
                                                  0)

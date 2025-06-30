@@ -30,7 +30,7 @@ class AdapterLRUCache(LRUCache[int, T]):
         self.deactivate_fn = deactivate_fn
 
     def _on_remove(self, key: int, value: Optional[T]):
-        logger.debug("Removing adapter int id: %d", key)
+        logger.debug("Removing adapter int id: {}", key)
         self.deactivate_fn(key)
         return super()._on_remove(key, value)
 

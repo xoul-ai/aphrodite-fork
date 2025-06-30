@@ -134,7 +134,7 @@ def _initialize_model(
     warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
     logger.warning(
-        "Trying to guess the arguments for old-style model class %s",
+        "Trying to guess the arguments for old-style model class {}",
         model_class,
     )
     # try to be compatible with old-style model class
@@ -451,7 +451,7 @@ class DefaultModelLoader(BaseModelLoader):
                 self.get_all_weights(model_config, model))
             self.counter_after_loading_weights = time.perf_counter()
             logger.info(
-                "Loading weights took %.2f seconds",
+                "Loading weights took {:.2f} seconds",
                 self.counter_after_loading_weights -
                 self.counter_before_loading_weights)
             # We only enable strict check for non-quantized models
@@ -720,8 +720,8 @@ class ShardedStateLoader(BaseModelLoader):
                         param_data = param_data.narrow(dim, 0, size)
                 if tensor.shape != param_shape:
                     logger.warning(
-                        "loading tensor of shape %s into "
-                        "parameter '%s' of shape %s",
+                        "loading tensor of shape {} into "
+                        "parameter '{}' of shape {}",
                         tensor.shape,
                         key,
                         param_shape,

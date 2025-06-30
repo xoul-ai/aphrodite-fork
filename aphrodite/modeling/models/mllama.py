@@ -1515,7 +1515,7 @@ class MllamaForConditionalGeneration(nn.Module, SupportsMultiModal,
                 orig_name = name
                 name = maybe_remap_kv_scale_name(name, params_dict)
                 if name is None:
-                    logger.debug("Missing name %s, orig name %s", name,
+                    logger.debug("Missing name {}, orig name {}", name,
                                  orig_name)
                     continue
 

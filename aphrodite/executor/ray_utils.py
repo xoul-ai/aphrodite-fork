@@ -54,7 +54,7 @@ try:
             node_id = ray.get_runtime_context().get_node_id()
             device_key = aphrodite.platforms.current_platform.ray_device_key
             if not device_key:
-                raise RuntimeError("current platform %s does not support ray.",
+                raise RuntimeError("current platform {} does not support ray.",
                                    aphrodite.platforms.current_platform.device_name)
             gpu_ids = ray.get_runtime_context().get_accelerator_ids(
             )[device_key]
@@ -194,13 +194,13 @@ def _verify_bundles(placement_group: "PlacementGroup",
     for node_id, bundles in node_id_to_bundle.items():
         if len(bundles) < parallel_config.tensor_parallel_size:
             logger.warning(
-                "tensor_parallel_size=%d "
-                "is bigger than a reserved number of %ss (%d "
-                "%ss) in a node %s. Tensor parallel workers can be "
+                "tensor_parallel_size={} "
+                "is bigger than a reserved number of %ss ({} "
+                "%ss) in a node {}. Tensor parallel workers can be "
                 "spread out to 2+ nodes which can degrade the performance "
                 "unless you have fast interconnect across nodes, like "
                 "Infiniband. To resolve this issue, make sure you have more "
-                "than %d GPUs available at each node.",
+                "than {} GPUs available at each node.",
                 parallel_config.tensor_parallel_size, device_str, len(bundles),
                 device_str, node_id, parallel_config.tensor_parallel_size)
 
@@ -229,7 +229,7 @@ def _wait_until_pg_ready(current_placement_group: "PlacementGroup"):
         wait_interval *= 2
         logger.info(
             "Waiting for creating a placement group of specs for "
-            "%d seconds. specs=%s. Check `ray status` and "
+            "{} seconds. specs={}. Check `ray status` and "
             "`ray list nodes` to see if you have enough resources,"
             " and make sure the IP addresses used by ray cluster"
             " are the same as APHRODITE_HOST_IP environment variable"
@@ -259,7 +259,7 @@ def _wait_until_pg_removed(current_placement_group: "PlacementGroup"):
         wait_interval *= 2
         logger.info(
             "Waiting for removing a placement group of specs for "
-            "%d seconds.", int(time.time() - s))
+            "{} seconds.", int(time.time() - s))
         time.sleep(wait_interval)
 
 

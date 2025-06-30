@@ -260,5 +260,5 @@ class SequenceParallelismPass(AphroditeInductorPass):
     def __call__(self, graph: fx.Graph):
         self.dump_graph(graph, "before_sequence_parallelism_pass")
         count = self.patterns.apply(graph)
-        logger.debug("Replaced %s patterns", count)
+        logger.debug("Replaced {} patterns", count)
         self.dump_graph(graph, "after_sequence_parallelism_pass")

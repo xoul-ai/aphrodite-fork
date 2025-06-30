@@ -101,7 +101,7 @@ class Worker(LocalOrDistributedWorkerBase):
         # APHRODITE_TORCH_PROFILER_DIR=/path/to/save/trace
         if envs.APHRODITE_TORCH_PROFILER_DIR:
             torch_profiler_trace_dir = envs.APHRODITE_TORCH_PROFILER_DIR
-            logger.info("Profiling enabled. Traces will be saved to: %s",
+            logger.info("Profiling enabled. Traces will be saved to: {}",
                         torch_profiler_trace_dir)
             self.profiler = torch.profiler.profile(
                 activities=[
@@ -142,8 +142,8 @@ class Worker(LocalOrDistributedWorkerBase):
         used_bytes = total - free_bytes_after_sleep
         assert freed_bytes >= 0, "Memory usage increased after sleeping."
         logger.info(
-            "Sleep mode freed %.2f GiB memory, "
-            "%.2f GiB memory is still in use.", freed_bytes / GiB_bytes,
+            "Sleep mode freed {:.2f} GiB memory, "
+            "{:.2f} GiB memory is still in use.", freed_bytes / GiB_bytes,
             used_bytes / GiB_bytes)
 
     def wake_up(self, tags: Optional[list[str]] = None) -> None:
@@ -351,7 +351,7 @@ class Worker(LocalOrDistributedWorkerBase):
                 self.aphrodite_config.compilation_config.cudagraph_capture_sizes
             ]
         for size in sorted(warmup_sizes, reverse=True):
-            logger.info("Compile and warming up model for size %d", size)
+            logger.info("Compile and warming up model for size {}", size)
             self.model_runner._dummy_run(size)
         if not self.model_config.enforce_eager:
             self.model_runner.capture_model(self.gpu_cache)

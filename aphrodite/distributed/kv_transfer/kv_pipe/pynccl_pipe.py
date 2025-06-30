@@ -106,7 +106,7 @@ class PyNcclPipe(KVPipeBase):
         return send, recv
 
     def _select_device(self, device: str):
-        logger.info("Selecting device: %s", device)
+        logger.info("Selecting device: {}", device)
         if device == "cuda":
             return torch.device(f"cuda:{self.local_rank}")
         else:
@@ -206,7 +206,7 @@ class PyNcclPipe(KVPipeBase):
             with self.buffer_size_lock:
                 self.buffer_size -= tensor_size
         except Exception as e:
-            logger.error("[rank%d]: Exception when trying to send %s, msg: %s",
+            logger.error("[rank{}]: Exception when trying to send {}, msg: {}",
                          torch.distributed.get_rank(), str(tensor), str(e))
             import traceback
             traceback.print_exc()
@@ -260,8 +260,8 @@ class PyNcclPipe(KVPipeBase):
             tensor = future.result()
         except Exception as e:
             logger.error("Encountering exception in KV receiving thread")
-            logger.error("%s", e)
-            logger.error("My device: %s", self.device)
+            logger.error("{}", e)
+            logger.error("My device: {}", self.device)
             import traceback
             traceback.print_exc()
             raise e

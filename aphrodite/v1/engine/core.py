@@ -54,7 +54,7 @@ class EngineCore:
                  executor_fail_callback: Optional[Callable] = None):
         assert aphrodite_config.model_config.runner_type != "pooling"
 
-        logger.info("Initializing a V1 LLM engine (v%s) with config: %s",
+        logger.info("Initializing a V1 LLM engine (v{}) with config: {}",
                     APHRODITE_VERSION, aphrodite_config)
 
         self.log_stats = log_stats
@@ -86,7 +86,7 @@ class EngineCore:
         # implement it
         if Scheduler is not V1Scheduler:
             logger.warning(
-                "Using configured V1 scheduler class %s. "
+                "Using configured V1 scheduler class {}. "
                 "This scheduler interface is not public and "
                 "compatibility may not be maintained.",
                 aphrodite_config.scheduler_config.scheduler_cls)
@@ -112,7 +112,7 @@ class EngineCore:
         self.batch_queue: Optional[queue.Queue[tuple[Future[ModelRunnerOutput],
                                                      SchedulerOutput]]] = None
         if self.batch_queue_size > 1:
-            logger.info("Batch queue is enabled with size %d",
+            logger.info("Batch queue is enabled with size {}",
                         self.batch_queue_size)
             self.batch_queue = queue.Queue(self.batch_queue_size)
         self.aphrodite_config = aphrodite_config
@@ -157,7 +157,7 @@ class EngineCore:
 
         elapsed = time.time() - start
         logger.info(("init engine (profile, create kv cache, "
-                     "warmup model) took %.2f seconds"), elapsed)
+                     "warmup model) took {:.2f} seconds"), elapsed)
         return num_gpu_blocks, num_cpu_blocks, scheduler_kv_cache_config
 
     def add_request(self, request: EngineCoreRequest):
@@ -458,7 +458,7 @@ class EngineCoreProc(EngineCore):
                 output.result = method(
                     *self._convert_msgspec_args(method, args))
             except BaseException as e:
-                logger.exception("Invocation of %s method failed", method_name)
+                logger.exception("Invocation of {} method failed", method_name)
                 output.failure_message = (f"Call to {method_name} method"
                                           f" failed: {str(e)}")
             self.output_queue.put_nowait(
@@ -466,7 +466,7 @@ class EngineCoreProc(EngineCore):
         elif request_type == EngineCoreRequestType.EXECUTOR_FAILED:
             raise RuntimeError("Executor failed.")
         else:
-            logger.error("Unrecognized input request type encountered: %s",
+            logger.error("Unrecognized input request type encountered: {}",
                          request_type)
 
     @staticmethod
@@ -644,7 +644,7 @@ class DPEngineCoreProc(EngineCoreProc):
             if new_wave >= self.current_wave:
                 self.current_wave = new_wave
                 if not self.engines_running:
-                    logger.debug("EngineCore starting idle loop for wave %d.",
+                    logger.debug("EngineCore starting idle loop for wave {}.",
                                  new_wave)
                     self.engines_running = True
         else:
@@ -691,7 +691,7 @@ class DPEngineCoreProc(EngineCoreProc):
             if not self.engines_running:
                 if self.local_dp_rank == 0:
                     # Notify client that we are pausing the loop.
-                    logger.debug("Wave %d finished, pausing engine loop.",
+                    logger.debug("Wave {} finished, pausing engine loop.",
                                  self.current_wave)
                     self.output_queue.put_nowait(
                         EngineCoreOutputs(wave_complete=self.current_wave))

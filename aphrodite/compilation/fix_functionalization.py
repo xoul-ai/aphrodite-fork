@@ -95,7 +95,7 @@ class FixFunctionalizationPass(AphroditeInductorPass):
         for node in self.nodes_to_remove:
             graph.erase_node(node)
 
-        logger.debug("De-functionalized %s nodes, removed %s nodes", count,
+        logger.debug("De-functionalized {} nodes, removed {} nodes", count,
                      count_removed)
         self.dump_graph(graph, "after_fix_functionalization")
         self.end_and_log()

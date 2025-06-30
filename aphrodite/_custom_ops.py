@@ -14,7 +14,7 @@ if not current_platform.is_tpu() and not current_platform.is_hpu():
     try:
         import aphrodite._C
     except ImportError as e:
-        logger.warning("Failed to import from aphrodite._C with %r", e)
+        logger.warning("Failed to import from aphrodite._C with {!r}", e)
 
 supports_moe_ops = False
 with contextlib.suppress(ImportError):

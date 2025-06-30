@@ -21,7 +21,6 @@ async def serve_http(app: FastAPI,
                      sock: Optional[socket.socket],
                      enable_ssl_refresh: bool = False,
                      **uvicorn_kwargs: Any):
-    logger.info("Available routes are:")
     for route in app.routes:
         methods = getattr(route, "methods", None)
         path = getattr(route, "path", None)
@@ -68,7 +67,7 @@ async def serve_http(app: FastAPI,
         process = find_process_using_port(port)
         if process is not None:
             logger.debug(
-                "port %s is used by process %s launched with command:\n%s",
+                "port {} is used by process {} launched with command:\n{}",
                 port, process, " ".join(process.cmdline()))
         logger.info("Shutting down FastAPI HTTP server.")
         return server.shutdown()

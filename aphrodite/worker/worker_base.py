@@ -587,7 +587,7 @@ class WorkerWrapperBase:
                 worker_class.__bases__ = worker_class.__bases__ + (
                     worker_extension_cls, )
                 logger.info(
-                    "Injected %s into %s for extended collective_rpc calls %s",
+                    "Injected {} into {} for extended collective_rpc calls {}",
                     worker_extension_cls, worker_class, extended_calls)
         with set_current_aphrodite_config(self.aphrodite_config):
             # To make Aphrodite config available during worker initialization

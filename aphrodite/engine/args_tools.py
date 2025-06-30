@@ -1415,7 +1415,7 @@ class EngineArgs:
 
         if not self.enable_chunked_prefill and use_long_context:
             logger.warning(
-                "The model has a long context length (%s). This may cause"
+                "The model has a long context length ({}). This may cause"
                 "OOM during the initial memory profiling phase, or result "
                 "in low performance due to small KV cache size. Consider "
                 "setting --max-model-len to a smaller value.", max_model_len)
@@ -1495,13 +1495,13 @@ class EngineArgs:
             self.max_num_batched_tokens = default_max_num_batched_tokens[
                 usage_context]
             logger.debug(
-                "Setting max_num_batched_tokens to %d for %s usage context.",
+                "Setting max_num_batched_tokens to {} for {} usage context.",
                 self.max_num_batched_tokens, use_context_value)
 
         if self.max_num_seqs is None:
             self.max_num_seqs = default_max_num_seqs
 
-            logger.debug("Setting max_num_seqs to %d for %s usage context.",
+            logger.debug("Setting max_num_seqs to {} for {} usage context.",
                          self.max_num_seqs, use_context_value)
 
 
@@ -1542,13 +1542,13 @@ def _raise_or_fallback(feature_name: str, recommend_to_remove: bool):
 def _warn_or_fallback(feature_name: str) -> bool:
     if envs.is_set("APHRODITE_USE_V1") and envs.APHRODITE_USE_V1:
         logger.warning(
-            "Detected APHRODITE_USE_V1=1 with %s. Usage should "
+            "Detected APHRODITE_USE_V1=1 with {}. Usage should "
             "be considered experimental. Please report any "
             "issues on Github.", feature_name)
         should_exit = False
     else:
         logger.info(
-            "%s is experimental on APHRODITE_USE_V1=1. "
+            "{} is experimental on APHRODITE_USE_V1=1. "
             "Falling back to V0 Engine.", feature_name)
         should_exit = True
     return should_exit

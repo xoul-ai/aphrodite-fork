@@ -107,7 +107,7 @@ class TPUWorker(LoRANotSupportedWorkerBase, LocalOrDistributedWorkerBase):
             # For TPU, we can only have 1 active profiler session for 1 profiler
             # server. So we only profile on rank0.
             self.profile_dir = envs.APHRODITE_TORCH_PROFILER_DIR
-            logger.info("Profiling enabled. Traces will be saved to: %s",
+            logger.info("Profiling enabled. Traces will be saved to: {}",
                         self.profile_dir)
             self.profiler = xp.start_server(9012)
 

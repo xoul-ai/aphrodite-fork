@@ -101,7 +101,7 @@ class TorchCompileWrapperWithCustomDispatcher:
                     with open(decompiled_file, "w") as f:
                         f.write(src)
 
-                    logger.debug("Dynamo transformed code saved to %s",
+                    logger.debug("Dynamo transformed code saved to {}",
                                  decompiled_file)
                 except Exception:
                     pass

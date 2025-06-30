@@ -47,17 +47,17 @@ class SSLCertRefresher:
     async def _watch_files(self, paths, fun: Callable[[Change, str],
                                                       None]) -> None:
         """Watch multiple file paths asynchronously."""
-        logger.info("SSLCertRefresher monitors files: %s", paths)
+        logger.info("SSLCertRefresher monitors files: {}", paths)
         async for changes in awatch(*paths):
             try:
                 for change, file_path in changes:
-                    logger.info("File change detected: %s - %s", change.name,
+                    logger.info("File change detected: {} - {}", change.name,
                                 file_path)
                     fun(change, file_path)
             except Exception as e:
                 logger.error(
                     "SSLCertRefresher failed taking action on file change. "
-                    "Error: %s", e)
+                    "Error: {}", e)
 
     def stop(self) -> None:
         """Stop watching files."""

@@ -114,7 +114,7 @@ class LoggingStatLogger(StatLoggerBase):
             "Engine %03d: "
             "Avg prompt throughput: %.1f tokens/s, "
             "Avg generation throughput: %.1f tokens/s, "
-            "Running: %d reqs, Waiting: %d reqs, "
+            "Running: {} reqs, Waiting: {} reqs, "
             "GPU KV cache usage: %.1f%%, "
             "Prefix cache hit rate: %.1f%%",
             self.engine_index,
@@ -132,7 +132,7 @@ class LoggingStatLogger(StatLoggerBase):
     def log_engine_initialized(self):
         logger.info(
             "aphrodite cache_config_info with initialization " \
-            "after num_gpu_blocks is: %d",
+            "after num_gpu_blocks is: {}",
             self.aphrodite_config.cache_config.num_gpu_blocks)
 
 

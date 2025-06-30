@@ -28,6 +28,7 @@ from typing_extensions import deprecated
 
 import aphrodite.common.envs as envs
 from aphrodite import version
+from aphrodite.common.logger import log_once
 from aphrodite.common.utils import (GiB_bytes, LayerBlockType,
                                     cuda_device_count_stateless,
                                     get_cpu_memory, get_open_port,
@@ -538,10 +539,10 @@ class ModelConfig:
                                self.code_revision, self.config_format)
 
         if hf_overrides_kw:
-            logger.info("Overriding HF config with %s", hf_overrides_kw)
+            logger.info("Overriding HF config with {}", hf_overrides_kw)
             hf_config.update(hf_overrides_kw)
         if hf_overrides_fn:
-            logger.info("Overriding HF config with %s", hf_overrides_fn)
+            logger.info("Overriding HF config with {}", hf_overrides_fn)
             hf_config = hf_overrides_fn(hf_config)
 
         self.hf_config = hf_config
@@ -567,7 +568,7 @@ class ModelConfig:
                     self.hf_text_config.sliding_window)
 
                 logger.warning_once(
-                    "%s has interleaved attention, which is currently not supported by the %s backend. Disabling sliding window and capping the max length to the sliding window size (%d).",  # noqa: E501
+                    "{} has interleaved attention, which is currently not supported by the {} backend. Disabling sliding window and capping the max length to the sliding window size ({}).",  # noqa: E501
                     self.hf_text_config.model_type,
                     backend,
                     sliding_window_len_min,
@@ -796,8 +797,8 @@ class ModelConfig:
                     selected_task = preferred_task
 
                 logger.info(
-                    "This model supports multiple tasks: %s. "
-                    "Defaulting to '%s'.", supported_tasks, selected_task)
+                    "This model supports multiple tasks: {}. "
+                    "Defaulting to '{}'.", supported_tasks, selected_task)
         else:
             # Aliases
             if task_option == "embedding":
@@ -996,7 +997,7 @@ class ModelConfig:
         if (self.hf_config.model_type in ROCM_UNSUPPORTED_MODELS
                 and not self.enforce_eager and current_platform.is_rocm()):
             logger.warning(
-                "CUDA graph is not supported for %s on ROCm yet, fallback "
+                "CUDA graph is not supported for {} on ROCm yet, fallback "
                 "to the eager mode.", self.hf_config.model_type)
             self.enforce_eager = True
 
@@ -1393,7 +1394,8 @@ class ModelConfig:
             diff_sampling_param = {}
 
         if diff_sampling_param:
-            logger.warning_once(
+            log_once(
+                "WARNING",
                 "Default sampling parameters have been overridden by the "
                 "model's Hugging Face generation config recommended from the "
                 "model creator. If this is not intended, please relaunch "
@@ -1597,7 +1599,7 @@ class CacheConfig:
         if cpu_memory_usage > 0.7 * total_cpu_memory:
             raise ValueError("Too large swap space. " + msg)
         elif cpu_memory_usage > 0.4 * total_cpu_memory:
-            logger.warning("Possibly too large swap space. %s", msg)
+            logger.warning("Possibly too large swap space. {}", msg)
 
 
 @config
@@ -1723,7 +1725,7 @@ class LoadConfig:
 
         if self.ignore_patterns is not None and len(self.ignore_patterns) > 0:
             logger.info(
-                "Ignoring the following patterns when downloading weights: %s",
+                "Ignoring the following patterns when downloading weights: {}",
                 self.ignore_patterns)
         else:
             self.ignore_patterns = ["original/**/*"]
@@ -1934,7 +1936,7 @@ class ParallelConfig:
                         if get_current_placement_group():
                             backend = "ray"
             self.distributed_executor_backend = backend
-            logger.info("Defaulting to use %s for distributed inference",
+            logger.info("Defaulting to use {} for distributed inference",
                         backend)
 
         if self.distributed_executor_backend is None and self.world_size == 1:
@@ -2136,13 +2138,13 @@ class SchedulerConfig:
             self.max_model_len = 8192
             logger.warning(
                 "max_model_len was is not set. Defaulting to arbitrary value "
-                "of %d.", self.max_model_len)
+                "of {}.", self.max_model_len)
 
         if self.max_num_seqs is None:
             self.max_num_seqs = 128
             logger.warning(
                 "max_num_seqs was is not set. Defaulting to arbitrary value "
-                "of %d.", self.max_num_seqs)
+                "of {}.", self.max_num_seqs)
 
         if self.max_num_batched_tokens is None:
             if self.enable_chunked_prefill:
@@ -2181,7 +2183,7 @@ class SchedulerConfig:
 
         if self.enable_chunked_prefill:
             logger.info(
-                "Chunked prefill is enabled with max_num_batched_tokens=%d.",
+                "Chunked prefill is enabled with max_num_batched_tokens={}.",
                 self.max_num_batched_tokens)
 
         self.chunked_prefill_enabled = self.enable_chunked_prefill
@@ -2192,8 +2194,8 @@ class SchedulerConfig:
 
             logger.info(
                 "Concurrent partial prefills enabled with "
-                "max_num_partial_prefills=%d, max_long_partial_prefills=%d, "
-                "long_prefill_token_threshold=%d",
+                "max_num_partial_prefills={}, max_long_partial_prefills={}, "
+                "long_prefill_token_threshold={}",
                 self.max_num_partial_prefills, self.max_long_partial_prefills,
                 self.long_prefill_token_threshold)
 
@@ -2682,7 +2684,7 @@ class SpeculativeConfig:
                 speculative_draft_tensor_parallel_size = 1
                 if target_parallel_config.tensor_parallel_size > 1:
                     logger.warning(
-                        "%s cannot currently be run with tp>1; "
+                        "{} cannot currently be run with tp>1; "
                         "setting speculative_draft_tensor_parallel_size=1",
                         draft_hf_config.model_type)
             else:
@@ -3154,15 +3156,15 @@ def _get_and_verify_dtype(
     if torch_dtype != config_dtype:
         if torch_dtype == torch.float32:
             # Upcasting to float32 is allowed.
-            logger.info("Upcasting %s to %s.", config_dtype, torch_dtype)
+            logger.info("Upcasting {} to {}.", config_dtype, torch_dtype)
             pass
         elif config_dtype == torch.float32:
             # Downcasting from float32 to float16 or bfloat16 is allowed.
-            logger.info("Downcasting %s to %s.", config_dtype, torch_dtype)
+            logger.info("Downcasting {} to {}.", config_dtype, torch_dtype)
             pass
         else:
             # Casting between float16 and bfloat16 is allowed with a warning.
-            logger.warning("Casting %s to %s.", config_dtype, torch_dtype)
+            logger.warning("Casting {} to {}.", config_dtype, torch_dtype)
 
     return torch_dtype
 
@@ -3944,7 +3946,7 @@ class CompilationConfig(BaseModel):
             self.cudagraph_capture_sizes = list(
                 set(self.cudagraph_capture_sizes))
             logger.info(("cudagraph sizes specified by model runner"
-                         " %s is overridden by config %s"),
+                         " {} is overridden by config {}"),
                         cudagraph_capture_sizes, self.cudagraph_capture_sizes)
 
         computed_compile_sizes = []
@@ -4304,8 +4306,8 @@ class AphroditeConfig:
         ]
         if removed_sizes:
             logger.warning(
-                "Batch sizes %s are removed because they are not "
-                "multiple of tp_size %d when "
+                "Batch sizes {} are removed because they are not "
+                "multiple of tp_size {} when "
                 "sequence parallelism is enabled", removed_sizes,
                 self.parallel_config.tensor_parallel_size)
 
@@ -4456,9 +4458,9 @@ def set_current_aphrodite_config(aphrodite_config: AphroditeConfig, check_compil
     except Exception:
         raise
     else:
-        logger.debug("enabled custom ops: %s",
+        logger.debug("enabled custom ops: {}",
                      aphrodite_config.compilation_config.enabled_custom_ops)
-        logger.debug("disabled custom ops: %s",
+        logger.debug("disabled custom ops: {}",
                      aphrodite_config.compilation_config.disabled_custom_ops)
         if check_compile and \
             aphrodite_config.compilation_config.level == CompilationLevel.PIECEWISE \
@@ -4469,7 +4471,7 @@ def set_current_aphrodite_config(aphrodite_config: AphroditeConfig, check_compil
             # If it is not increased, it means the model does not support
             # compilation (does not have @support_torch_compile decorator).
             logger.warning(
-                "`torch.compile` is turned on, but the model %s"
+                "`torch.compile` is turned on, but the model {}"
                 " does not support it. Please open an issue on GitHub"
                 " if you want it to be supported.",
                 aphrodite_config.model_config.model)

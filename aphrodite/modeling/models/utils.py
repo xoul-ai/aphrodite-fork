@@ -131,13 +131,13 @@ class AutoWeightsLoader:
             weight_qualname = self._get_qualname(base_prefix, weight_name)
 
             if self._can_skip(weight_qualname):
-                logger.debug("Skipping weight %s", weight_qualname)
+                logger.debug("Skipping weight {}", weight_qualname)
 
                 continue
 
             if weight_name != "":
                 if self._can_ignore_unexpected(weight_qualname):
-                    logger.debug("Ignoring weight %s", weight_qualname)
+                    logger.debug("Ignoring weight {}", weight_qualname)
 
                     continue
 
@@ -149,7 +149,7 @@ class AutoWeightsLoader:
                                     default_weight_loader)
             weight_loader(param, weight_data)
 
-            logger.debug("Loaded weight %s with shape %s", weight_qualname,
+            logger.debug("Loaded weight {} with shape {}", weight_qualname,
                          param.shape)
 
             yield weight_qualname
@@ -192,7 +192,7 @@ class AutoWeightsLoader:
                 if loaded_params is None:
                     logger.warning(
                         "Unable to collect loaded parameters "
-                        "for module %s", module)
+                        "for module {}", module)
                 else:
                     yield from map(
                         lambda x: self._get_qualname(base_prefix, x),
@@ -211,7 +211,7 @@ class AutoWeightsLoader:
 
             if child_prefix in child_modules:
                 if self._can_skip(prefix + "."):
-                    logger.debug("Skipping module %s", prefix)
+                    logger.debug("Skipping module {}", prefix)
 
                     continue
 
@@ -220,7 +220,7 @@ class AutoWeightsLoader:
                                              child_weights)
             elif child_prefix in child_params:
                 if self._can_skip(prefix):
-                    logger.debug("Skipping param %s", prefix)
+                    logger.debug("Skipping param {}", prefix)
 
                     continue
 
@@ -230,14 +230,14 @@ class AutoWeightsLoader:
                 can_skip_module = self._can_skip(prefix + ".")
                 can_skip_param = self._can_skip(prefix)
                 if can_skip_module or can_skip_param:
-                    logger.debug("Skipping missing %s", prefix)
+                    logger.debug("Skipping missing {}", prefix)
 
                     continue
 
                 can_ignore_module = self._can_ignore_unexpected(prefix + ".")
                 can_ignore_param = self._can_ignore_unexpected(prefix)
                 if can_ignore_module or can_ignore_param:
-                    logger.debug("Ignoring missing %s", prefix)
+                    logger.debug("Ignoring missing {}", prefix)
 
                     continue
 

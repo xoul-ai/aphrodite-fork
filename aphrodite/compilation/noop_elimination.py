@@ -96,7 +96,7 @@ class NoOpEliminationPass(AphroditeInductorPass):
                     graph.erase_node(node)
                     count += 1
 
-        logger.debug("Removed %s no-op reshapes and slices", count)
+        logger.debug("Removed {} no-op reshapes and slices", count)
         self.dump_graph(graph, "after_noop_elimination")
         self.end_and_log()
 

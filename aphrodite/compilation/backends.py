@@ -82,8 +82,8 @@ class CompilerManager:
         compiled_graph = self.compiler.load(handle, graph, example_inputs,
                                             graph_index, runtime_shape)
         logger.debug(
-            "Directly load the %s-th graph for shape %s from %s via "
-            "handle %s", graph_index, str(runtime_shape), self.compiler.name,
+            "Directly load the {}-th graph for shape {} from {} via "
+            "handle {}", graph_index, str(runtime_shape), self.compiler.name,
             handle)
         return compiled_graph
 
@@ -114,7 +114,7 @@ class CompilerManager:
                 now = time.time()
                 elapsed = now - compilation_start_time
                 logger.info(
-                    "Directly load the compiled graph(s) for shape %s "
+                    "Directly load the compiled graph(s) for shape {} "
                     "from the cache, took %.3f s", str(runtime_shape), elapsed)
             return compiled_graph
 
@@ -132,10 +132,10 @@ class CompilerManager:
             self.is_cache_updated = True
             if graph_index == 0:
                 # adds some info logging for the first graph
-                logger.info("Cache the graph of shape %s for later use",
+                logger.info("Cache the graph of shape {} for later use",
                             str(runtime_shape))
             logger.debug(
-                "store the %s-th graph for shape %s from %s via handle %s",
+                "store the {}-th graph for shape {} from {} via handle {}",
                 graph_index, str(runtime_shape), self.compiler.name, handle)
 
         # after compiling the last graph, record the end time
@@ -144,10 +144,10 @@ class CompilerManager:
             elapsed = now - compilation_start_time
             compilation_config.compilation_time += elapsed
             if runtime_shape is None:
-                logger.info("Compiling a graph for general shape takes %.2f s",
+                logger.info("Compiling a graph for general shape takes {:.2f} s",
                             elapsed)
             else:
-                logger.info("Compiling a graph for shape %s takes %.2f s",
+                logger.info("Compiling a graph for shape {} takes {:.2f} s",
                             runtime_shape, elapsed)
 
         return compiled_graph
@@ -381,7 +381,7 @@ class AphroditeBackend:
                 sorted(self.compilation_config.traced_files))
             self.compilation_config.traced_files.clear()
             logger.debug(
-                "Traced files (to be considered for compilation cache):\n%s",
+                "Traced files (to be considered for compilation cache):\n{}",
                 "\n".join(forward_code_files))
             hash_content = []
             for filepath in forward_code_files:
@@ -430,7 +430,7 @@ class AphroditeBackend:
         if disable_cache:
             logger.info("Aphrodite's torch.compile cache is disabled.")
         else:
-            logger.info("Using cache directory: %s for Aphrodite's "
+            logger.info("Using cache directory: {} for Aphrodite's "
                         "torch.compile", local_cache_dir)
 
         self.compiler_manager.initialize_cache(local_cache_dir, disable_cache)
@@ -440,7 +440,7 @@ class AphroditeBackend:
         compilation_counter.num_graphs_seen += 1
         from .monitor import torch_compile_start_time
         dynamo_time = time.time() - torch_compile_start_time
-        logger.info("Dynamo bytecode transform time: %.2f s", dynamo_time)
+        logger.info("Dynamo bytecode transform time: {:.2f} s", dynamo_time)
         self.compilation_config.compilation_time += dynamo_time
 
         # we control the compilation process, each instance can only be
@@ -483,7 +483,7 @@ class AphroditeBackend:
             with open(graph_path, "w") as f:
                 f.write(src)
 
-            logger.debug("Computation graph saved to %s", graph_path)
+            logger.debug("Computation graph saved to {}", graph_path)
 
         self._called = True
 
@@ -659,7 +659,7 @@ class PiecewiseBackend:
                 entry.num_finished_warmup += 1
                 if self.is_first_graph:
                     logger.debug(
-                        "Warming up %s/%s for shape %s",
+                        "Warming up {}/{} for shape {}",
                         entry.num_finished_warmup,
                         self.compilation_config.cudagraph_num_of_warmups,
                         runtime_shape)
@@ -669,7 +669,7 @@ class PiecewiseBackend:
                 # Since we capture cudagraph for many different shapes and
                 # capturing is fast, we don't need to log it for every shape.
                 # We only log it in the debug mode.
-                logger.debug("Capturing a cudagraph for shape %s",
+                logger.debug("Capturing a cudagraph for shape {}",
                              runtime_shape)
 
             input_addresses = [

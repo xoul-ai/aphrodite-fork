@@ -351,7 +351,7 @@ def get_w8a8_block_int8_configs(N: int, K: int, block_n: int,
     if os.path.exists(config_file_path):
         with open(config_file_path) as f:
             logger.info(
-                "Using configuration from %s for W8A8 Block INT8 kernel.",
+                "Using configuration from {} for W8A8 Block INT8 kernel.",
                 config_file_path,
             )
             # If a configuration has been found, return it
@@ -361,7 +361,7 @@ def get_w8a8_block_int8_configs(N: int, K: int, block_n: int,
     # configuration
     logger.warning(
         ("Using default W8A8 Block INT8 kernel config. Performance might "
-         "be sub-optimal! Config file not found at %s"),
+         "be sub-optimal! Config file not found at {}"),
         config_file_path,
     )
     return None

@@ -41,7 +41,7 @@ class LMCacheConnector(KVConnectorBase):
             lmcache_store_kv)
         from aphrodite.distributed.kv_transfer.kv_connector.v1.lmcache_integration.utils import (  # noqa
             ENGINE_NAME)
-        logger.info("Initializing LMCacheConfig under kv_transfer_config %s",
+        logger.info("Initializing LMCacheConfig under kv_transfer_config {}",
                     self.transfer_config)
 
         # TODO (Jiayi): Find model_config, parallel_config, and cache_config

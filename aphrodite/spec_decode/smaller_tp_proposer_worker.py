@@ -41,7 +41,7 @@ class SmallerTpProposerWorker(ProposerWorkerBase):
         # gpu ranks that will generate draft tokens together
         draft_ranks = list(range(draft_tensor_parallel_size))
 
-        logger.info("Wrapping {%s} in {%s}", type(worker), cls)
+        logger.info("Wrapping {{}} in {{}}", type(worker), cls)
         return cls(worker, draft_ranks)
 
     def __init__(self, worker: MultiStepWorker, draft_ranks: List[int]):

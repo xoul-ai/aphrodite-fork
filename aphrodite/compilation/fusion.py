@@ -604,12 +604,12 @@ class FusionPass(AphroditeInductorPass):
         self.dump_graph(graph, "before_fusion")
 
         count = self.patterns.apply(graph)
-        logger.debug("Replaced %s patterns", count)
+        logger.debug("Replaced {} patterns", count)
         self.dump_graph(graph, "after_pattern_match")
 
         # Manually process multi-output matches (and run DCE)
         self.process_matches(graph)
-        logger.debug("Post-processed %s matches", len(self.matches))
+        logger.debug("Post-processed {} matches", len(self.matches))
         self.dump_graph(graph, "after_fusion")
         self.matches.clear()
         self.end_and_log()

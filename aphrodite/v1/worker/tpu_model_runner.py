@@ -280,7 +280,7 @@ class TPUModelRunner:
         if new_compiled_graphs == 0:
             return
 
-        logger.info("Add new %d compiled XLA graphs due to %s",
+        logger.info("Add new {} compiled XLA graphs due to {}",
                     new_compiled_graphs, case_str)
         self.num_xla_graphs += new_compiled_graphs
 
@@ -959,12 +959,12 @@ class TPUModelRunner:
         for mode, max_items_by_mode in \
             self.max_num_mm_items_by_modality.items():
             logger.info(
-                "Compiling Multimodal %s Encoder with different input"
+                "Compiling Multimodal {} Encoder with different input"
                 " shapes.", mode)
             start = time.perf_counter()
             # No padding for MM encoder just yet.
             for num_items in range(1, max_items_by_mode + 1):
-                logger.info("  -- mode: %s items: %d", mode, num_items)
+                logger.info("  -- mode: {} items: {}", mode, num_items)
                 batched_dummy_mm_inputs = self._get_mm_dummy_batch(
                     mode, num_items)
                 # Run multimodal encoder.
@@ -1012,18 +1012,18 @@ class TPUModelRunner:
             xm.wait_device_ops()
             end = time.perf_counter()
             logger.info(
-                "Multimodal %s Encoder compilation finished in in %.2f "
+                "Multimodal {} Encoder compilation finished in in {:.2f} "
                 "[secs].", mode, end - start)
 
     def _precompile_backbone(self) -> None:
         logger.info("Compiling the model with different input shapes.")
         start = time.perf_counter()
         for num_tokens in self.num_tokens_paddings:
-            logger.info("  -- num_tokens: %d", num_tokens)
+            logger.info("  -- num_tokens: {}", num_tokens)
             self._dummy_run(num_tokens)
         xm.wait_device_ops()
         end = time.perf_counter()
-        logger.info("Compilation finished in %.2f [secs].", end - start)
+        logger.info("Compilation finished in {:.2f} [secs].", end - start)
         self._update_num_xla_graphs("model backbone")
 
     def _precompile_select_hidden_states(self) -> None:
@@ -1044,7 +1044,7 @@ class TPUModelRunner:
                                       device=self.device)
                 torch._dynamo.mark_dynamic(indices, 0)
                 self.select_hidden_states(dummy_hidden, indices)
-                logger.info("  -- num_tokens: %d, num_seqs: %d", num_tokens,
+                logger.info("  -- num_tokens: {}, num_seqs: {}", num_tokens,
                             num_reqs)
                 # Requests can't be more than tokens. But do compile for the
                 # next bigger value in case num_tokens uses bucketed padding.
@@ -1052,7 +1052,7 @@ class TPUModelRunner:
                     break
         xm.wait_device_ops()
         end = time.perf_counter()
-        logger.info("Compilation finished in %.2f [secs].", end - start)
+        logger.info("Compilation finished in {:.2f} [secs].", end - start)
         self._update_num_xla_graphs("select_hidden_states")
 
     def _precompile_compute_logits(self) -> None:
@@ -1065,10 +1065,10 @@ class TPUModelRunner:
                                        dtype=self._hidden_states_dtype)
             torch._dynamo.mark_dynamic(dummy_hidden, 0)
             self.compute_logits(dummy_hidden)
-            logger.info("  -- num_seqs: %d", num_reqs)
+            logger.info("  -- num_seqs: {}", num_reqs)
         xm.wait_device_ops()
         end = time.perf_counter()
-        logger.info("Compilation finished in %.2f [secs].", end - start)
+        logger.info("Compilation finished in {:.2f} [secs].", end - start)
         self._update_num_xla_graphs("compute_logits")
 
     def _precompile_structured_decoding(self) -> None:
@@ -1089,10 +1089,10 @@ class TPUModelRunner:
             arange = self.structured_decode_arange.to(self.device)
             self.structured_decode(dummy_require_struct_decoding,
                                    dummy_grammar_bitmask, dummy_logits, arange)
-            logger.info("  -- num_seqs: %d", num_reqs)
+            logger.info("  -- num_seqs: {}", num_reqs)
         xm.wait_device_ops()
         end = time.perf_counter()
-        logger.info("Compilation finished in %.2f [secs].", end - start)
+        logger.info("Compilation finished in {:.2f} [secs].", end - start)
         self._update_num_xla_graphs("structured_decoding")
 
     def _precompile_sample_from_logits(self) -> None:
@@ -1116,10 +1116,10 @@ class TPUModelRunner:
                     ))
                 sampling_metadata.all_greedy = all_greedy
                 self.sample_from_logits(dummy_logits, sampling_metadata)
-            logger.info("  -- num_seqs: %d", num_reqs)
+            logger.info("  -- num_seqs: {}", num_reqs)
         xm.wait_device_ops()
         end = time.perf_counter()
-        logger.info("Compilation finished in %.2f [secs].", end - start)
+        logger.info("Compilation finished in {:.2f} [secs].", end - start)
         self._update_num_xla_graphs("sample_from_logits")
 
     def capture_model(self) -> None:
@@ -1152,8 +1152,8 @@ class TPUModelRunner:
                                  self.encoder_cache_size)
 
             logger.info(
-                "Encoder cache will be initialized with a budget of %d tokens,"
-                " and profiled with %s %s items of the maximum feature size.",
+                "Encoder cache will be initialized with a budget of {} tokens,"
+                " and profiled with {} {} items of the maximum feature size.",
                 encoder_budget, max_num_mm_items, dummy_data_modality)
 
             # Create dummy batch of multimodal inputs.
@@ -1171,7 +1171,7 @@ class TPUModelRunner:
             xm.wait_device_ops()
             end = time.perf_counter()
             logger.info(
-                "Multimodal Encoder profiling finished in in %.2f [secs].",
+                "Multimodal Encoder profiling finished in in {:.2f} [secs].",
                 end - start)
 
             assert len(dummy_encoder_outputs) == max_num_mm_items, (
@@ -1366,7 +1366,7 @@ def _get_req_paddings(min_req_size: int, max_req_size: int) -> list[int]:
     num = max(MIN_NUM_SEQS, min_req_size)
     while num <= max_req_size and (len(paddings) == 0 or paddings[-1] != num):
         paddings.append(num)
-        logger.info("    %d", num)
+        logger.info("    {}", num)
         num = _get_padded_num_reqs_with_upper_limit(num + 1, max_req_size)
     return paddings
 
@@ -1395,7 +1395,7 @@ def _get_token_paddings(min_token_size: int, max_token_size: int,
     if padding_gap == 0:
         logger.info("Using exponential token paddings:")
         while True:
-            logger.info("    %d", num)
+            logger.info("    {}", num)
             paddings.append(num)
             if num >= max_token_size:
                 break
@@ -1403,13 +1403,13 @@ def _get_token_paddings(min_token_size: int, max_token_size: int,
     else:
         logger.info("Using incremental token paddings:")
         while num <= padding_gap:
-            logger.info("    %d", num)
+            logger.info("    {}", num)
             paddings.append(num)
             num *= 2
         num //= 2
         while num < max_token_size:
             num += padding_gap
-            logger.info("    %d", num)
+            logger.info("    {}", num)
             paddings.append(num)
 
     return paddings

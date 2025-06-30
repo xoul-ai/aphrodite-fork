@@ -27,7 +27,7 @@ class XPUPlatform(Platform):
                              block_size: int, use_v1: bool,
                              use_mla: bool) -> str:
         if selected_backend != _Backend.IPEX:
-            logger.info("Cannot use %s backend on XPU.", selected_backend)
+            logger.info("Cannot use {} backend on XPU.", selected_backend)
         logger.info("Using IPEX attention backend.")
         return "aphrodite.attention.backends.ipex_attn.IpexAttnBackend"
 
@@ -68,7 +68,7 @@ class XPUPlatform(Platform):
             if not bf16_supported:
                 logger.warning(
                     "bfloat16 is only supported on Intel Data Center GPU, "
-                    "Intel Arc GPU is not supported yet. Your device is %s,"
+                    "Intel Arc GPU is not supported yet. Your device is {},"
                     " which is not supported. will fallback to float16",
                     cls.get_device_name())
                 model_config.dtype = torch.float16
@@ -103,7 +103,7 @@ class XPUPlatform(Platform):
 
         elif parallel_config.distributed_executor_backend != "ray":
             logger.warning(
-                "%s is not supported on XPU, fallback to ray distributed"
+                "{} is not supported on XPU, fallback to ray distributed"
                 " executor backend.",
                 parallel_config.distributed_executor_backend)
             parallel_config.distributed_executor_backend = "ray"
@@ -128,7 +128,7 @@ class XPUPlatform(Platform):
         elif device_name.count("data center gpu") > 0:
             return True
         else:
-            logger.warning("Unknown device name %s, always use float16",
+            logger.warning("Unknown device name {}, always use float16",
                            device_name)
             return False
 

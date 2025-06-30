@@ -18,18 +18,18 @@ try:
                         amdsmi_get_processor_handles, amdsmi_init,
                         amdsmi_shut_down, amdsmi_topo_get_link_type)
 except ImportError as e:
-    logger.warning("Failed to import from amdsmi with %r", e)
+    logger.warning("Failed to import from amdsmi with {!r}", e)
 
 try:
     import aphrodite._C  # noqa: F401
 except ImportError as e:
-    logger.warning("Failed to import from aphrodite._C with %r", e)
+    logger.warning("Failed to import from aphrodite._C with {!r}", e)
 
 # import custom ops, trigger op registration
 try:
     import aphrodite._rocm_C  # noqa: F401
 except ImportError as e:
-    logger.warning("Failed to import from aphrodite._rocm_C with %r", e)
+    logger.warning("Failed to import from aphrodite._rocm_C with {!r}", e)
 
 # Models not supported by ROCm.
 _ROCM_UNSUPPORTED_MODELS: List[str] = []
@@ -180,7 +180,7 @@ class RocmPlatform(Platform):
                 # not Instinct series GPUs.
                 logger.info("flash_attn is not supported on NAVI GPUs.")
         else:
-            logger.info("%s is not supported in AMD GPUs.", selected_backend)
+            logger.info("{} is not supported in AMD GPUs.", selected_backend)
         logger.info("Using ROCmFlashAttention backend.")
         return "aphrodite.attention.backends.rocm_flash_attn.ROCmFlashAttentionBackend"  # noqa: E501
 
@@ -285,8 +285,8 @@ class RocmPlatform(Platform):
         if model_arch in _ROCM_PARTIALLY_SUPPORTED_MODELS:
             msg = _ROCM_PARTIALLY_SUPPORTED_MODELS[model_arch]
             logger.warning(
-                "Model architecture '%s' is partially "
-                "supported by ROCm: %s", model_arch, msg)
+                "Model architecture '{}' is partially "
+                "supported by ROCm: {}", model_arch, msg)
 
     @classmethod
     def verify_quantization(cls, quant: str) -> None:

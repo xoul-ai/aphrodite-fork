@@ -190,11 +190,11 @@ class CudaPlatformBase(Platform):
                     is_flashmla_supported)
                 if not is_flashmla_supported()[0]:
                     logger.warning(
-                        "FlashMLA backend is not supported due to %s",
+                        "FlashMLA backend is not supported due to {}",
                         is_flashmla_supported()[1])
                 elif block_size != 64:
                     logger.warning(
-                        "FlashMLA backend is not supported for block size %d"
+                        "FlashMLA backend is not supported for block size {}"
                         " (currently only supports block size 64).",
                         block_size)
                 else:
@@ -263,7 +263,7 @@ class CudaPlatformBase(Platform):
                     FlashAttentionBackend.get_supported_head_sizes()
                 if head_size not in supported_sizes:
                     logger.info(
-                        "Cannot use FlashAttention-2 backend for head size %d.",
+                        "Cannot use FlashAttention-2 backend for head size {}.",
                         head_size)
                     target_backend = _Backend.XFORMERS
                 fp8_kv_cache = (kv_cache_dtype is not None
@@ -406,7 +406,7 @@ class NvmlCudaPlatform(CudaPlatformBase):
             if (len(set(device_names)) > 1
                     and os.environ.get("CUDA_DEVICE_ORDER") != "PCI_BUS_ID"):
                 logger.warning(
-                    "Detected different devices in the system: %s. Please"
+                    "Detected different devices in the system: {}. Please"
                     " make sure to set `CUDA_DEVICE_ORDER=PCI_BUS_ID` to "
                     "avoid unexpected behavior.",
                     ", ".join(device_names),

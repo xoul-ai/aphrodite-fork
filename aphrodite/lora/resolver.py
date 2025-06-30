@@ -55,8 +55,8 @@ class _LoRAResolverRegistry:
         """
         if resolver_name in self.resolvers:
             logger.warning(
-                "LoRA resolver %s is already registered, and will be "
-                "overwritten by the new resolver instance %s.", resolver_name,
+                "LoRA resolver {} is already registered, and will be "
+                "overwritten by the new resolver instance {}.", resolver_name,
                 resolver)
 
         self.resolvers[resolver_name] = resolver

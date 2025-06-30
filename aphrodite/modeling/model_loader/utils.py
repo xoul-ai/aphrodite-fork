@@ -73,7 +73,7 @@ def resolve_transformers_arch(model_config: ModelConfig,
                     "implementation is not compatible with Aphrodite. Try setting "
                     "APHRODITE_USE_V1=0.")
             logger.warning(
-                "%s has no Aphrodite implementation, falling back to Transformers "
+                "{} has no Aphrodite implementation, falling back to Transformers "
                 "implementation. Some features may not be supported and "
                 "performance may not be optimal.", arch)
             architectures[i] = "TransformersForCausalLM"
@@ -160,6 +160,6 @@ def configure_quant_config(quant_config: QuantizationConfig,
         quant_config.packed_modules_mapping = packed_mapping
     else:
         logger.warning(
-            "The model class %s has not defined `packed_modules_mapping`, "
+            "The model class {} has not defined `packed_modules_mapping`, "
             "this may lead to incorrect mapping of quantized or ignored "
             "modules", model_class.__name__)

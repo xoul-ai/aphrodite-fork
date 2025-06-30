@@ -102,9 +102,9 @@ def with_retry(func: Callable[[], Any],
             return func()
         except Exception as e:
             if attempt == max_retries - 1:
-                logger.error("%s: %s", log_msg, e)
+                logger.error("{}: {}", log_msg, e)
                 raise
-            logger.error("%s: %s, retrying %d of %d", log_msg, e, attempt + 1,
+            logger.error("{}: {}, retrying {} of {}", log_msg, e, attempt + 1,
                          max_retries)
             time.sleep(retry_delay)
             retry_delay *= 2
@@ -426,7 +426,7 @@ def get_hf_file_to_dict(file_name: str,
         except HfHubHTTPError as e:
             logger.warning(
                 "Cannot connect to Hugging Face Hub. Skipping file "
-                "download for '%s':",
+                "download for '{}':",
                 file_name,
                 exc_info=e)
             return None

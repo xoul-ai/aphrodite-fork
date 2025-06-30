@@ -202,7 +202,7 @@ class SpecDecodeWorker(LoRANotSupportedWorkerBase):
             proposer_worker = SmallerTpProposerWorker.maybe_wrap_worker(
                 proposer_worker, draft_tp, target_tp)
 
-        logger.info("Configuring SpecDecodeWorker with proposer=%s",
+        logger.info("Configuring SpecDecodeWorker with proposer={}",
                     type(proposer_worker))
 
         spec_decode_sampler: SpecDecodeBaseSampler = None
@@ -216,7 +216,7 @@ class SpecDecodeWorker(LoRANotSupportedWorkerBase):
             )
         logger.info(
             "[Speculative Decoding] Configuring"
-            " SpecDecodeWorker with sampler=%s", type(spec_decode_sampler))
+            " SpecDecodeWorker with sampler={}", type(spec_decode_sampler))
 
         if not disable_mqa_scorer:
             if scorer_worker.model_runner.attn_backend.get_name(

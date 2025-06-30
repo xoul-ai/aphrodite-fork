@@ -42,7 +42,7 @@ class SimpleConnector(KVConnectorBase):
             from aphrodite.distributed.kv_transfer.kv_pipe.pynccl_pipe import (
                 PyNcclPipe)
             logger.info(
-                "Initializing PyNcclConfig under kv_transfer_config %s",
+                "Initializing PyNcclConfig under kv_transfer_config {}",
                 self.config)
         elif self.config.kv_connector == "MooncakeConnector":
             # Check if MOONCAKE_CONFIG_PATH is set
@@ -58,7 +58,7 @@ class SimpleConnector(KVConnectorBase):
                 from aphrodite.distributed.kv_transfer.kv_pipe.mooncake_pipe import (  # noqa: E501
                     MooncakePipe)
                 logger.info(
-                    "Initializing MooncakeConfig under kv_transfer_config %s",
+                    "Initializing MooncakeConfig under kv_transfer_config {}",
                     self.config)
 
         self.lookup_buffer_size = self.config.kv_buffer_size
@@ -201,7 +201,7 @@ class SimpleConnector(KVConnectorBase):
                                         dtype=bool), keys, values,
                         hidden_or_intermediate_states[start_pos:end_pos])
 
-        logger.debug("[rank%d]: KV send DONE.", torch.distributed.get_rank())
+        logger.debug("[rank{}]: KV send DONE.", torch.distributed.get_rank())
 
     def recv_kv_caches_and_hidden_states(
         self, model_executable: torch.nn.Module,
@@ -302,13 +302,13 @@ class SimpleConnector(KVConnectorBase):
             # But optionally you can adjust model_input so that you only do
             # prefilling on those tokens that are missing KV caches.
             logger.warning(
-                "[rank%d]: Failed to receive all KVs and hidden "
+                "[rank{}]: Failed to receive all KVs and hidden "
                 "states, redo model forwarding.", torch.distributed.get_rank())
             hidden_or_intermediate_states = None
 
         else:
             logger.debug(
-                "[rank%d]: Successfully received all KVs and hidden "
+                "[rank{}]: Successfully received all KVs and hidden "
                 "states, skip model forwarding.", torch.distributed.get_rank())
             hidden_or_intermediate_states = torch.cat(
                 hidden_or_intermediate_states_for_one_req, dim=0)

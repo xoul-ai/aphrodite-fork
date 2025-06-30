@@ -88,11 +88,11 @@ class MooncakeStore(KVStoreBufferBase):
                              self.config.master_server_address)
 
         except ValueError as e:
-            logger.error("Configuration loading failed: %s", e)
+            logger.error("Configuration loading failed: {}", e)
             raise
         except Exception as exc:
             logger.error(
-                "An error occurred while loading the configuration: %s", exc)
+                "An error occurred while loading the configuration: {}", exc)
             raise
 
     def close(self):
@@ -132,7 +132,7 @@ class MooncakeStore(KVStoreBufferBase):
         try:
             self.store.put(key, value_bytes)
         except TypeError as err:
-            logger.error("Failed to put value into Mooncake Store: %s", err)
+            logger.error("Failed to put value into Mooncake Store: {}", err)
             raise TypeError("Mooncake Store Put Type Error.") from err
 
     def _get_impl(
@@ -143,7 +143,7 @@ class MooncakeStore(KVStoreBufferBase):
         try:
             data = self.store.get(key)
         except TypeError as err:
-            logger.error("Failed to get value from Mooncake Store: %s", err)
+            logger.error("Failed to get value from Mooncake Store: {}", err)
             raise TypeError("Mooncake Store Get Type Error.") from err
 
         if data:

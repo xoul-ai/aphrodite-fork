@@ -114,16 +114,16 @@ class TP1DraftModelRunner(ModelRunnerWrapperBase):
 
         if debug_advance_input:
             logger.debug("NEW INPUT: ")
-            logger.debug("  input_tokens = %s", new_model_input.input_tokens)
-            logger.debug("  input_positions = %s",
+            logger.debug("  input_tokens = {}", new_model_input.input_tokens)
+            logger.debug("  input_positions = {}",
                          new_model_input.input_positions)
-            logger.debug("  seq_lens = %d", new_model_input.seq_lens)
-            logger.debug("  query_lens = %d", new_model_input.query_lens)
+            logger.debug("  seq_lens = {}", new_model_input.seq_lens)
+            logger.debug("  query_lens = {}", new_model_input.query_lens)
             logger.debug("  attn_metadata:")
-            logger.debug("    seq_lens_tensor: %s",
+            logger.debug("    seq_lens_tensor: {}",
                          attn_metadata.seq_lens_tensor)
-            logger.debug("    slot_mapping: %s", attn_metadata.slot_mapping)
-            logger.debug("    block_tables: %s", attn_metadata.block_tables)
+            logger.debug("    slot_mapping: {}", attn_metadata.slot_mapping)
+            logger.debug("    block_tables: {}", attn_metadata.block_tables)
 
         return new_model_input
 

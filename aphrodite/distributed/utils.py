@@ -101,7 +101,7 @@ def get_pp_indices(num_hidden_layers: int, pp_rank: int,
             for i in range(2, remaining_layers + 2):
                 partitions[-i] += 1
             logger.info(
-                "Hidden layers were unevenly partitioned: [%s]. "
+                "Hidden layers were unevenly partitioned: [{}]. "
                 "This can be manually overridden using the "
                 "APHRODITE_PP_LAYER_PARTITION environment variable",
                 ",".join(str(p) for p in partitions))

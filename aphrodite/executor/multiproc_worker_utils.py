@@ -114,7 +114,7 @@ class WorkerMonitor(threading.Thread):
                 if process.sentinel in dead_sentinels:
                     process.join(JOIN_TIMEOUT_S)
                 if process.exitcode is not None and process.exitcode != 0:
-                    logger.error("Worker %s pid %s died, exit code: %s",
+                    logger.error("Worker {} pid {} died, exit code: {}",
                                  process.name, process.pid, process.exitcode)
             # Cleanup any remaining workers
             if logger:
@@ -233,7 +233,7 @@ def _run_worker_process(
                 break
             except BaseException as e:
                 logger.exception(
-                    "Exception in worker %s while processing method %s.",
+                    "Exception in worker {} while processing method {}.",
                     process_name, method)
                 exception = e
             result_queue.put(
@@ -301,7 +301,7 @@ def set_multiprocessing_worker_envs(parallel_config):
             current_parallelism :=
             torch.get_num_threads()) > default_omp_num_threads:
         logger.warning(
-            "Reducing Torch parallelism from %d threads to %d to avoid "
+            "Reducing Torch parallelism from {} threads to {} to avoid "
             "unnecessary CPU contention. Set OMP_NUM_THREADS in the "
             "external environment to tune this value as needed.",
             current_parallelism, default_omp_num_threads)

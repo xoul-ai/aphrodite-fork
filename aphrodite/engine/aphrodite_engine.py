@@ -241,8 +241,8 @@ class AphroditeEngine:
         )
 
         logger.info(
-            "Initializing a V0 LLM engine (v%s) with config: %s, "
-            "use_cached_outputs=%s, ",
+            "Initializing a V0 LLM engine (v{}) with config: {}, "
+            "use_cached_outputs={}, ",
             APHRODITE_VERSION,
             aphrodite_config,
             use_cached_outputs,
@@ -427,8 +427,8 @@ class AphroditeEngine:
         if self.cache_config.num_gpu_blocks_override is not None:
             num_gpu_blocks_override = self.cache_config.num_gpu_blocks_override
             logger.info(
-                "Overriding num_gpu_blocks=%d with "
-                "num_gpu_blocks_override=%d", num_gpu_blocks,
+                "Overriding num_gpu_blocks={} with "
+                "num_gpu_blocks_override={}", num_gpu_blocks,
                 num_gpu_blocks_override)
             num_gpu_blocks = num_gpu_blocks_override
 
@@ -438,7 +438,7 @@ class AphroditeEngine:
         self.modeling.initialize_cache(num_gpu_blocks, num_cpu_blocks)
         elapsed = time.time() - start
         logger.info(("init engine (profile, create kv cache, "
-                     "warmup model) took %.2f seconds"), elapsed)
+                     "warmup model) took {:.2f} seconds"), elapsed)
 
     @classmethod
     def _get_executor_cls(cls,
@@ -2113,14 +2113,14 @@ class AphroditeEngine:
 
             logger.debug(
                 "Building guided decoding logits processor in "
-                "AphroditeEngine. Params: %s", guided_decoding)
+                "AphroditeEngine. Params: {}", guided_decoding)
 
             tokenizer = self.get_tokenizer(lora_request=lora_request)
             guided_decoding.backend = guided_decoding.backend or \
                 self.decoding_config.backend
 
             if self.decoding_config.reasoning_backend:
-                logger.debug("Building with reasoning backend %s",
+                logger.debug("Building with reasoning backend {}",
                              self.decoding_config.reasoning_backend)
 
             processor = get_local_guided_decoding_logits_processor(

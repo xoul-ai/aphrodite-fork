@@ -23,13 +23,13 @@ def load_plugins_by_group(group: str) -> Dict[str, Callable]:
 
     discovered_plugins = entry_points(group=group)
     if len(discovered_plugins) == 0:
-        logger.debug("No plugins for group %s found.", group)
+        logger.debug("No plugins for group {} found.", group)
         return {}
-    logger.info("Available plugins for group %s:", group)
+    logger.info("Available plugins for group {}:", group)
     for plugin in discovered_plugins:
-        logger.info("name=%s, value=%s", plugin.name, plugin.value)
+        logger.info("name={}, value={}", plugin.name, plugin.value)
     if allowed_plugins is None:
-        logger.info("all available plugins for group %s will be loaded.",
+        logger.info("all available plugins for group {} will be loaded.",
                     group)
         logger.info("set environment variable APHRODITE_PLUGINS to control"
                     " which plugins to load.")
@@ -39,9 +39,9 @@ def load_plugins_by_group(group: str) -> Dict[str, Callable]:
             try:
                 func = plugin.load()
                 plugins[plugin.name] = func
-                logger.info("plugin %s loaded.", plugin.name)
+                logger.info("plugin {} loaded.", plugin.name)
             except Exception:
-                logger.exception("Failed to load plugin %s", plugin.name)
+                logger.exception("Failed to load plugin {}", plugin.name)
     return plugins
 
 

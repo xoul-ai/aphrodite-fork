@@ -118,7 +118,7 @@ class MultiprocExecutor(Executor):
             proc_name = next(h.proc.name for h in workers
                              if h.proc.sentinel == died[0])
             logger.error(
-                "Worker proc %s died unexpectedly, "
+                "Worker proc {} died unexpectedly, "
                 "shutting down executor.", proc_name)
             _self.shutdown()
             callback = _self.failure_callback

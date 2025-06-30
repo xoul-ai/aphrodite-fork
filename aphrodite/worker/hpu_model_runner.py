@@ -600,7 +600,7 @@ class HPUModelRunnerBase(ModelRunnerBase[TModelInputForHPU]):
                     htcore.hpu_initialize(self.model,
                                           mark_only_scales_as_const=True)
                 self.inc_initialized_successfully = True
-                logger.info("Preparing model with INC took %s",
+                logger.info("Preparing model with INC took {}",
                             m_inc.get_summary_string())
             else:
                 self.model = self.model.to("hpu")
@@ -1738,7 +1738,7 @@ class HPUModelRunner(HPUModelRunnerBase[ModelInputForHPUWithSamplingMetadata]):
         self.seen_configs.add(cfg)
         if not seen and not warmup_mode:
             phase = 'prompt' if is_prompt else 'decode'
-            logger.warning("Configuration: (%s, %s, %s) was not warmed-up!",
+            logger.warning("Configuration: ({}, {}, {}) was not warmed-up!",
                            phase, batch_size, seq_len)
 
     def create_lora_mask(self, input_tokens: torch.Tensor, lora_ids: List[int],

@@ -39,7 +39,7 @@ def tpu_platform_plugin() -> Optional[str]:
         is_tpu = True
         logger.debug("Confirmed TPU platform is available.")
     except Exception as e:
-        logger.debug("TPU platform is not available because: %s", str(e))
+        logger.debug("TPU platform is not available because: {}", str(e))
         pass
 
     return "aphrodite.platforms.tpu.TpuPlatform" if is_tpu else None
@@ -71,7 +71,7 @@ def cuda_platform_plugin() -> Optional[str]:
         finally:
             pynvml.nvmlShutdown()
     except Exception as e:
-        logger.debug("Exception happens when checking CUDA platform: %s",
+        logger.debug("Exception happens when checking CUDA platform: {}",
                      str(e))
         if "nvml" not in e.__class__.__name__.lower():
             # If the error is not related to NVML, re-raise it.
@@ -88,7 +88,7 @@ def cuda_platform_plugin() -> Optional[str]:
             logger.debug("Confirmed CUDA platform is available on Jetson.")
             is_cuda = True
         else:
-            logger.debug("CUDA platform is not available because: %s", str(e))
+            logger.debug("CUDA platform is not available because: {}", str(e))
 
     return "aphrodite.platforms.cuda.CudaPlatform" if is_cuda else None
 
@@ -109,7 +109,7 @@ def rocm_platform_plugin() -> Optional[str]:
         finally:
             amdsmi.amdsmi_shut_down()
     except Exception as e:
-        logger.debug("ROCm platform is not available because: %s", str(e))
+        logger.debug("ROCm platform is not available because: {}", str(e))
         pass
 
     return "aphrodite.platforms.rocm.RocmPlatform" if is_rocm else None
@@ -127,7 +127,7 @@ def hpu_platform_plugin() -> Optional[str]:
             logger.debug("HPU platform is not available because "
                          "habana_frameworks is not found.")
     except Exception as e:
-        logger.debug("HPU platform is not available because: %s", str(e))
+        logger.debug("HPU platform is not available because: {}", str(e))
         pass
 
     return "aphrodite.platforms.hpu.HpuPlatform" if is_hpu else None
@@ -145,7 +145,7 @@ def xpu_platform_plugin() -> Optional[str]:
             is_xpu = True
             logger.debug("Confirmed XPU platform is available.")
     except Exception as e:
-        logger.debug("XPU platform is not available because: %s", str(e))
+        logger.debug("XPU platform is not available because: {}", str(e))
         pass
 
     return "aphrodite.platforms.xpu.XPUPlatform" if is_xpu else None
@@ -167,7 +167,7 @@ def cpu_platform_plugin() -> Optional[str]:
                              " because the machine is MacOS.")
 
     except Exception as e:
-        logger.debug("CPU platform is not available because: %s", str(e))
+        logger.debug("CPU platform is not available because: {}", str(e))
         pass
 
     return "aphrodite.platforms.cpu.CpuPlatform" if is_cpu else None
@@ -182,7 +182,7 @@ def neuron_platform_plugin() -> Optional[str]:
         logger.debug("Confirmed Neuron platform is available because"
                      " transformers_neuronx is found.")
     except ImportError as e:
-        logger.debug("Neuron platform is not available because: %s", str(e))
+        logger.debug("Neuron platform is not available because: {}", str(e))
         pass
 
     return "aphrodite.platforms.neuron.NeuronPlatform" if is_neuron else None
@@ -225,7 +225,7 @@ def resolve_current_platform_cls_qualname() -> str:
             f"{activated_oot_plugins}")
     elif len(activated_oot_plugins) == 1:
         platform_cls_qualname = platform_plugins[activated_oot_plugins[0]]()
-        logger.info("Platform plugin %s is activated",
+        logger.info("Platform plugin {} is activated",
                     activated_oot_plugins[0])
     elif len(activated_builtin_plugins) >= 2:
         raise RuntimeError(
@@ -234,7 +234,7 @@ def resolve_current_platform_cls_qualname() -> str:
     elif len(activated_builtin_plugins) == 1:
         platform_cls_qualname = builtin_platform_plugins[
             activated_builtin_plugins[0]]()
-        logger.info("Automatically detected platform %s.",
+        logger.info("Automatically detected platform {}.",
                     activated_builtin_plugins[0])
     else:
         platform_cls_qualname = (

@@ -234,7 +234,7 @@ async def build_async_engine_client_from_engine_args(
 
         # Select random path for IPC.
         ipc_path = get_open_zmq_ipc_path()
-        logger.debug("Multiprocessing frontend to use %s for IPC Path.",
+        logger.debug("Multiprocessing frontend to use {} for IPC Path.",
                      ipc_path)
 
         # Start RPCServer in separate process (holds the LLMEngine).
@@ -257,7 +257,7 @@ async def build_async_engine_client_from_engine_args(
         engine_process.start()
         engine_pid = engine_process.pid
         assert engine_pid is not None, "Engine process failed to start."
-        logger.info("Started engine process with PID %d", engine_pid)
+        logger.info("Started engine process with PID {}", engine_pid)
 
         def _cleanup_ipc_path():
             socket_path = ipc_path.replace("ipc://", "")
@@ -442,7 +442,7 @@ def mount_metrics(app: FastAPI):
 
     prometheus_multiproc_dir_path = os.getenv("PROMETHEUS_MULTIPROC_DIR", None)
     if prometheus_multiproc_dir_path is not None:
-        logger.debug("Aphrodite to use %s as PROMETHEUS_MULTIPROC_DIR",
+        logger.debug("Aphrodite to use {} as PROMETHEUS_MULTIPROC_DIR",
                      prometheus_multiproc_dir_path)
         registry = CollectorRegistry()
         multiprocess.MultiProcessCollector(registry)
@@ -1109,7 +1109,7 @@ if envs.APHRODITE_SERVER_DEV_MODE:
         device_str = raw_request.query_params.get("device")
         if device_str is not None:
             device = Device[device_str.upper()]
-        logger.info("Resetting prefix cache with specific %s...", str(device))
+        logger.info("Resetting prefix cache with specific {}...", str(device))
         await engine_client(raw_request).reset_prefix_cache(device)
         return Response(status_code=200)
 
@@ -1128,7 +1128,7 @@ if envs.APHRODITE_SERVER_DEV_MODE:
         if tags == []:
             # set to None to wake up all tags if no tags are provided
             tags = None
-        logger.info("wake up the engine with tags: %s", tags)
+        logger.info("wake up the engine with tags: {}", tags)
         await engine_client(raw_request).wake_up(tags)
         # FIXME: in v0 with frontend multiprocessing, the wake-up command
         # is sent but does not finish yet when we return a response.
@@ -1527,7 +1527,7 @@ def build_app(args: Namespace) -> FastAPI:
                 section async for section in response.body_iterator
             ]
             response.body_iterator = iterate_in_threadpool(iter(response_body))
-            logger.info("response_body={%s}",
+            logger.info("response_body={{}}",
                         response_body[0].decode() if response_body else None)
             return response
 
@@ -1589,8 +1589,8 @@ async def init_app_state(
 
             if hf_chat_template != resolved_chat_template:
                 logger.warning(
-                    "Using supplied chat template: %s\n"
-                    "It is different from official chat template '%s'. "
+                    "Using supplied chat template: {}\n"
+                    "It is different from official chat template '{}'. "
                     "This discrepancy may lead to performance degradation.",
                     resolved_chat_template, args.model)
 
@@ -1685,8 +1685,8 @@ def create_server_socket(addr: tuple[str, int]) -> socket.socket:
 
 
 async def run_server(args, **uvicorn_kwargs) -> None:
-    logger.info("Aphrodite API server version %s", APHRODITE_VERSION)
-    logger.debug("args: %s", args)
+    logger.info("Aphrodite API server version {}", APHRODITE_VERSION)
+    logger.debug("args: {}", args)
 
     if args.tool_parser_plugin and len(args.tool_parser_plugin) > 3:
         ToolParserManager.import_tool_parser(args.tool_parser_plugin)
@@ -1731,7 +1731,7 @@ async def run_server(args, **uvicorn_kwargs) -> None:
             return a or "0.0.0.0"
 
         is_ssl = args.ssl_keyfile and args.ssl_certfile
-        logger.info("Starting Aphrodite API server on http%s://%s:%d",
+        logger.info("Starting Aphrodite API server on http{}://{}:{}",
                     "s" if is_ssl else "", _listen_addr(sock_addr[0]),
                     sock_addr[1])
 
@@ -1743,20 +1743,20 @@ async def run_server(args, **uvicorn_kwargs) -> None:
 
         if SERVE_KOBOLD_LITE_UI:
             ui_url = f"{protocol}://{host_name}:{port_str}{root_path}/"
-            logger.info(f"Kobold Lite UI:   {ui_url}")
+            logger.info(f"Kobold Lite UI:    {ui_url}")
 
         if not args.disable_fastapi_docs:
-            logger.info(f"Documentation:    {protocol}://{host_name}:{port_str}{root_path}/redoc")  # noqa: E501
-        logger.info(f"Completions API:  {protocol}://{host_name}:{port_str}{root_path}/v1/completions")  # noqa: E501
-        logger.info(f"Chat API:         {protocol}://{host_name}:{port_str}{root_path}/v1/chat/completions")  # noqa: E501
-        logger.info(f"Embeddings API:   {protocol}://{host_name}:{port_str}{root_path}/v1/embeddings")  # noqa: E501
-        logger.info(f"Pooling API:      {protocol}://{host_name}:{port_str}{root_path}/pooling")  # noqa: E501
-        logger.info(f"Score API:        {protocol}://{host_name}:{port_str}{root_path}/score")  # noqa: E501
-        logger.info(f"Rerank API:       {protocol}://{host_name}:{port_str}{root_path}/rerank")  # noqa: E501
-        logger.info(f"Rerank API v1:    {protocol}://{host_name}:{port_str}{root_path}/v1/rerank")  # noqa: E501
-        logger.info(f"Rerank API v2:    {protocol}://{host_name}:{port_str}{root_path}/v2/rerank")  # noqa: E501
+            logger.info(f"Documentation:     {protocol}://{host_name}:{port_str}{root_path}/redoc")  # noqa: E501
+        logger.info(f"Completions API:   {protocol}://{host_name}:{port_str}{root_path}/v1/completions")  # noqa: E501
+        logger.info(f"Chat API:          {protocol}://{host_name}:{port_str}{root_path}/v1/chat/completions")  # noqa: E501
+        logger.info(f"Embeddings API:    {protocol}://{host_name}:{port_str}{root_path}/v1/embeddings")  # noqa: E501
+        logger.info(f"Pooling API:       {protocol}://{host_name}:{port_str}{root_path}/pooling")  # noqa: E501
+        logger.info(f"Score API:         {protocol}://{host_name}:{port_str}{root_path}/score")  # noqa: E501
+        logger.info(f"Rerank API:        {protocol}://{host_name}:{port_str}{root_path}/rerank")  # noqa: E501
+        logger.info(f"Rerank API v1:     {protocol}://{host_name}:{port_str}{root_path}/v1/rerank")  # noqa: E501
+        logger.info(f"Rerank API v2:     {protocol}://{host_name}:{port_str}{root_path}/v2/rerank")  # noqa: E501
         logger.info(f"Transcription API: {protocol}://{host_name}:{port_str}{root_path}/v1/audio/transcriptions")  # noqa: E501
-        logger.info(f"Tokenization API: {protocol}://{host_name}:{port_str}{root_path}/v1/tokenize")  # noqa: E501
+        logger.info(f"Tokenization API:  {protocol}://{host_name}:{port_str}{root_path}/v1/tokenize")  # noqa: E501
 
         shutdown_task = await serve_http(
             app,

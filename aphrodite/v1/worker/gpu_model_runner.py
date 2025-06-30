@@ -1330,7 +1330,7 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         return draft_token_ids
 
     def load_model(self) -> None:
-        logger.info("Starting to load model %s...", self.model_config.model)
+        logger.info("Starting to load model {}...", self.model_config.model)
         with DeviceMemoryProfiler() as m:  # noqa: SIM117
             time_before_load = time.perf_counter()
             self.model = get_model(aphrodite_config=self.aphrodite_config)
@@ -1348,7 +1348,7 @@ class GPUModelRunner(LoRAModelRunnerMixin):
                     self.model.get_eagle3_aux_hidden_state_layers())
             time_after_load = time.perf_counter()
         self.model_memory_usage = m.consumed_memory
-        logger.info("Model loading took %.4f GiB and %.6f seconds",
+        logger.info("Model loading took {:.4f} GiB and {:.6f} seconds",
                     self.model_memory_usage / GiB_bytes,
                     time_after_load - time_before_load)
 
@@ -1627,8 +1627,8 @@ class GPUModelRunner(LoRAModelRunnerMixin):
                                    max_num_mm_items_decoder_budget)
 
             logger.info(
-                "Encoder cache will be initialized with a budget of %s tokens,"
-                " and profiled with %s %s items of the maximum feature size.",
+                "Encoder cache will be initialized with a budget of {} tokens,"
+                " and profiled with {} {} items of the maximum feature size.",
                 encoder_budget, max_num_mm_items, dummy_data_modality)
 
             # Create dummy batch of multimodal inputs.
@@ -1671,7 +1671,7 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         if not self.use_cuda_graph:
             logger.warning(
                 "Skipping CUDA graph capture. Please add "
-                "-O %s to use CUDA graphs.", CompilationLevel.PIECEWISE)
+                "-O {} to use CUDA graphs.", CompilationLevel.PIECEWISE)
             return
 
         start_time = time.perf_counter()
@@ -1692,7 +1692,7 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         elapsed_time = end_time - start_time
         cuda_graph_size = start_free_gpu_memory - end_free_gpu_memory
         # This usually takes 5~20 seconds.
-        logger.info("Graph capturing finished in %.0f secs, took %.2f GiB",
+        logger.info("Graph capturing finished in %.0f secs, took {:.2f} GiB",
                     elapsed_time, cuda_graph_size / (1 << 30))
 
     def initialize_kv_cache(self, kv_cache_config: KVCacheConfig) -> None:

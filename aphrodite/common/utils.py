@@ -651,7 +651,7 @@ def _get_open_port() -> int:
                     return port
             except OSError:
                 port += 1  # Increment port number if already in use
-                logger.info("Port %d is already in use, trying port %d",
+                logger.info("Port {} is already in use, trying port {}",
                             port - 1, port)
     # try ipv4
     try:
@@ -686,8 +686,8 @@ def update_environment_variables(envs: dict[str, str]):
     for k, v in envs.items():
         if k in os.environ and os.environ[k] != v:
             logger.warning(
-                "Overwriting environment variable %s "
-                "from '%s' to '%s'", k, os.environ[k], v)
+                "Overwriting environment variable {} "
+                "from '{}' to '{}'", k, os.environ[k], v)
         os.environ[k] = v
 
 
@@ -1042,7 +1042,7 @@ def find_nccl_library() -> str:
     # manually load the nccl library
     if so_file:
         logger.info(
-            "Found nccl from environment variable APHRODITE_NCCL_SO_PATH=%s",
+            "Found nccl from environment variable APHRODITE_NCCL_SO_PATH={}",
             so_file)
     else:
         if torch.version.cuda is not None:
@@ -1051,7 +1051,7 @@ def find_nccl_library() -> str:
             so_file = "librccl.so.1"
         else:
             raise ValueError("NCCL only supports CUDA and ROCm backends.")
-        logger.info("Found nccl from library %s", so_file)
+        logger.info("Found nccl from library {}", so_file)
     return so_file
 
 
@@ -1472,7 +1472,7 @@ class FlexibleArgumentParser(ArgumentParser):
         if extension not in ('yaml', 'yml'):
             raise ValueError(
                 "Config file must be of a yaml/yml type.\
-                              %s supplied", extension)
+                              {} supplied", extension)
 
         # only expecting a flat dictionary of atomic types
         processed_args: list[str] = []
@@ -1483,7 +1483,7 @@ class FlexibleArgumentParser(ArgumentParser):
                 config = yaml.safe_load(config_file)
         except Exception as ex:
             logger.error(
-                "Unable to read the config file at %s. \
+                "Unable to read the config file at {}. \
                 Make sure path is correct", file_path)
             raise ex
 
@@ -1642,11 +1642,11 @@ def get_allowed_kwarg_only_overrides(
         if requires_kw_only:
             logger.warning(
                 "The following intended overrides are not keyword-only args "
-                "and will be dropped: %s", dropped_keys)
+                "and will be dropped: {}", dropped_keys)
         else:
             logger.warning(
                 "The following intended overrides are not keyword args "
-                "and will be dropped: %s", dropped_keys)
+                "and will be dropped: {}", dropped_keys)
 
     return filtered_overrides
 
@@ -2267,8 +2267,8 @@ def set_ulimit(target_soft_limit=65535):
                                (target_soft_limit, current_hard))
         except ValueError as e:
             logger.warning(
-                "Found ulimit of %s and failed to automatically increase "
-                "with error %s. This can cause fd limit errors like "
+                "Found ulimit of {} and failed to automatically increase "
+                "with error {}. This can cause fd limit errors like "
                 "`OSError: [Errno 24] Too many open files`. Consider "
                 "increasing with ulimit -n", current_soft, e)
 
@@ -2413,7 +2413,7 @@ def _maybe_force_spawn():
             "Overriding APHRODITE_WORKER_MULTIPROC_METHOD to 'spawn'. "
             "See https://docs.aphrodite.ai/en/latest/getting_started/"
             "troubleshooting.html#python-multiprocessing "
-            "for more information. Reason: %s", reason)
+            "for more information. Reason: {}", reason)
         os.environ["APHRODITE_WORKER_MULTIPROC_METHOD"] = "spawn"
 
 

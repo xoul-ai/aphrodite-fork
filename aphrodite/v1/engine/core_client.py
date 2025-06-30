@@ -421,7 +421,7 @@ class MPClient(EngineCoreClient):
         while identities:
             events = poller.poll(STARTUP_POLL_PERIOD_MS)
             if not events:
-                logger.debug("Waiting for %d core engine proc(s) to start: %s",
+                logger.debug("Waiting for {} core engine proc(s) to start: {}",
                              len(identities), identities)
                 continue
             if len(events) > 1 or events[0][0] != sync_input_socket:
@@ -436,7 +436,7 @@ class MPClient(EngineCoreClient):
             message_dict = json.loads(data.decode('utf-8'))
             if message_dict['type'] != 'READY':
                 raise RuntimeError(f"Engine {eng_id} failed: {data.decode()}")
-            logger.info("Core engine process %d ready.", eng_id)
+            logger.info("Core engine process {} ready.", eng_id)
             identities.discard(eng_id)
             # Setup KV cache config with initialization state from
             # engine core process.
@@ -915,7 +915,7 @@ class DPAsyncMPClient(AsyncMPClient):
                 exclude_index=outputs.engine_index))
 
     def _start_wave_coros(self, exclude_index: int) -> list[Awaitable[None]]:
-        logger.debug("Sending start DP wave %d.", self.current_wave)
+        logger.debug("Sending start DP wave {}.", self.current_wave)
         return [
             self._send_input(EngineCoreRequestType.START_DP_WAVE,
                              self.current_wave, engine)

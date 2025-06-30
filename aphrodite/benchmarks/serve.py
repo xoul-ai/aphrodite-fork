@@ -880,7 +880,7 @@ def main(args: argparse.Namespace):
         result_json: dict[str, Any] = {}
 
         # Setup
-        current_dt = datetime.now().strftime("%Y%m%d-%H%M%S")
+        current_dt = datetime.now().strftime("%Y%m{}-%H%M{}")
         result_json["date"] = current_dt
         result_json["endpoint_type"] = endpoint_type
         result_json["label"] = label

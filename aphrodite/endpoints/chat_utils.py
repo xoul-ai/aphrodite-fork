@@ -345,14 +345,14 @@ def resolve_hf_chat_template(
                 processor.chat_template is not None:
                 return processor.chat_template
         except Exception:
-            logger.debug("Failed to load AutoProcessor chat template for %s",
+            logger.debug("Failed to load AutoProcessor chat template for {}",
                         tokenizer.name_or_path, exc_info=True)
 
     # 3rd priority: AutoTokenizer chat template
     try:
         return tokenizer.get_chat_template(chat_template, tools=tools)
     except Exception:
-        logger.debug("Failed to load AutoTokenizer chat template for %s",
+        logger.debug("Failed to load AutoTokenizer chat template for {}",
                      tokenizer.name_or_path, exc_info=True)
 
     return None
@@ -392,15 +392,15 @@ def _log_chat_template_content_format(
     detected_format: ChatTemplateContentFormatOption,
 ):
     logger.info(
-        "Detected the chat template content format to be '%s'. "
+        "Detected the chat template content format to be '{}'. "
         "You can set `--chat-template-content-format` to override this.",
         detected_format,
     )
 
     if given_format != "auto" and given_format != detected_format:
         logger.warning(
-            "You specified `--chat-template-content-format %s` "
-            "which is different from the detected format '%s'. "
+            "You specified `--chat-template-content-format {}` "
+            "which is different from the detected format '{}'. "
             "If our automatic detection is incorrect, please consider "
             "opening a GitHub issue so that we can improve it: "
             "https://github.com/aphrodite-project/aphrodite/issues/new/choose",
@@ -1028,7 +1028,7 @@ def _parse_chat_message_content_part(
     # content is None, log a warning and skip
     if part_type in VALID_MESSAGE_CONTENT_MM_PART_TYPES and content is None:
         logger.warning(
-            "Skipping multimodal part '%s' (type: '%s') "
+            "Skipping multimodal part '{}' (type: '{}') "
             "with empty / unparsable content.", part, part_type)
         return None
 

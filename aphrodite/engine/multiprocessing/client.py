@@ -218,7 +218,7 @@ class MQAphroditeEngineClient(EngineClient):
                         # should shut down the server.
                         error: BaseException = request_outputs
                         logger.error(
-                            "Received Exception %s rather than RPCError from "
+                            "Received Exception {} rather than RPCError from "
                             "MPAphroditeEngine. This should never happen.", error)
                         request_id = None
                         exception = error

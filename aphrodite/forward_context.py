@@ -143,7 +143,7 @@ def set_forward_context(attn_metadata: Any,
                 forward_stats.sort(key=lambda x: x[1], reverse=True)
                 if forward_stats:
                     logger.info(("Batchsize forward time stats "
-                                 "(batchsize, count, median_time(ms)): %s"),
+                                 "(batchsize, count, median_time(ms)): {}"),
                                 forward_stats)
 
         # KVConnector: each attn layer triggers (possibly async) save.

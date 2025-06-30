@@ -175,7 +175,7 @@ class RequestTracker:
                 stream.finish()
 
         if verbose and finished:
-            logger.info("Finished request %s.", request_id)
+            logger.info("Finished request {}.", request_id)
 
     def process_exception(self,
                           request_id: str,
@@ -184,7 +184,7 @@ class RequestTracker:
                           verbose: bool = False) -> None:
         """Propagate an exception from the engine."""
         if verbose:
-            logger.info("Finished request %s.", request_id)
+            logger.info("Finished request {}.", request_id)
         self.abort_request(request_id, exception=exception)
 
     def add_request(self,
@@ -207,7 +207,7 @@ class RequestTracker:
         self.new_requests_event.set()
 
         if verbose:
-            logger.info("Added request %s.", request_id)
+            logger.info("Added request {}.", request_id)
 
         return stream
 
@@ -219,7 +219,7 @@ class RequestTracker:
                       verbose: bool = False) -> None:
         """Abort a request during next background loop iteration."""
         if verbose:
-            logger.info("Aborted request %s.", request_id)
+            logger.info("Aborted request {}.", request_id)
 
         self._aborted_requests.put_nowait(request_id)
 
@@ -561,7 +561,7 @@ async def build_guided_decoding_logits_processor_async(
 
     logger.debug(
         "Building guided decoding logits processor. "
-        "guided_decoding: %s%s", guided_decoding,
+        "guided_decoding: {}{}", guided_decoding,
         f", reasoning_backend: {reasoning_backend}"
         if reasoning_backend is not None else "")
 

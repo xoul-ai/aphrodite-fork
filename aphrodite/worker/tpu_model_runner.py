@@ -125,9 +125,9 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         block_table_size = 4 * self.block_tables.size
         if block_table_size >= smem_size:
             logger.warning(
-                "The max_model_len (%d) is too large. This may degrade the "
+                "The max_model_len ({}) is too large. This may degrade the "
                 "performance due to the insufficient smem size. Consider "
-                "setting --max-model-len to a smaller value, like %d.",
+                "setting --max-model-len to a smaller value, like {}.",
                 self.model_config.max_model_len,
                 self.model_config.max_model_len /
                 (block_table_size / smem_size))
@@ -291,14 +291,14 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
                                 kv_caches,
                                 exec_mode=ExecutionMode.PREFILL)
                 xm.wait_device_ops()
-                logger.info("batch_size: %d, seq_len: %d", batch_size, seq_len)
+                logger.info("batch_size: {}, seq_len: {}", batch_size, seq_len)
                 num_tokens = batch_size * seq_len
                 if num_tokens >= self.scheduler_config.max_num_batched_tokens:
                     break
                 seq_len = seq_len * 2
 
         end = time.time()
-        logger.info("Compilation for prefill done in %.2f s.", end - start)
+        logger.info("Compilation for prefill done in {:.2f} s.", end - start)
 
         # Prefix prefill
         if self.cache_config.enable_prefix_caching:
@@ -313,7 +313,7 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
                                     kv_caches,
                                     exec_mode=ExecutionMode.PREFIX_PREFILL)
                     xm.wait_device_ops()
-                    logger.info("batch_size: %d, seq_len: %d", batch_size,
+                    logger.info("batch_size: {}, seq_len: {}", batch_size,
                                 seq_len)
                     num_tokens = batch_size * seq_len
                     if (num_tokens
@@ -321,7 +321,7 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
                         break
                     seq_len = seq_len * 2
             end = time.time()
-            logger.info("Compilation for prefix prefill done in %.2f s.",
+            logger.info("Compilation for prefix prefill done in {:.2f} s.",
                         end - start)
 
         # Decode
@@ -334,14 +334,14 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
                             kv_caches,
                             exec_mode=ExecutionMode.DECODE)
             xm.wait_device_ops()
-            logger.info("batch_size: %d, seq_len: %d", batch_size, seq_len)
+            logger.info("batch_size: {}, seq_len: {}", batch_size, seq_len)
 
             if batch_size >= self.scheduler_config.max_num_seqs:
                 break
             batch_size = batch_size + 16 if batch_size >= 16 else batch_size * 2
 
         end = time.time()
-        logger.info("Compilation for decode done in %.2f s.", end - start)
+        logger.info("Compilation for decode done in {:.2f} s.", end - start)
 
     def _prepare_prompt(
         self,

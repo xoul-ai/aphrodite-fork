@@ -167,7 +167,7 @@ class OpenAIServingTranscription(OpenAIServing):
 
         if self.default_sampling_params:
             logger.info(
-                "Overwriting default completion sampling param with: %s",
+                "Overwriting default completion sampling param with: {}",
                 self.default_sampling_params)
 
     async def _preprocess_transcription(
@@ -185,7 +185,7 @@ class OpenAIServingTranscription(OpenAIServing):
                 pass
             elif request.language in ISO639_1_OTHER_LANGS:
                 logger.warning(
-                    "The selected language %s has limited accuracy with"
+                    "The selected language {} has limited accuracy with"
                     " reported WER>=0.5. Results may be less accurate "
                     "for this choice.", request.language)
             else:

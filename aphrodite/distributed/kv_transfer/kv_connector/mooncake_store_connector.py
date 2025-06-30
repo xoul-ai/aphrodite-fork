@@ -48,11 +48,11 @@ class MooncakeStoreConnector(KVConnectorBase):
                 from aphrodite.distributed.kv_transfer.kv_lookup_buffer.mooncake_store import (  # noqa: E501
                     MooncakeStore)
                 logger.info(
-                    "Initializing KVStoreConnector under kv_transfer_config %s",
+                    "Initializing KVStoreConnector under kv_transfer_config {}",
                     self.config)
                 self.kv_store = MooncakeStore(config)
         else:
-            logger.error("Can not find %s", self.config.kv_connector)
+            logger.error("Can not find {}", self.config.kv_connector)
 
         assert self.kv_store is not None
 
@@ -107,7 +107,7 @@ class MooncakeStoreConnector(KVConnectorBase):
             self.kv_store.put(hidden_key,
                               hidden_or_intermediate_states[start_pos:end_pos])
 
-        logger.debug("[rank%d]: KV send DONE.", torch.distributed.get_rank())
+        logger.debug("[rank{}]: KV send DONE.", torch.distributed.get_rank())
 
     def recv_kv_caches_and_hidden_states(
         self, model_executable: torch.nn.Module,
@@ -178,13 +178,13 @@ class MooncakeStoreConnector(KVConnectorBase):
 
         if not bypass_model_exec:
             logger.warning(
-                "[rank%d]: Failed to receive all KVs and hidden "
+                "[rank{}]: Failed to receive all KVs and hidden "
                 "states, redo model forwarding.", torch.distributed.get_rank())
             hidden_or_intermediate_states = None
 
         else:
             logger.debug(
-                "[rank%d]: Successfully received all KVs and hidden "
+                "[rank{}]: Successfully received all KVs and hidden "
                 "states, skip model forwarding.", torch.distributed.get_rank())
             hidden_or_intermediate_states = torch.cat(
                 hidden_or_intermediate_states_for_one_req, dim=0)

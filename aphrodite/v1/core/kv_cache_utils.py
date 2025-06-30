@@ -628,16 +628,16 @@ def _get_kv_cache_config_uniform_type(aphrodite_config: AphroditeConfig,
         num_gpu_blocks_override = \
             aphrodite_config.cache_config.num_gpu_blocks_override
         logger.info(
-            "Overriding num_gpu_blocks=%d with "
-            "num_gpu_blocks_override=%d", num_blocks, num_gpu_blocks_override)
+            "Overriding num_gpu_blocks={} with "
+            "num_gpu_blocks_override={}", num_blocks, num_gpu_blocks_override)
         num_blocks = num_gpu_blocks_override
 
     num_tokens = num_blocks * aphrodite_config.cache_config.block_size
     num_tokens_str = f"{num_tokens:,}"
-    logger.info("GPU KV cache size: %s tokens", num_tokens_str)
+    logger.info("GPU KV cache size: {} tokens", num_tokens_str)
     max_model_len_str = f"{aphrodite_config.model_config.max_model_len:,}"
     max_concurrency = num_tokens / aphrodite_config.model_config.max_model_len
-    logger.info("Maximum concurrency for %s tokens per request: %.2fx",
+    logger.info("Maximum concurrency for {} tokens per request: {:.2f}x",
                 max_model_len_str, max_concurrency)
 
     per_layer_size = page_size * num_blocks

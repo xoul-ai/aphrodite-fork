@@ -446,7 +446,7 @@ class XPUModelRunner(ModelRunnerBase[ModelInputForXPUWithSamplingMetadata]):
                 expr = (f"min({max_num_seqs_orig}, "
                         f"{max_num_batched_tokens} // {max_mm_tokens})")
                 logger.warning(
-                    "Computed max_num_seqs (%s) to be less than 1. "
+                    "Computed max_num_seqs ({}) to be less than 1. "
                     "Setting it to the minimum value of 1.", expr)
                 max_num_seqs = 1
 

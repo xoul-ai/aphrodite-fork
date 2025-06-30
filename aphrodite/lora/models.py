@@ -390,7 +390,7 @@ class LoRAModelManager(AdapterModelManager):
         index, _ = first_free_slot
         self._active_adapters[lora_id] = None
         lora_model = self._registered_adapters[lora_id]
-        logger.debug("Activating LoRA. int id: %d, slot index: %d",
+        logger.debug("Activating LoRA. int id: {}, slot index: {}",
                      lora_model.id, index)
         self.lora_index_to_id[index] = lora_model.id
         for module_name, module in self.modules.items():
@@ -476,7 +476,7 @@ class LoRAModelManager(AdapterModelManager):
             if self._filter_unsupported_mm_module(module_name):
                 logger.warning(
                     "Regarding multimodal models, Aphrodite currently only "
-                    "supports adding LoRA to language model, %s will be "
+                    "supports adding LoRA to language model, {} will be "
                     "ignored.", module_name)
                 continue
             parts = module_name.split(".")[-1]
@@ -675,9 +675,9 @@ class LoRAModelManager(AdapterModelManager):
 
     def add_adapter(self, adapter: LoRAModel) -> bool:
         logger.debug(
-            "Adding lora. Model id: %d, "
-            "int id: %d, "
-            "scaling factor: %s", adapter.id, adapter.id,
+            "Adding lora. Model id: {}, "
+            "int id: {}, "
+            "scaling factor: {}", adapter.id, adapter.id,
             adapter.scaling_factor)
         return add_adapter(adapter, self._registered_adapters, self.capacity,
                            self._add_adapter)
@@ -724,9 +724,9 @@ class LRUCacheLoRAModelManager(LoRAModelManager):
     def add_adapter(self, lora: LoRAModel) -> bool:
         """Add a LoRAModel to the manager."""
         logger.debug(
-            "Adding lora. Model id: %d, "
-            "int id: %d, "
-            "scaling factor: %s", lora.id, lora.id, lora.scaling_factor)
+            "Adding lora. Model id: {}, "
+            "int id: {}, "
+            "scaling factor: {}", lora.id, lora.id, lora.scaling_factor)
         if lora.id not in self._registered_adapters:
             self._add_adapter(lora)
             was_added = True

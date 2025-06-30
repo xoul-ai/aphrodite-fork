@@ -158,7 +158,7 @@ class ZmqEventPublisher(EventPublisher):
 
         if pending_items:
             logger.warning(
-                "Warning: Queue still has %s items after %s seconds timeout",
+                "Warning: Queue still has {} items after {} seconds timeout",
                 self._event_queue.qsize(),
                 self.SHUTDOWN_TIMEOUT,
             )
@@ -212,7 +212,7 @@ class ZmqEventPublisher(EventPublisher):
                 try:
                     self._service_replay()
                 except Exception as e:
-                    logger.exception("Error in replay: %s", e)
+                    logger.exception("Error in replay: {}", e)
 
             # --- main queue (critical) ---------------------------------
             try:
@@ -235,7 +235,7 @@ class ZmqEventPublisher(EventPublisher):
 
             except Exception as e:
                 # Publishing failed;  back-off a bit to avoid a tight error loop
-                logger.exception("Error in publisher thread: %s", e)
+                logger.exception("Error in publisher thread: {}", e)
                 time.sleep(0.1)
 
     def _service_replay(self) -> None:
@@ -244,7 +244,7 @@ class ZmqEventPublisher(EventPublisher):
 
         frame = self._replay.recv_multipart()
         if len(frame) != 3:
-            logger.warning("Invalid replay request: %s", frame)
+            logger.warning("Invalid replay request: {}", frame)
             return
         client_id, _, start_seq_bytes = frame
         start_seq = int.from_bytes(start_seq_bytes, "big")

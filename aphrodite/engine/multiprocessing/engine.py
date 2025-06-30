@@ -307,13 +307,13 @@ class MQAphroditeEngine:
                 priority=request.priority)
 
             if self.log_requests:
-                logger.info("Added request %s.", request.request_id)
+                logger.info("Added request {}.", request.request_id)
 
         except Exception as e:
             # We do not set self._errored = True here, since the error
             # is due to an issue adding this request to the engine,
             # rather than an issue with the engine itself.
-            logger.debug("Failed to add request %s to engine. %s",
+            logger.debug("Failed to add request {} to engine. {}",
                          request.request_id, e)
             is_errored = self._errored_with is not None
             rpc_err = RPCError(request_id=request_id,
@@ -327,7 +327,7 @@ class MQAphroditeEngine:
     def _handle_abort_request(self, request: RPCAbortRequest):
         self.engine.abort_request(request.request_id)
         if self.log_requests:
-            logger.info("Aborted request %s.", request.request_id)
+            logger.info("Aborted request {}.", request.request_id)
 
     def _handle_load_adapter_request(self, request: RPCLoadAdapterRequest):
         try:

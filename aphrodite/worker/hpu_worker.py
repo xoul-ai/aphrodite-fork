@@ -74,7 +74,7 @@ class HPUWorker(LocalOrDistributedWorkerBase):
         # APHRODITE_TORCH_PROFILER_DIR=/path/to/save/trace
         if envs.APHRODITE_TORCH_PROFILER_DIR:
             torch_profiler_trace_dir = envs.APHRODITE_TORCH_PROFILER_DIR
-            logger.info("Profiling enabled. Traces will be saved to: %s",
+            logger.info("Profiling enabled. Traces will be saved to: {}",
                         torch_profiler_trace_dir)
             self.profiler = torch.profiler.profile(
                 activities=[

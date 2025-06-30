@@ -60,7 +60,7 @@ class KVConnectorFactory:
         connector_name = config.kv_transfer_config.kv_connector
         connector_cls = cls._registry[connector_name]()
         assert issubclass(connector_cls, KVConnectorBase_V1)
-        logger.info("Creating v1 connector with name: %s", connector_name)
+        logger.info("Creating v1 connector with name: {}", connector_name)
         # NOTE: v1 connector is explicitly separated into two roles.
         # Scheduler connector:
         # - Co-locate with scheduler process

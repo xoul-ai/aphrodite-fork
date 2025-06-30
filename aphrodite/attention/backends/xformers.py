@@ -709,7 +709,7 @@ class XFormersImpl(AttentionImpl[XFormersMetadata]):
                     attn_bias = BlockDiagonalCausalMask.from_seqlens(
                         attn_metadata.seq_lens, device=query.device)
                 else:
-                    raise ValueError("Unknown AttentionType: %s", attn_type)
+                    raise ValueError("Unknown AttentionType: {}", attn_type)
 
                 if self.sliding_window is not None:
                     attn_bias = attn_bias.make_local_attention(

@@ -251,7 +251,7 @@ class AsyncLLM(EngineClient):
         await self.engine_core.add_request_async(request)
 
         if self.log_requests:
-            logger.info("Added request %s.", request.request_id)
+            logger.info("Added request {}.", request.request_id)
 
     # TODO: we should support multiple prompts in one call, as you
     # can do with LLM.generate. So that for multi-prompt completion
@@ -317,26 +317,26 @@ class AsyncLLM(EngineClient):
         except asyncio.CancelledError:
             await self.abort(request_id)
             if self.log_requests:
-                logger.info("Request %s aborted.", request_id)
+                logger.info("Request {} aborted.", request_id)
             raise
 
         # Engine is dead. Do not abort since we shut down.
         except EngineDeadError:
             if self.log_requests:
-                logger.info("Request %s failed (engine dead).", request_id)
+                logger.info("Request {} failed (engine dead).", request_id)
             raise
 
         # Request validation error.
         except ValueError:
             if self.log_requests:
-                logger.info("Request %s failed (bad request).", request_id)
+                logger.info("Request {} failed (bad request).", request_id)
             raise
 
         # Unexpected error in the generate() task (possibly recoverable).
         except Exception as e:
             await self.abort(request_id)
             if self.log_requests:
-                logger.info("Request %s failed.", request_id)
+                logger.info("Request {} failed.", request_id)
             raise EngineGenerateError() from e
 
     def _run_output_handler(self):
@@ -410,7 +410,7 @@ class AsyncLLM(EngineClient):
         await self.engine_core.abort_requests_async(request_ids)
 
         if self.log_requests:
-            logger.info("Aborted request %s.", request_id)
+            logger.info("Aborted request {}.", request_id)
 
     @staticmethod
     def _record_stats(

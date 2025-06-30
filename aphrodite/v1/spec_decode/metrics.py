@@ -78,10 +78,10 @@ class SpecDecodingLogging:
         log_fn(
             "SpecDecoding metrics: "
             "Draft acceptance rate: %.1f%%, "
-            "Mean acceptance length: %.2f, "
-            "Accepted: %d tokens, "
-            "Drafted: %d tokens, "
-            "Per-position acceptance rate: %s",
+            "Mean acceptance length: {:.2f}, "
+            "Accepted: {} tokens, "
+            "Drafted: {} tokens, "
+            "Per-position acceptance rate: {}",
             draft_acceptance_rate,
             mean_acceptance_length,
             num_accepted_tokens,

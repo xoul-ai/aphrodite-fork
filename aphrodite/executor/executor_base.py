@@ -105,12 +105,12 @@ class ExecutorBase(ABC):
         """Initialize the KV cache by invoking the underlying worker.
         """
         # NOTE: This is logged in the executor because there can be >1 workers.
-        logger.info("# %s blocks: %d, # CPU blocks: %d",
+        logger.info("# {} blocks: {}, # CPU blocks: {}",
                     aphrodite.platforms.current_platform.device_name,
                     num_gpu_blocks, num_cpu_blocks)
         max_concurrency = (num_gpu_blocks * self.cache_config.block_size /
                            self.model_config.max_model_len)
-        logger.info("Maximum concurrency for %s tokens per request: %.2fx",
+        logger.info("Maximum concurrency for {} tokens per request: {:.2f}x",
                     self.model_config.max_model_len, max_concurrency)
 
         self.cache_config.num_gpu_blocks = num_gpu_blocks
@@ -213,13 +213,13 @@ class ExecutorBase(ABC):
         if tags:
             for tag in tags:
                 if tag not in self.sleeping_tags:
-                    logger.warning("Tag %s is not in sleeping tags %s", tag,
+                    logger.warning("Tag {} is not in sleeping tags {}", tag,
                                    self.sleeping_tags)
                     return
         time_before_wakeup = time.perf_counter()
         self.collective_rpc("wake_up", kwargs=dict(tags=tags))
         time_after_wakeup = time.perf_counter()
-        logger.info("It took %.6f seconds to wake up tags %s.",
+        logger.info("It took %.6f seconds to wake up tags {}.",
                     time_after_wakeup - time_before_wakeup,
                     tags if tags is not None else self.sleeping_tags)
         if tags:

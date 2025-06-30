@@ -171,7 +171,7 @@ class RayDistributedExecutor(DistributedExecutorBase):
             ray_remote_kwargs = self._configure_ray_workers_use_nsight(
                 ray_remote_kwargs)
 
-        logger.info("use_ray_spmd_worker: %s", self.use_ray_spmd_worker)
+        logger.info("use_ray_spmd_worker: {}", self.use_ray_spmd_worker)
 
         # Create the workers.
         bundle_indices: List[int]
@@ -246,8 +246,8 @@ class RayDistributedExecutor(DistributedExecutorBase):
                     worker_metadata.pop(i)
                     break
 
-        logger.debug("workers: %s", worker_metadata)
-        logger.debug("driver_dummy_worker: %s", self.driver_dummy_worker)
+        logger.debug("workers: {}", worker_metadata)
+        logger.debug("driver_dummy_worker: {}", self.driver_dummy_worker)
         if not self.use_ray_spmd_worker and self.driver_dummy_worker is None:
             raise ValueError(
                 "Ray does not allocate any GPUs on the driver node."
@@ -347,14 +347,14 @@ class RayDistributedExecutor(DistributedExecutorBase):
                 if name in os.environ:
                     args[name] = os.environ[name]
 
-        logger.info("non_carry_over_env_vars from config: %s",
+        logger.info("non_carry_over_env_vars from config: {}",
                     self.non_carry_over_env_vars)
         logger.info(
-            "Copying the following environment variables to workers: %s",
+            "Copying the following environment variables to workers: {}",
             [v for v in env_vars_to_copy if v in os.environ])
         logger.info(
             "If certain env vars should NOT be copied to workers, add them to "
-            "%s file", self.non_carry_over_env_vars_file)
+            "{} file", self.non_carry_over_env_vars_file)
 
         self._env_vars_for_all_workers = (
             all_args_to_update_environment_variables)
@@ -556,9 +556,9 @@ class RayDistributedExecutor(DistributedExecutorBase):
         self._check_ray_cgraph_installation()
         from ray.dag import InputNode, MultiOutputNode
 
-        logger.info("APHRODITE_USE_RAY_COMPILED_DAG_CHANNEL_TYPE = %s",
+        logger.info("APHRODITE_USE_RAY_COMPILED_DAG_CHANNEL_TYPE = {}",
                     envs.APHRODITE_USE_RAY_COMPILED_DAG_CHANNEL_TYPE)
-        logger.info("APHRODITE_USE_RAY_COMPILED_DAG_OVERLAP_COMM = %s",
+        logger.info("APHRODITE_USE_RAY_COMPILED_DAG_OVERLAP_COMM = {}",
                     envs.APHRODITE_USE_RAY_COMPILED_DAG_OVERLAP_COMM)
 
         channel_type = envs.APHRODITE_USE_RAY_COMPILED_DAG_CHANNEL_TYPE
@@ -573,7 +573,7 @@ class RayDistributedExecutor(DistributedExecutorBase):
         # i.e., the distributed execution that includes model forward runs and
         # intermediate tensor communications, in the case of aphrodite.
         os.environ.setdefault("RAY_CGRAPH_get_timeout", "300")  # noqa: SIM112
-        logger.info("RAY_CGRAPH_get_timeout is set to %s",
+        logger.info("RAY_CGRAPH_get_timeout is set to {}",
                     os.environ["RAY_CGRAPH_get_timeout"])  # noqa: SIM112
 
         with InputNode() as input_data:

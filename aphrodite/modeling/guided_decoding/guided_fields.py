@@ -29,7 +29,17 @@ class GuidedDecodingRequest:
 
     def __post_init__(self):
         """Validate that some fields are mutually exclusive."""
-        guide_count = sum(x is not None
+        # Helper function to check if a value is effectively None
+        def is_effectively_none(value):
+            if value is None:
+                return True
+            if isinstance(value, str) and value.strip() == "":
+                return True
+            if isinstance(value, dict) and len(value) == 0:
+                return True
+            return False
+        
+        guide_count = sum(not is_effectively_none(x)
                           for x in (self.guided_json, self.guided_regex,
                                     self.guided_choice, self.guided_grammar,
                                     self.guided_json_object,

@@ -71,7 +71,7 @@ class OpenAIBaseModel(BaseModel):
         if any(k not in field_names for k in data):
             logger.warning(
                 "The following fields were present in the request "
-                "but ignored: %s",
+                "but ignored: {}",
                 data.keys() - field_names,
             )
         return result
@@ -681,16 +681,27 @@ class ChatCompletionRequest(OpenAIBaseModel):
         if isinstance(data, ValueError):
             raise data
 
+        # Helper function to check if a value is effectively None
+        def is_effectively_none(value):
+            if value is None:
+                return True
+            if isinstance(value, str) and value.strip() == "":
+                return True
+            if isinstance(value, dict) and len(value) == 0:
+                return True
+            return False
+
         guide_count = sum([
-            "guided_json" in data and data["guided_json"] is not None,
-            "guided_regex" in data and data["guided_regex"] is not None,
-            "guided_choice" in data and data["guided_choice"] is not None
+            "guided_json" in data and not is_effectively_none(data["guided_json"]),
+            "guided_regex" in data and not is_effectively_none(data["guided_regex"]),
+            "guided_choice" in data and not is_effectively_none(data["guided_choice"]),
+            "guided_grammar" in data and not is_effectively_none(data["guided_grammar"])
         ])
         # you can only use one kind of guided decoding
         if guide_count > 1:
             raise ValueError(
                 "You can only use one kind of guided decoding "
-                "('guided_json', 'guided_regex' or 'guided_choice').")
+                "('guided_json', 'guided_regex', 'guided_choice', or 'guided_grammar').")
         # you can only either use guided decoding or tools, not both
         if guide_count > 1 and data.get("tool_choice", "none") not in (
                 "none",
@@ -1079,15 +1090,38 @@ class CompletionRequest(OpenAIBaseModel):
     @model_validator(mode="before")
     @classmethod
     def check_guided_decoding_count(cls, data):
+        if isinstance(data, ValueError):
+            raise data
+
+        # Helper function to check if a value is effectively None
+        def is_effectively_none(value):
+            if value is None:
+                return True
+            if isinstance(value, str) and value.strip() == "":
+                return True
+            if isinstance(value, dict) and len(value) == 0:
+                return True
+            return False
+
         guide_count = sum([
-            "guided_json" in data and data["guided_json"] is not None,
-            "guided_regex" in data and data["guided_regex"] is not None,
-            "guided_choice" in data and data["guided_choice"] is not None
+            "guided_json" in data and not is_effectively_none(data["guided_json"]),
+            "guided_regex" in data and not is_effectively_none(data["guided_regex"]),
+            "guided_choice" in data and not is_effectively_none(data["guided_choice"]),
+            "guided_grammar" in data and not is_effectively_none(data["guided_grammar"])
         ])
+        # you can only use one kind of guided decoding
         if guide_count > 1:
             raise ValueError(
                 "You can only use one kind of guided decoding "
-                "('guided_json', 'guided_regex' or 'guided_choice').")
+                "('guided_json', 'guided_regex', 'guided_choice', or 'guided_grammar').")
+        # you can only either use guided decoding or tools, not both
+        if guide_count > 1 and data.get("tool_choice", "none") not in (
+                "none",
+                "auto",
+                "required",
+        ):
+            raise ValueError(
+                "You can only either use guided decoding or tools, not both.")
         return data
 
     @model_validator(mode="before")

@@ -73,7 +73,7 @@ class MooncakeTransferEngine:
             raise
         except Exception as exc:
             logger.error(
-                "An error occurred while loading the configuration: %s", exc)
+                "An error occurred while loading the configuration: {}", exc)
             raise
         prefill_host, base_prefill_port = self.config.prefill_url.split(':')
         decode_host, base_decode_port = self.config.decode_url.split(':')
@@ -229,7 +229,7 @@ class MooncakePipe(KVPipeBase):
 
     def _select_device(self, device: str) -> torch.device:
         """Select available device (CUDA or CPU)."""
-        logger.info("Selecting device: %s", device)
+        logger.info("Selecting device: {}", device)
         if device == "cuda":
             return torch.device(f"cuda:{self.local_rank}")
         else:

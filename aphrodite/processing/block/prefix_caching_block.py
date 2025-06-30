@@ -456,7 +456,7 @@ class PrefixCachingBlockAllocator(BlockAllocator):
         if num_used_blocks > 0:
             logger.warning(
                 "Failed to reset prefix cache because some "
-                "blocks (%d) are not freed yet", num_used_blocks)
+                "blocks ({}) are not freed yet", num_used_blocks)
             return False
 
         # Free all blocks in the evictor.

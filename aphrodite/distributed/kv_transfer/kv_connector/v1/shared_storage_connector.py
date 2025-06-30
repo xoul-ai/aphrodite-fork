@@ -78,7 +78,7 @@ class SharedStorageConnector(KVConnectorBase_V1):
         self._storage_path = transfer_config.get_from_extra_config(
             "shared_storage_path", "/tmp")
         logger.info(aphrodite_config.kv_transfer_config)
-        logger.info("Shared storage path is %s", self._storage_path)
+        logger.info("Shared storage path is {}", self._storage_path)
 
     def start_load_kv(self, forward_context: "ForwardContext",
                       **kwargs) -> None:
@@ -149,7 +149,7 @@ class SharedStorageConnector(KVConnectorBase_V1):
         for request in metadata.requests:
             if request.is_store:
                 continue
-            logger.info("Inject KV cache of %d tokens to the paged memory",
+            logger.info("Inject KV cache of {} tokens to the paged memory",
                         len(request.slot_mapping))
             for layer_name in forward_context.no_compile_layers:
                 attn_layer = forward_context.no_compile_layers[layer_name]
