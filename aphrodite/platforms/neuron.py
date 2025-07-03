@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Optional
 
 from loguru import logger
 
-from aphrodite import envs
+from aphrodite.common import envs
 
 from .interface import Platform, PlatformEnum
 

@@ -10,7 +10,7 @@ from transformers import BatchFeature, ProcessorMixin
 from transformers.models.whisper import WhisperFeatureExtractor
 from transformers.models.whisper.modeling_whisper import WhisperEncoder
 
-from aphrodite import envs
+from aphrodite.common import envs
 from aphrodite.common.config import AphroditeConfig
 from aphrodite.common.sequence import IntermediateTensors
 from aphrodite.forward_context import get_forward_context

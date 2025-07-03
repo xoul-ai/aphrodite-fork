@@ -493,7 +493,7 @@ def setup_default_loggers(
         factories = custom_stat_loggers
     else:
         factories = [PrometheusStatLogger]
-        if logger.isEnabledFor(logging.INFO):
+        if logging.getLogger().isEnabledFor(logging.INFO):
             factories.append(LoggingStatLogger)
 
     stat_loggers: list[list[StatLoggerBase]] = []

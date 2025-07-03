@@ -3,7 +3,7 @@ from typing import Callable, List, Optional, Tuple, Union
 import torch
 
 from aphrodite import _custom_ops as ops
-from aphrodite import envs
+from aphrodite.common import envs
 from aphrodite.common.config import (CompilationLevel,
                                      get_current_aphrodite_config)
 from aphrodite.platforms import current_platform

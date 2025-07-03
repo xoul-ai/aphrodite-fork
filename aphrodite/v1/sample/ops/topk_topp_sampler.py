@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from loguru import logger
 
-from aphrodite import envs
+from aphrodite.common import envs
 from aphrodite.platforms import current_platform
 
 try:

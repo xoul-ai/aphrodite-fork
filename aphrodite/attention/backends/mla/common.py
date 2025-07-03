@@ -195,7 +195,7 @@ from typing import (TYPE_CHECKING, Any, Dict, Generic, List, Optional, Tuple,
 import torch
 
 from aphrodite import _custom_ops as ops
-from aphrodite import envs
+from aphrodite.common import envs
 from aphrodite.attention.backends.abstract import (AttentionBackend,
                                                    AttentionLayer,
                                                    AttentionMetadata,

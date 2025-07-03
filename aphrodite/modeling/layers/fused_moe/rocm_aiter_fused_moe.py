@@ -3,7 +3,7 @@ from typing import List, Optional, Tuple
 
 import torch
 
-from aphrodite import envs
+from aphrodite.common import envs
 from aphrodite.common.utils import direct_register_custom_op
 from aphrodite.platforms import current_platform
 
