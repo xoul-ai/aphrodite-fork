@@ -118,7 +118,7 @@ def cli_env_setup():
     # possible.
     #
     # We only set it here in the CLI entrypoint, because changing to `spawn`
-    # could break some existing code using vLLM as a library. `spawn` will cause
+    # could break some existing code using Aphrodite as a library. `spawn` will cause
     # unexpected behavior if the code is not protected by
     # `if __name__ == "__main__":`.
     #
@@ -127,9 +127,9 @@ def cli_env_setup():
     # - https://pytorch.org/docs/stable/notes/multiprocessing.html#cuda-in-multiprocessing
     # - https://pytorch.org/docs/stable/multiprocessing.html#sharing-cuda-tensors
     # - https://docs.habana.ai/en/latest/PyTorch/Getting_Started_with_PyTorch_and_Gaudi/Getting_Started_with_PyTorch.html?highlight=multiprocessing#torch-multiprocessing-for-dataloaders
-    if "VLLM_WORKER_MULTIPROC_METHOD" not in os.environ:
-        logger.debug("Setting VLLM_WORKER_MULTIPROC_METHOD to 'spawn'")
-        os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
+    if "APHRODITE_WORKER_MULTIPROC_METHOD" not in os.environ:
+        logger.debug("Setting APHRODITE_WORKER_MULTIPROC_METHOD to 'spawn'")
+        os.environ["APHRODITE_WORKER_MULTIPROC_METHOD"] = "spawn"
 
 
 def _validate_truncation_size(

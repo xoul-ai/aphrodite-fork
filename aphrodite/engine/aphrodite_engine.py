@@ -2172,7 +2172,7 @@ class AphroditeEngine:
 
 if envs.is_set("APHRODITE_USE_V1") and envs.APHRODITE_USE_V1:
     from aphrodite.v1.engine.llm_engine import (
-        AphroditeEngine as V1AphroditeEngine)
+        LLMEngine as V1AphroditeEngine)
     AphroditeEngine = V1AphroditeEngine  # type: ignore
 
 setup_logger()

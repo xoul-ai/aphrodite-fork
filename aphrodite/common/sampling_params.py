@@ -407,6 +407,7 @@ class SamplingParams(
     # They are set in post_init.
     output_text_buffer_length: int = 0
     _all_stop_token_ids: Set[int] = msgspec.field(default_factory=set)
+    _bad_words_token_ids: Optional[list[list[int]]] = None
 
     # Fields used to construct logits processors
     guided_decoding: Optional[GuidedDecodingParams] = None

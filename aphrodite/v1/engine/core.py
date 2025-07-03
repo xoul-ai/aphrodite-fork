@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import queue
 import signal
@@ -419,7 +420,7 @@ class EngineCoreProc(EngineCore):
 
         waited = False
         while not self.engines_running and not (self.scheduler.has_requests()):
-            if logger.isEnabledFor(DEBUG) and self.input_queue.empty():
+            if logging.getLogger().isEnabledFor(logging.DEBUG) and self.input_queue.empty():
                 logger.debug("EngineCore waiting for work.")
                 waited = True
             req = self.input_queue.get()

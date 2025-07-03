@@ -115,7 +115,7 @@ class CompilerManager:
                 elapsed = now - compilation_start_time
                 logger.info(
                     "Directly load the compiled graph(s) for shape {} "
-                    "from the cache, took %.3f s", str(runtime_shape), elapsed)
+                    "from the cache, took {:.3f} s", str(runtime_shape), elapsed)
             return compiled_graph
 
         # no compiler cached the graph, or the cache is disabled,

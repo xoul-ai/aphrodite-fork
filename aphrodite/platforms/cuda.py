@@ -14,6 +14,7 @@ from typing_extensions import ParamSpec
 # import custom ops, trigger op registration
 import aphrodite._C  # noqa
 import aphrodite.common.envs as envs
+from aphrodite.common.logger import log_once
 from aphrodite.common.utils import import_pynvml
 
 from .interface import DeviceCapability, Platform, PlatformEnum, _Backend
@@ -178,7 +179,7 @@ class CudaPlatformBase(Platform):
             #  we should probably consider factoring out V1 here
             if selected_backend == _Backend.TRITON_MLA or block_size != 64:
                 if use_v1:
-                    logger.info_once("Using Triton MLA backend on V1 engine.")
+                    log_once("INFO", "Using Triton MLA backend on V1 engine.")
                     return ("aphrodite.v1.attention.backends.mla."
                             "triton_mla.TritonMLABackend")
                 else:
@@ -199,7 +200,7 @@ class CudaPlatformBase(Platform):
                         block_size)
                 else:
                     if use_v1:
-                        logger.info_once(
+                        log_once("INFO",
                             "Using FlashMLA backend on V1 engine.")
                         return ("aphrodite.v1.attention.backends.mla."
                                 "flashmla.FlashMLABackend")
@@ -209,15 +210,15 @@ class CudaPlatformBase(Platform):
                                 "flashmla.FlashMLABackend")
         if use_v1:
             if selected_backend == _Backend.FLASHINFER:
-                logger.info_once("Using FlashInfer backend on V1 engine.")
+                log_once("INFO", "Using FlashInfer backend on V1 engine.")
                 return ("aphrodite.v1.attention.backends."
                         "flashinfer.FlashInferBackend")
             if selected_backend == _Backend.TRITON_ATTN_APHRODITE_V1:
-                logger.info_once("Using Triton backend on V1 engine.")
+                log_once("INFO", "Using Triton backend on V1 engine.")
                 return ("aphrodite.v1.attention.backends."
                         "triton_attn.TritonAttentionBackend")
             if cls.has_device_capability(80):
-                logger.info_once("Using Flash Attention backend on V1 engine.")
+                log_once("INFO", "Using Flash Attention backend on V1 engine.")
                 return ("aphrodite.v1.attention.backends."
                         "flash_attn.FlashAttentionBackend")
         if selected_backend == _Backend.FLASHINFER:
