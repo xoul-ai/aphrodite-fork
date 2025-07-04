@@ -96,12 +96,12 @@ from aphrodite.engine.multiprocessing import (APHRODITE_RPC_SUCCESS_STR,
 from aphrodite.engine.multiprocessing.client import MQAphroditeEngineClient
 from aphrodite.engine.multiprocessing.engine import run_mp_engine
 from aphrodite.engine.protocol import EngineClient
+from aphrodite.modeling.model_loader.weight_utils import get_model_config_yaml
 from aphrodite.reasoning import ReasoningParserManager
 from aphrodite.server import serve_http
 from aphrodite.transformers_utils.config import (
     maybe_register_config_serialize_by_value)
-from aphrodite.transformers_utils.tokenizer import (MistralTokenizer,
-                                                    get_tokenizer)
+from aphrodite.transformers_utils.tokenizer import MistralTokenizer
 from aphrodite.usage.usage_lib import UsageContext
 from aphrodite.version import __version__ as APHRODITE_VERSION
 
@@ -149,6 +149,7 @@ async def lifespan(app: FastAPI):
         # Ensure app state including engine ref is gc'd
         del app.state
 
+
 @asynccontextmanager
 async def build_async_engine_client(
         args: Namespace) -> AsyncIterator[EngineClient]:
@@ -177,14 +178,15 @@ async def build_async_engine_client_from_engine_args(
 
     # Create the EngineConfig (determines if we can use V1).
     usage_context = UsageContext.OPENAI_API_SERVER
-    aphrodite_config = engine_args.create_engine_config(usage_context=usage_context)
+    aphrodite_config = engine_args.create_engine_config(
+        usage_context=usage_context)
 
     # V1 AsyncLLM.
     if envs.APHRODITE_USE_V1:
         if disable_frontend_multiprocessing:
             logger.warning(
                 "V1 is enabled, but got --disable-frontend-multiprocessing. "
-                "To disable frontend multiprocessing, set VLLM_USE_V1=0.")
+                "To disable frontend multiprocessing, set APHRODITE_USE_V1=0.")
 
         from aphrodite.v1.engine.async_llm import AsyncLLM
         async_llm: Optional[AsyncLLM] = None
@@ -268,8 +270,8 @@ async def build_async_engine_client_from_engine_args(
         atexit.register(_cleanup_ipc_path)
 
         # Build RPCClient, which conforms to EngineClient Protocol.
-        build_client = partial(MQAphroditeEngineClient, ipc_path, aphrodite_config,
-                               engine_pid)
+        build_client = partial(MQAphroditeEngineClient, ipc_path,
+                               aphrodite_config, engine_pid)
         mq_engine_client = await asyncio.get_running_loop().run_in_executor(
             None, build_client)
         try:
@@ -305,6 +307,7 @@ async def build_async_engine_client_from_engine_args(
             from prometheus_client import multiprocess
             multiprocess.mark_process_dead(engine_process.pid)
 
+
 async def validate_json_request(raw_request: Request):
     content_type = raw_request.headers.get("content-type", "").lower()
     media_type = content_type.split(";", maxsplit=1)[0]
@@ -314,9 +317,9 @@ async def validate_json_request(raw_request: Request):
             detail="Unsupported Media Type: Only 'application/json' is allowed"
         )
 
+
 @asynccontextmanager
-async def build_engine_client(
-        args: Namespace) -> AsyncIterator[EngineClient]:
+async def build_engine_client(args: Namespace) -> AsyncIterator[EngineClient]:
 
     # Context manager to handle engine_client lifecycle
     # Ensures everything is shutdown and cleaned up on error/exit
@@ -387,8 +390,7 @@ async def build_engine_client_from_engine_args(
         # so we need to spawn a new process
         context = multiprocessing.get_context("spawn")
         engine_process = context.Process(target=run_mp_engine,
-                                         args=(engine_args,
-                                               ipc_path))
+                                         args=(engine_args, ipc_path))
         engine_process.start()
         logger.info(f"Started engine process with PID {engine_process.pid}")
         # Build RPCClient, which conforms to EngineClient Protocol.
@@ -467,10 +469,8 @@ def mount_metrics(app: FastAPI):
     app.routes.append(metrics_route)
 
 
-async def _handle_model_switch(
-        raw_request: Request,
-        requested_model: str
-) -> Optional[JSONResponse]:
+async def _handle_model_switch(raw_request: Request,
+                               requested_model: str) -> Optional[JSONResponse]:
     """Helper function to handle model switching if needed.
     Returns error response if something went wrong, None if successful."""
 
@@ -484,10 +484,8 @@ async def _handle_model_switch(
             config.pop("model", None)
             request_data.update(config)
 
-        load_response = await load_model(
-            raw_request,
-            request=json.dumps(request_data)
-        )
+        load_response = await load_model(raw_request,
+                                         request=json.dumps(request_data))
         if load_response.status_code != 200:
             return load_response
         return None
@@ -506,10 +504,8 @@ async def _handle_model_switch(
         config.pop("model", None)
         request_data.update(config)
 
-    load_response = await load_model(
-        raw_request,
-        request=json.dumps(request_data)
-    )
+    load_response = await load_model(raw_request,
+                                     request=json.dumps(request_data))
     if load_response.status_code != 200:
         return load_response
 
@@ -565,21 +561,18 @@ def engine_client(request: Request) -> EngineClient:
 async def unload_model(raw_request: Request):
     """Unload the model and shut down the engine process."""
     if not raw_request.app.state.model_is_loaded:
-        return JSONResponse(
-            content={
-                "status": "error",
-                "message": "No model loaded."
-            },
-            status_code=500
-        )
+        return JSONResponse(content={
+            "status": "error",
+            "message": "No model loaded."
+        },
+                            status_code=500)
     client = raw_request.app.state.engine_client
 
     if isinstance(client, MQAphroditeEngineClient):
         try:
             shutdown_req = RPCShutdownRequest()
             await client.input_socket.send_multipart(
-                (pickle.dumps(shutdown_req),), copy=False
-            )
+                (pickle.dumps(shutdown_req), ), copy=False)
 
             response = await client.output_socket.recv_multipart()
             if pickle.loads(response[0]) != APHRODITE_RPC_SUCCESS_STR:
@@ -601,50 +594,49 @@ async def unload_model(raw_request: Request):
             return JSONResponse(content={"status": "success"})
 
         except Exception as e:
-            return JSONResponse(
-                content={
-                    "status": "error",
-                    "message": f"Failed to shutdown engine: {str(e)}"
-                },
-                status_code=500
-            )
-    else:
-        return JSONResponse(
-            content={
-                "status": "error",
-                "message": "Model unloading only supported with multiprocessing"
-                " backend"
+            return JSONResponse(content={
+                "status":
+                "error",
+                "message":
+                f"Failed to shutdown engine: {str(e)}"
             },
-            status_code=400
-        )
+                                status_code=500)
+    else:
+        return JSONResponse(content={
+            "status":
+            "error",
+            "message":
+            "Model unloading only supported with multiprocessing"
+            " backend"
+        },
+                            status_code=400)
+
 
 @router.post("/v1/model/load")
-async def load_model(
-    raw_request: Request,
-    config_file: Optional[UploadFile] = None,
-    request: Optional[str] = Form(None)
-):
+async def load_model(raw_request: Request,
+                     config_file: Optional[UploadFile] = None,
+                     request: Optional[str] = Form(None)):
     """Load a new model after unloading the previous one.
     Accept either a config file, a JSON request body, or both."""
     if raw_request.app.state.model_is_loaded:
-        return JSONResponse(
-            content={
-                "status": "error",
-                "message": "A model is already loaded. Please unload it first."
-            },
-            status_code=400
-        )
+        return JSONResponse(content={
+            "status":
+            "error",
+            "message":
+            "A model is already loaded. Please unload it first."
+        },
+                            status_code=400)
 
     try:
         parser = FlexibleArgumentParser()
         parser = make_arg_parser(parser)
         new_args = parser.parse_args([])
 
-        original_args = api_server_args
+        original_args = api_server_args  # niqa: F821
         essential_params = [
             'host', 'port', 'api_keys', 'admin_key',
-            'disable_frontend_multiprocessing', 'root_path',
-            'ssl_keyfile', 'ssl_certfile'
+            'disable_frontend_multiprocessing', 'root_path', 'ssl_keyfile',
+            'ssl_certfile'
         ]
         for param in essential_params:
             if hasattr(original_args, param):
@@ -663,26 +655,26 @@ async def load_model(
             try:
                 json_args = json.loads(request)
             except json.JSONDecodeError:
-                return JSONResponse(
-                    content={
-                        "status": "error",
-                        "message": "Invalid JSON in request form field."
-                    },
-                    status_code=400
-                )
+                return JSONResponse(content={
+                    "status":
+                    "error",
+                    "message":
+                    "Invalid JSON in request form field."
+                },
+                                    status_code=400)
         else:
             try:
                 json_args = await raw_request.json()
             except Exception:
                 if not config_file:
-                    return JSONResponse(
-                        content={
-                            "status": "error",
-                            "message": "Must provide either config_file or "
-                            "valid JSON request body."
-                        },
-                        status_code=400
-                    )
+                    return JSONResponse(content={
+                        "status":
+                        "error",
+                        "message":
+                        "Must provide either config_file or "
+                        "valid JSON request body."
+                    },
+                                        status_code=400)
 
         if json_args:
             for key, value in json_args.items():
@@ -690,33 +682,31 @@ async def load_model(
                     setattr(new_args, key, value)
 
         if not hasattr(new_args, 'model') or not new_args.model:
-            return JSONResponse(
-                content={
-                    "status": "error",
-                    "message": "No model specified in config or request body."
-                },
-                status_code=400
-            )
+            return JSONResponse(content={
+                "status":
+                "error",
+                "message":
+                "No model specified in config or request body."
+            },
+                                status_code=400)
 
         engine_args = AsyncEngineArgs.from_cli_args(new_args)
 
         if (MQAphroditeEngineClient.is_unsupported_config(engine_args)
                 or new_args.disable_frontend_multiprocessing):
-            return JSONResponse(
-                content={
-                    "status": "error",
-                    "message": "Model loading only supported with "
-                    "multiprocessing backend."
-                },
-                status_code=400
-            )
+            return JSONResponse(content={
+                "status":
+                "error",
+                "message":
+                "Model loading only supported with "
+                "multiprocessing backend."
+            },
+                                status_code=400)
 
         ipc_path = get_open_zmq_ipc_path()
         context = multiprocessing.get_context("spawn")
-        engine_process = context.Process(
-            target=run_mp_engine,
-            args=(engine_args, ipc_path)
-        )
+        engine_process = context.Process(target=run_mp_engine,
+                                         args=(engine_args, ipc_path))
         engine_process.start()
 
         engine_config = engine_args.create_engine_config()
@@ -729,18 +719,18 @@ async def load_model(
                     break
                 except TimeoutError:
                     if not engine_process.is_alive():
-                        return JSONResponse(
-                            content={
-                                "status": "error",
-                                "message": "Engine process died before "
-                                "responding to readiness probe."
-                            },
-                            status_code=500
-                        )
+                        return JSONResponse(content={
+                            "status":
+                            "error",
+                            "message":
+                            "Engine process died before "
+                            "responding to readiness probe."
+                        },
+                                            status_code=500)
 
             model_config = await engine_client.get_model_config()
-            init_app_state(
-                engine_client, model_config, raw_request.app.state, new_args)
+            init_app_state(engine_client, model_config, raw_request.app.state,
+                           new_args)
             raw_request.app.state.model_is_loaded = True
             raw_request.app.state.current_model = new_args.model
 
@@ -752,19 +742,19 @@ async def load_model(
             raise e
 
     except Exception as e:
-        return JSONResponse(
-            content={
-                "status": "error",
-                "message": f"Failed to load model: {str(e)}"
-            },
-            status_code=500
-        )
+        return JSONResponse(content={
+            "status": "error",
+            "message": f"Failed to load model: {str(e)}"
+        },
+                            status_code=500)
+
 
 @router.get("/health")
 async def health(raw_request: Request) -> Response:
     """Health check."""
     await engine_client(raw_request).check_health()
     return Response(status_code=200)
+
 
 @router.get("/load")
 async def get_server_load_metrics(request: Request):
@@ -839,30 +829,32 @@ async def serviceinfo():
     """Return service information including version, API endpoints,
     and documentation URLs."""
 
-    return JSONResponse(content={
-        "version": 0.2,
-        "software": {
-            "name": "Aphrodite Engine",
-            "version": APHRODITE_VERSION,
-            "repository": "https://github.com/PygmalionAI/aphrodite-engine",
-            "homepage": "https://aphrodite.pygmalion.chat",
-            "logo": "https://pygmalion.chat/icons/favicon.ico",
-        },
-        "api": {
-            "openai": {
-                "name": "OpenAI API",
-                "rel_url": "/v1",
-                "documentation": "/redoc",
-                "version": 1,
+    return JSONResponse(
+        content={
+            "version": 0.2,
+            "software": {
+                "name": "Aphrodite Engine",
+                "version": APHRODITE_VERSION,
+                "repository":
+                "https://github.com/PygmalionAI/aphrodite-engine",
+                "homepage": "https://aphrodite.pygmalion.chat",
+                "logo": "https://pygmalion.chat/icons/favicon.ico",
             },
-            "koboldai": {
-                "name": "KoboldAI API",
-                "rel_url": "/api",
-                "documentation": "/redoc",
-                "version": 1,
+            "api": {
+                "openai": {
+                    "name": "OpenAI API",
+                    "rel_url": "/v1",
+                    "documentation": "/redoc",
+                    "version": 1,
+                },
+                "koboldai": {
+                    "name": "KoboldAI API",
+                    "rel_url": "/api",
+                    "documentation": "/redoc",
+                    "version": 1,
+                }
             }
-        }
-    })
+        })
 
 
 @router.post("/v1/chat/completions",
@@ -1090,13 +1082,13 @@ TASK_HANDLERS: dict[str, dict[str, tuple]] = {
     },
 }
 
-
-
 if envs.APHRODITE_SERVER_DEV_MODE:
 
     @router.get("/server_info")
     async def show_server_info(raw_request: Request):
-        server_info = {"aphrodite_config": str(raw_request.app.state.aphrodite_config)}
+        server_info = {
+            "aphrodite_config": str(raw_request.app.state.aphrodite_config)
+        }
         return JSONResponse(content=server_info)
 
     @router.post("/reset_prefix_cache")
@@ -1220,21 +1212,6 @@ if envs.APHRODITE_ALLOW_RUNTIME_LORA_UPDATING:
 
 badwordsids: list[int] = []
 
-def _set_badwords(tokenizer, hf_config):  # pylint: disable=redefined-outer-name
-    # pylint: disable=global-variable-undefined
-    global badwordsids
-    if hf_config.bad_words_ids is not None:
-        badwordsids = hf_config.bad_words_ids
-        return
-
-    badwordsids = [
-        v for k, v in tokenizer.get_vocab().items()
-        if any(c in str(k) for c in "[]")
-    ]
-    if tokenizer.pad_token_id in badwordsids:
-        badwordsids.remove(tokenizer.pad_token_id)
-    badwordsids.append(tokenizer.eos_token_id)
-
 
 def prepare_engine_payload(
         kai_payload: KAIGenerationInputSchema
@@ -1250,7 +1227,6 @@ def prepare_engine_payload(
         kai_payload.n = 1
         kai_payload.top_p = 1.0
         kai_payload.top_k = -1
-
 
     sampling_params = SamplingParams(
         n=kai_payload.n,
@@ -1315,9 +1291,8 @@ async def generate(kai_payload: KAIGenerationInputSchema,
 
 
 @extra_api.post("/generate/stream")
-async def generate_stream(
-        kai_payload: KAIGenerationInputSchema,
-        raw_request: Request) -> StreamingResponse:
+async def generate_stream(kai_payload: KAIGenerationInputSchema,
+                          raw_request: Request) -> StreamingResponse:
 
     sampling_params, input_tokens = prepare_engine_payload(kai_payload)
     results_generator = engine_client(raw_request).generate(
@@ -1375,7 +1350,8 @@ async def abort_generation(raw_request: Request):
 async def count_tokens(request: TokenizeRequest, raw_request: Request):
     """Tokenize string and return token count"""
 
-    generator = await tokenization(raw_request).create_tokenize(request, raw_request)
+    generator = await tokenization(raw_request).create_tokenize(
+        request, raw_request)
     return JSONResponse({"value": generator.model_dump()["tokens"]})
 
 
@@ -1740,23 +1716,44 @@ async def run_server(args, **uvicorn_kwargs) -> None:
         host_name = args.host if args.host else "localhost"
         port_str = str(args.port)
 
-
         if SERVE_KOBOLD_LITE_UI:
             ui_url = f"{protocol}://{host_name}:{port_str}{root_path}/"
             logger.info(f"Kobold Lite UI:    {ui_url}")
 
         if not args.disable_fastapi_docs:
-            logger.info(f"Documentation:     {protocol}://{host_name}:{port_str}{root_path}/redoc")  # noqa: E501
-        logger.info(f"Completions API:   {protocol}://{host_name}:{port_str}{root_path}/v1/completions")  # noqa: E501
-        logger.info(f"Chat API:          {protocol}://{host_name}:{port_str}{root_path}/v1/chat/completions")  # noqa: E501
-        logger.info(f"Embeddings API:    {protocol}://{host_name}:{port_str}{root_path}/v1/embeddings")  # noqa: E501
-        logger.info(f"Pooling API:       {protocol}://{host_name}:{port_str}{root_path}/pooling")  # noqa: E501
-        logger.info(f"Score API:         {protocol}://{host_name}:{port_str}{root_path}/score")  # noqa: E501
-        logger.info(f"Rerank API:        {protocol}://{host_name}:{port_str}{root_path}/rerank")  # noqa: E501
-        logger.info(f"Rerank API v1:     {protocol}://{host_name}:{port_str}{root_path}/v1/rerank")  # noqa: E501
-        logger.info(f"Rerank API v2:     {protocol}://{host_name}:{port_str}{root_path}/v2/rerank")  # noqa: E501
-        logger.info(f"Transcription API: {protocol}://{host_name}:{port_str}{root_path}/v1/audio/transcriptions")  # noqa: E501
-        logger.info(f"Tokenization API:  {protocol}://{host_name}:{port_str}{root_path}/v1/tokenize")  # noqa: E501
+            logger.info(
+                f"Documentation:     {protocol}://{host_name}:{port_str}{root_path}/redoc"
+            )  # noqa: E501
+        logger.info(
+            f"Completions API:   {protocol}://{host_name}:{port_str}{root_path}/v1/completions"
+        )  # noqa: E501
+        logger.info(
+            f"Chat API:          {protocol}://{host_name}:{port_str}{root_path}/v1/chat/completions"
+        )  # noqa: E501
+        logger.info(
+            f"Embeddings API:    {protocol}://{host_name}:{port_str}{root_path}/v1/embeddings"
+        )  # noqa: E501
+        logger.info(
+            f"Pooling API:       {protocol}://{host_name}:{port_str}{root_path}/pooling"
+        )  # noqa: E501
+        logger.info(
+            f"Score API:         {protocol}://{host_name}:{port_str}{root_path}/score"
+        )  # noqa: E501
+        logger.info(
+            f"Rerank API:        {protocol}://{host_name}:{port_str}{root_path}/rerank"
+        )  # noqa: E501
+        logger.info(
+            f"Rerank API v1:     {protocol}://{host_name}:{port_str}{root_path}/v1/rerank"
+        )  # noqa: E501
+        logger.info(
+            f"Rerank API v2:     {protocol}://{host_name}:{port_str}{root_path}/v2/rerank"
+        )  # noqa: E501
+        logger.info(
+            f"Transcription API: {protocol}://{host_name}:{port_str}{root_path}/v1/audio/transcriptions"
+        )  # noqa: E501
+        logger.info(
+            f"Tokenization API:  {protocol}://{host_name}:{port_str}{root_path}/v1/tokenize"
+        )  # noqa: E501
 
         shutdown_task = await serve_http(
             app,

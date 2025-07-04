@@ -6,7 +6,7 @@ from aphrodite.endpoints.cli.types import CLISubcommand
 
 
 class BenchmarkThroughputSubcommand(BenchmarkSubcommandBase):
-    """ The `throughput` subcommand for vllm bench. """
+    """ The `throughput` subcommand for aphrodite bench. """
 
     def __init__(self):
         self.name = "throughput"

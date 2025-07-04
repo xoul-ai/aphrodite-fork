@@ -127,7 +127,7 @@ class ChatCommand(CLISubcommand):
             "chat",
             help="Generate chat completions via the running API server.",
             description="Generate chat completions via the running API server.",
-            usage="vllm chat [options]")
+            usage="aphrodite chat [options]")
         _add_query_options(chat_parser)
         chat_parser.add_argument(
             "--system-prompt",
@@ -165,7 +165,7 @@ class CompleteCommand(CLISubcommand):
                   "via the running API server."),
             description=("Generate text completions based on the given prompt "
                          "via the running API server."),
-            usage="vllm complete [options]")
+            usage="aphrodite complete [options]")
         _add_query_options(complete_parser)
         return complete_parser
 

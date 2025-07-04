@@ -8,7 +8,8 @@ from .registry import (DummyData, InputContext, InputProcessingContext,
 
 INPUT_REGISTRY = InputRegistry()
 """
-The global :class:`~InputRegistry` which is used by :class:`~vllm.LLMEngine`
+The global :class:`~InputRegistry` which is used by
+:class:`~aphrodite.AphroditeEngine`
 to dispatch data processing according to the target model.
 """
 

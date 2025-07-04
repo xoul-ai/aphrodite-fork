@@ -45,7 +45,6 @@ except ImportError:
         "SafeTensorsFileLoader")
     SingleGroup = fastsafetensors.placeholder_attr("SingleGroup")
 
-
 # use system-level temp directory for file locks, so that multiple users
 # can share the same lock without error.
 # lock files in the temp directory will be automatically deleted when the
@@ -516,6 +515,52 @@ def pt_weights_iterator(
         del state
 
 
+def get_model_config_yaml(model_name_or_path: str,
+                          cache_dir: Optional[str] = None) -> Optional[dict]:
+    """Look for aphrodite_config.yaml in model directory or HF repo.
+
+    Args:
+        model_name_or_path: Local path or HF model name
+        cache_dir: Optional cache directory for HF downloads
+
+    Returns:
+        Dict containing the config if found, None otherwise
+    """
+    is_local = os.path.isdir(model_name_or_path)
+    config_path = None
+
+    if is_local:
+        config_path = os.path.join(model_name_or_path, "aphrodite_config.yaml")
+        if not os.path.exists(config_path):
+            return None
+    else:
+        try:
+            with get_lock(model_name_or_path, cache_dir):
+                valid_names = ["aphrodite_config.yaml", "aphrodite_config.yml"]
+                for name in valid_names:
+                    config_path = hf_hub_download(
+                        model_name_or_path,
+                        filename=name,
+                        cache_dir=cache_dir,
+                        local_files_only=huggingface_hub.constants.
+                        HF_HUB_OFFLINE,
+                    )
+                    if os.path.exists(config_path):
+                        break
+        except (huggingface_hub.utils.EntryNotFoundError,
+                huggingface_hub.utils.LocalEntryNotFoundError):
+            return None
+
+    try:
+        import yaml
+        with open(config_path, 'r') as f:
+            config = yaml.safe_load(f)
+        return config
+    except Exception as e:
+        logger.warning(f"Failed to load aphrodite_config.yaml: {e}")
+        return None
+
+
 def get_gguf_extra_tensor_names(
         gguf_file: str, gguf_to_hf_name_map: Dict[str, str]) -> List[str]:
     reader = gguf.GGUFReader(gguf_file)
@@ -708,8 +753,7 @@ def maybe_remap_kv_scale_name(name: str, params_dict: dict) -> Optional[str]:
     """
     if name.endswith(".kv_scale"):
         log_once(
-            "WARNING",
-            "DEPRECATED. Found kv_scale in the checkpoint. "
+            "WARNING", "DEPRECATED. Found kv_scale in the checkpoint. "
             "This format is deprecated in favor of separate k_scale and "
             "v_scale tensors and will be removed in a future release. "
             "Functionally, we will remap kv_scale to k_scale and duplicate "

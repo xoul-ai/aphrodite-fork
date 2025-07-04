@@ -6,7 +6,7 @@ from aphrodite.endpoints.cli.types import CLISubcommand
 
 
 class BenchmarkLatencySubcommand(BenchmarkSubcommandBase):
-    """ The `latency` subcommand for vllm bench. """
+    """ The `latency` subcommand for aphrodite bench. """
 
     def __init__(self):
         self.name = "latency"

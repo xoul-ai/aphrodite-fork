@@ -9,7 +9,7 @@ from typing import Annotated, Any, ClassVar, Literal, Optional, Union
 import torch
 from fastapi import UploadFile
 from loguru import logger
-from pydantic import (BaseModel, ConfigDict, Field, TypeAdapter, AliasChoices,
+from pydantic import (AliasChoices, BaseModel, ConfigDict, Field, TypeAdapter,
                       ValidationInfo, field_validator, model_validator)
 from typing_extensions import TypeAlias
 
@@ -23,7 +23,6 @@ from aphrodite.common.sequence import Logprob
 from aphrodite.common.utils import random_uuid, resolve_obj_by_qualname
 from aphrodite.endpoints.chat_utils import ChatCompletionMessageParam
 from aphrodite.transformers_utils.tokenizer import AnyTokenizer
-
 
 # torch is mocked during docs generation,
 # so we have to provide the values as literals
@@ -293,10 +292,9 @@ class ChatCompletionRequest(OpenAIBaseModel):
     dry_allowed_length: Optional[int] = 2
     dry_sequence_breakers: Optional[list[str]] = Field(
         default=["\n", ":", "\"", "*"])
-    dry_range: Optional[int] = Field(
-        default=0,
-        validation_alias=AliasChoices("dry_range",
-                                      "dry_penalty_last_n"))
+    dry_range: Optional[int] = Field(default=0,
+                                     validation_alias=AliasChoices(
+                                         "dry_range", "dry_penalty_last_n"))
     dry_max_ngram: Optional[int] = 12
     dry_max_occurrences: Optional[int] = 8
     dry_early_exit_match_len: Optional[int] = 8
@@ -309,8 +307,7 @@ class ChatCompletionRequest(OpenAIBaseModel):
     token_ban_ranges: Optional[list[tuple[list[int], int, int]]] = None
     sampler_priority: Optional[Union[list[int], list[str]]] = Field(
         default=[],
-        validation_alias=AliasChoices("sampler_priority",
-                                      "sampler_order"))
+        validation_alias=AliasChoices("sampler_priority", "sampler_order"))
     # doc: end-chat-completion-sampling-params
 
     # doc: begin-chat-completion-extra-params
@@ -458,7 +455,6 @@ class ChatCompletionRequest(OpenAIBaseModel):
             include_stop_str_in_output=self.include_stop_str_in_output,
         )
 
-
     def to_sampling_params(
         self,
         tokenizer: AnyTokenizer,
@@ -590,7 +586,6 @@ class ChatCompletionRequest(OpenAIBaseModel):
             guided_decoding=guided_decoding,
             logit_bias=self.logit_bias)
 
-
     def _get_guided_json_from_tool(
             self) -> Optional[Union[str, dict, BaseModel]]:
         # user has chosen to not use any tool
@@ -692,16 +687,21 @@ class ChatCompletionRequest(OpenAIBaseModel):
             return False
 
         guide_count = sum([
-            "guided_json" in data and not is_effectively_none(data["guided_json"]),
-            "guided_regex" in data and not is_effectively_none(data["guided_regex"]),
-            "guided_choice" in data and not is_effectively_none(data["guided_choice"]),
-            "guided_grammar" in data and not is_effectively_none(data["guided_grammar"])
+            "guided_json" in data
+            and not is_effectively_none(data["guided_json"]),
+            "guided_regex" in data
+            and not is_effectively_none(data["guided_regex"]),
+            "guided_choice" in data
+            and not is_effectively_none(data["guided_choice"]),
+            "guided_grammar" in data
+            and not is_effectively_none(data["guided_grammar"])
         ])
         # you can only use one kind of guided decoding
         if guide_count > 1:
             raise ValueError(
                 "You can only use one kind of guided decoding "
-                "('guided_json', 'guided_regex', 'guided_choice', or 'guided_grammar').")
+                "('guided_json', 'guided_regex', 'guided_choice', or 'guided_grammar')."
+            )
         # you can only either use guided decoding or tools, not both
         if guide_count > 1 and data.get("tool_choice", "none") not in (
                 "none",
@@ -785,7 +785,7 @@ class ChatCompletionRequest(OpenAIBaseModel):
     @classmethod
     def check_cache_salt_support(cls, data):
         if data.get("cache_salt") is not None:
-            if not envs.VLLM_USE_V1:
+            if not envs.APHRODITE_USE_V1:
                 raise ValueError(
                     "Parameter 'cache_salt' is not supported with "
                     "this instance of vLLM, which uses engine V0.")
@@ -853,10 +853,9 @@ class CompletionRequest(OpenAIBaseModel):
     dry_allowed_length: Optional[int] = 2
     dry_sequence_breakers: Optional[list[str]] = Field(
         default=["\n", ":", "\"", "*"])
-    dry_range: Optional[int] = Field(
-        default=0,
-        validation_alias=AliasChoices("dry_range",
-                                      "dry_penalty_last_n"))
+    dry_range: Optional[int] = Field(default=0,
+                                     validation_alias=AliasChoices(
+                                         "dry_range", "dry_penalty_last_n"))
     dry_max_ngram: Optional[int] = 12
     dry_max_occurrences: Optional[int] = 8
     dry_early_exit_match_len: Optional[int] = 8
@@ -869,8 +868,7 @@ class CompletionRequest(OpenAIBaseModel):
     token_ban_ranges: Optional[list[tuple[list[int], int, int]]] = None
     sampler_priority: Optional[Union[list[int], list[str]]] = Field(
         default=[],
-        validation_alias=AliasChoices("sampler_priority",
-                                      "sampler_order"))
+        validation_alias=AliasChoices("sampler_priority", "sampler_order"))
     # doc: end-completion-sampling-params
 
     # doc: begin-completion-extra-params
@@ -965,12 +963,12 @@ class CompletionRequest(OpenAIBaseModel):
         )
 
     def to_sampling_params(
-            self,
-            tokenizer: AnyTokenizer,
-            default_max_tokens: int,
-            logits_processor_pattern: Optional[str],
-            default_sampling_params: Optional[dict] = None,
-        ) -> SamplingParams:
+        self,
+        tokenizer: AnyTokenizer,
+        default_max_tokens: int,
+        logits_processor_pattern: Optional[str],
+        default_sampling_params: Optional[dict] = None,
+    ) -> SamplingParams:
         max_tokens = self.max_tokens
 
         if default_sampling_params is None:
@@ -1104,16 +1102,21 @@ class CompletionRequest(OpenAIBaseModel):
             return False
 
         guide_count = sum([
-            "guided_json" in data and not is_effectively_none(data["guided_json"]),
-            "guided_regex" in data and not is_effectively_none(data["guided_regex"]),
-            "guided_choice" in data and not is_effectively_none(data["guided_choice"]),
-            "guided_grammar" in data and not is_effectively_none(data["guided_grammar"])
+            "guided_json" in data
+            and not is_effectively_none(data["guided_json"]),
+            "guided_regex" in data
+            and not is_effectively_none(data["guided_regex"]),
+            "guided_choice" in data
+            and not is_effectively_none(data["guided_choice"]),
+            "guided_grammar" in data
+            and not is_effectively_none(data["guided_grammar"])
         ])
         # you can only use one kind of guided decoding
         if guide_count > 1:
             raise ValueError(
                 "You can only use one kind of guided decoding "
-                "('guided_json', 'guided_regex', 'guided_choice', or 'guided_grammar').")
+                "('guided_json', 'guided_regex', 'guided_choice', or 'guided_grammar')."
+            )
         # you can only either use guided decoding or tools, not both
         if guide_count > 1 and data.get("tool_choice", "none") not in (
                 "none",
@@ -1165,14 +1168,11 @@ class CompletionRequest(OpenAIBaseModel):
             # Validate that we now have a list of strings
             is_list = isinstance(data['dry_sequence_breakers'], list)
             all_strings = all(
-                isinstance(x, str)
-                for x in data['dry_sequence_breakers']
-            )
+                isinstance(x, str) for x in data['dry_sequence_breakers'])
             if not is_list or not all_strings:
                 raise ValueError(
                     "dry_sequence_breakers must be a list of strings or a "
-                    "JSON string representing a list of strings"
-                )
+                    "JSON string representing a list of strings")
 
         return data
 
