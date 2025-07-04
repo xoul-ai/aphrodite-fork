@@ -1252,6 +1252,14 @@ def ggml_moe_get_block_size(quant_type: int) -> int:
     return torch.ops._C.ggml_moe_get_block_size(quant_type)
 
 
+# FPX
+def fp_eXmY_linear_forward_cuda(exponent_bits: int, mantissa_bits: int,
+                                x: torch.Tensor, weights: torch.Tensor,
+                                scales: torch.Tensor, splitK: int) -> torch.Tensor:
+    return torch.ops._C.fp_eXmY_linear_forward_cuda(exponent_bits, mantissa_bits,
+                                                    x, weights, scales, splitK)
+
+
 # mamba
 def causal_conv1d_fwd(x: torch.Tensor, weight: torch.Tensor,
                       bias_: Optional[torch.Tensor],

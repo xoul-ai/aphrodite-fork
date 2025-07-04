@@ -46,9 +46,8 @@ class QuantLLMFPConfig(QuantizationConfig):
                 f"supported for QuantLLM FP quantizaiton, but got "
                 f"{self.weight_bits} bits.")
 
-        if get_tensor_model_parallel_rank() == 0:
-            logger.info(f"Loading model in FP{self.weight_bits}_E"
-                        f"{self.exponent_bits}M{self.mantissa_bits} format.")
+        # Defer logging until model parallel groups are initialized
+        self._logged = False
 
     def __repr__(self) -> str:
         return (f"QuantLLMFPConfig(weight_bits={self.weight_bits}), "
@@ -89,8 +88,24 @@ class QuantLLMFPConfig(QuantizationConfig):
             layer: torch.nn.Module,
             prefix: str) -> Optional["QuantLLMFPLinearMethod"]:
         if isinstance(layer, LinearBase):
+            # Log quantization info when the first linear layer is encountered
+            self._log_if_needed()
             return QuantLLMFPLinearMethod(self)
         return None
+
+    def _log_if_needed(self):
+        """Log quantization info only once from rank 0 after model parallel groups are initialized."""
+        if not self._logged:
+            from aphrodite.distributed.parallel_state import model_parallel_is_initialized
+            if model_parallel_is_initialized():
+                try:
+                    if get_tensor_model_parallel_rank() == 0:
+                        logger.info(f"Loading model in FP{self.weight_bits}_E"
+                                    f"{self.exponent_bits}M{self.mantissa_bits} format.")
+                        self._logged = True
+                except AssertionError:
+                    # Still not initialized, skip logging
+                    pass
 
 
 class QuantLLMFPLinearMethod(LinearMethodBase):
