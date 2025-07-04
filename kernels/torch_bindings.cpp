@@ -196,25 +196,30 @@ TORCH_LIBRARY_EXPAND(TORCH_EXTENSION_NAME, ops) {
   ops.def(
       "aqlm_gemm(Tensor input, Tensor codes, Tensor codebooks, "
       "Tensor scales, int[] codebook_partition_sizes, Tensor? bias) "
-      "-> Tensor");
+      "-> Tensor",
+      {stride_tag});
   ops.impl("aqlm_gemm", torch::kCUDA, &aqlm_gemm);
 
   // Decompression method for AQLM.
   ops.def(
       "aqlm_dequant(Tensor codes, Tensor codebooks, "
-      "int[] codebook_partition_sizes) -> Tensor");
+      "int[] codebook_partition_sizes) -> Tensor",
+      {stride_tag});
   ops.impl("aqlm_dequant", torch::kCUDA, &aqlm_dequant);
 
   // Quantized GEMM for AWQ.
   ops.def(
       "awq_gemm(Tensor _in_feats, Tensor _kernel, Tensor _scaling_factors, "
-      "Tensor _zeros, SymInt split_k_iters) -> Tensor");
+      "Tensor _zeros, SymInt split_k_iters) -> Tensor",
+      {stride_tag});
   ops.impl("awq_gemm", torch::kCUDA, &awq_gemm);
+
 
   // Dequantization for AWQ.
   ops.def(
       "awq_dequantize(Tensor _kernel, Tensor _scaling_factors, "
-      "Tensor _zeros, SymInt split_k_iters, int thx, int thy) -> Tensor");
+      "Tensor _zeros, SymInt split_k_iters, int thx, int thy) -> Tensor",
+      {stride_tag});
   ops.impl("awq_dequantize", torch::kCUDA, &awq_dequantize);
 
   // Quantized GEMM for VPTQ.
@@ -230,7 +235,8 @@ TORCH_LIBRARY_EXPAND(TORCH_EXTENSION_NAME, ops) {
       "          Tensor? q_indice_outliers,"
       "          Tensor? outliers_centroids,"
       "          Tensor? invperm,"
-      "          Tensor? bias) -> Tensor");
+      "          Tensor? bias) -> Tensor",
+      {stride_tag});
   ops.impl("vptq_gemm", torch::kCUDA, &vptq_gemm);
 
   // Decompression method for VPTQ.
@@ -245,35 +251,8 @@ TORCH_LIBRARY_EXPAND(TORCH_EXTENSION_NAME, ops) {
       "  Tensor? residual_centroids,"
       "  Tensor? q_indice_outliers,"
       "  Tensor? outliers_centroids,"
-      "  Tensor? invperm) -> Tensor");
+      "  Tensor? invperm) -> Tensor", {stride_tag});
   ops.impl("vptq_dequant", torch::kCUDA, &vptq_dequant);
-
-  // Dequantization for GGML.
-  ops.def(
-      "ggml_dequantize(Tensor W, int type, SymInt m, SymInt n, ScalarType? "
-      "dtype) -> Tensor");
-  ops.impl("ggml_dequantize", torch::kCUDA, &ggml_dequantize);
-
-  // mmvq kernel for GGML.
-  ops.def(
-      "ggml_mul_mat_vec_a8(Tensor W, Tensor X, int type, SymInt row) "
-      "-> Tensor");
-  ops.impl("ggml_mul_mat_vec_a8", torch::kCUDA, &ggml_mul_mat_vec_a8);
-
-  // mmq kernel for GGML.
-  ops.def(
-      "ggml_mul_mat_a8(Tensor W, Tensor X, int type, SymInt row) -> Tensor");
-  ops.impl("ggml_mul_mat_a8", torch::kCUDA, &ggml_mul_mat_a8);
-
-  // moe kernel for GGML.
-  ops.def(
-      "ggml_moe_a8(Tensor X, Tensor W, "
-      "Tensor sorted_token_ids, Tensor expert_ids, Tensor "
-      "num_tokens_post_padded, "
-      "int type, SymInt row, SymInt top_k, SymInt tokens) -> Tensor");
-  ops.impl("ggml_moe_a8", torch::kCUDA, &ggml_moe_a8);
-
-  ops.def("ggml_moe_get_block_size", &ggml_moe_get_block_size);
 
   // Note about marlin kernel 'workspace' arguments:
   // Technically these should be mutable since they are modified by the kernel.
@@ -288,11 +267,13 @@ TORCH_LIBRARY_EXPAND(TORCH_EXTENSION_NAME, ops) {
   // See the following document for more info on custom types and ops that use
   // custom types:
   // https://docs.google.com/document/d/18fBMPuOJ0fY5ZQ6YyrHUppw9FA332CpNtgB6SOIgyuA
+
   // Marlin (Dense) Optimized Quantized GEMM for GPTQ.
   ops.def(
       "marlin_gemm(Tensor a, Tensor b_q_weight, Tensor b_scales, "
       "Tensor! workspace, SymInt size_m, SymInt size_n, SymInt size_k) -> "
-      "Tensor");
+      "Tensor",
+      {stride_tag});
   // conditionally compiled so impl in source file
 
   // Marlin_24 (Sparse) Optimized Quantized GEMM for GPTQ.
@@ -300,69 +281,9 @@ TORCH_LIBRARY_EXPAND(TORCH_EXTENSION_NAME, ops) {
       "gptq_marlin_24_gemm(Tensor a, Tensor b_q_weight, Tensor b_meta, "
       "Tensor b_scales, Tensor workspace, "
       "int b_q_type, "
-      "SymInt size_m, SymInt size_n, SymInt size_k) -> Tensor");
-  // conditionally compiled so impl in source file
-
-  // gptq_marlin Optimized Quantized GEMM for GPTQ.
-  ops.def(
-      "gptq_marlin_gemm(Tensor a, Tensor b_q_weight, Tensor b_scales, "
-      "Tensor b_zeros, Tensor g_idx, Tensor perm, Tensor workspace, "
-      "int b_q_type, "
-      "SymInt size_m, SymInt size_n, SymInt size_k, bool is_k_full, "
-      "bool has_zp, bool use_atomic_add, bool use_fp32_reduce, "
-      "bool is_zp_float) -> Tensor",
+      "SymInt size_m, SymInt size_n, SymInt size_k) -> Tensor",
       {stride_tag});
-  // conditionally compiled so impl registration is in source file
-
-  // gptq_marlin repack from GPTQ.
-  ops.def(
-      "gptq_marlin_repack(Tensor b_q_weight, Tensor perm, "
-      "SymInt size_k, SymInt size_n, int num_bits) -> Tensor");
-  // conditionally compiled so impl in source file
-
-  // awq_marlin repack from AWQ.
-  ops.def(
-      "awq_marlin_repack(Tensor b_q_weight, SymInt size_k, "
-      "SymInt size_n, int num_bits) -> Tensor");
-  // conditionally compiled so impl in source file
-
-  // fp8_marlin Optimized Quantized GEMM for FP8 weight-only.
-  ops.def(
-      "fp8_marlin_gemm(Tensor a, Tensor b_q_weight, Tensor b_scales, "
-      "Tensor! workspace, int num_bits, SymInt size_m, SymInt size_n, "
-      "SymInt size_k) -> Tensor");
-  // conditionally compiled so impl in source file
-
-  #ifndef _WIN32
-  // marlin_qqq_gemm for QQQ.
-  ops.def(
-      "marlin_qqq_gemm(Tensor a, Tensor b_q_weight, "
-      "Tensor s_tok, Tensor s_ch, Tensor s_group, "
-      "Tensor! workspace, SymInt size_m, SymInt size_n, "
-      "SymInt size_k) -> Tensor");
-  // conditionally compiled so impl in source file
-
-  // CUTLASS w8a8 GEMM, supporting symmetric per-tensor or per-row/column
-  // quantization.
-  ops.def(
-      "cutlass_scaled_mm(Tensor! out, Tensor a,"
-      "                  Tensor b, Tensor a_scales,"
-      "                  Tensor b_scales, Tensor? bias) -> ()");
-  ops.impl("cutlass_scaled_mm", torch::kCUDA, &cutlass_scaled_mm);
-
-  // Check if cutlass scaled_mm is supported for CUDA devices of the given
-  // capability
-  ops.def("cutlass_scaled_mm_supports_fp8(int cuda_device_capability) -> bool");
-  ops.impl("cutlass_scaled_mm_supports_fp8", &cutlass_scaled_mm_supports_fp8);
-
-  // CUTLASS w8a8 GEMM, supporting asymmetric per-tensor or per-row/column
-  // quantization.
-  ops.def(
-      "cutlass_scaled_mm_azp(Tensor! out, Tensor a,"
-      "                  Tensor b, Tensor a_scales,"
-      "                  Tensor b_scales, Tensor azp_adj,"
-      "                  Tensor? azp, Tensor? bias) -> ()");
-  ops.impl("cutlass_scaled_mm_azp", torch::kCUDA, &cutlass_scaled_mm_azp);
+  //  conditionally compiled so impl in source file
 
   // Machete (Dense) Optimized Mixed Precision GEMM for Hopper.
   ops.def(
@@ -401,14 +322,296 @@ TORCH_LIBRARY_EXPAND(TORCH_EXTENSION_NAME, ops) {
   ops.def("permute_cols(Tensor A, Tensor perm) -> Tensor");
   ops.impl("permute_cols", torch::kCUDA, &permute_cols);
 
-  #endif
+  // gptq_marlin Optimized Quantized GEMM for GPTQ.
+  ops.def(
+      "gptq_marlin_gemm(Tensor a, Tensor b_q_weight, Tensor b_scales, "
+      "Tensor b_zeros, Tensor g_idx, Tensor perm, Tensor workspace, "
+      "int b_q_type, "
+      "SymInt size_m, SymInt size_n, SymInt size_k, bool is_k_full, "
+      "bool has_zp, bool use_atomic_add, bool use_fp32_reduce, "
+      "bool is_zp_float) -> Tensor",
+      {stride_tag});
+  // conditionally compiled so impl registration is in source file
+
+  // gptq_marlin repack from GPTQ.
+  ops.def(
+      "gptq_marlin_repack(Tensor b_q_weight, Tensor perm, "
+      "SymInt size_k, SymInt size_n, int num_bits) -> Tensor");
+  // conditionally compiled so impl registrations are in source file
+
+  // awq_marlin repack from AWQ.
+  ops.def(
+      "awq_marlin_repack(Tensor b_q_weight, SymInt size_k, "
+      "SymInt size_n, int num_bits) -> Tensor");
+  // conditionally compiled so impl registrations are in source file
+#endif
+
+  // Dequantization for GGML.
+  ops.def(
+      "ggml_dequantize(Tensor W, int type, SymInt m, SymInt n, ScalarType? "
+      "dtype) -> Tensor");
+  ops.impl("ggml_dequantize", torch::kCUDA, &ggml_dequantize);
+
+  // mmvq kernel for GGML.
+  ops.def(
+      "ggml_mul_mat_vec_a8(Tensor W, Tensor X, int type, SymInt row) "
+      "-> Tensor");
+  ops.impl("ggml_mul_mat_vec_a8", torch::kCUDA, &ggml_mul_mat_vec_a8);
+
+  // mmq kernel for GGML.
+  ops.def(
+      "ggml_mul_mat_a8(Tensor W, Tensor X, int type, SymInt row) -> Tensor");
+  ops.impl("ggml_mul_mat_a8", torch::kCUDA, &ggml_mul_mat_a8);
+
+  // moe kernel for GGML.
+  ops.def(
+      "ggml_moe_a8(Tensor X, Tensor W, "
+      "Tensor sorted_token_ids, Tensor expert_ids, Tensor "
+      "num_tokens_post_padded, "
+      "int type, SymInt row, SymInt top_k, SymInt tokens) -> Tensor");
+  ops.impl("ggml_moe_a8", torch::kCUDA, &ggml_moe_a8);
+
+  ops.def("ggml_moe_get_block_size", &ggml_moe_get_block_size);
+
+#ifndef USE_ROCM
+  // fp8_marlin Optimized Quantized GEMM for FP8 weight-only.
+  ops.def(
+      "fp8_marlin_gemm(Tensor a, Tensor b_q_weight, Tensor b_scales, "
+      "Tensor! workspace, int num_bits, SymInt size_m, SymInt size_n, "
+      "SymInt size_k) -> Tensor",
+      {stride_tag});
+  // conditionally compiled so impl registration is in source file
+
+  // marlin_qqq_gemm for QQQ.
+  ops.def(
+      "marlin_qqq_gemm(Tensor a, Tensor b_q_weight, "
+      "Tensor s_tok, Tensor s_ch, Tensor s_group, "
+      "Tensor! workspace, SymInt size_m, SymInt size_n, "
+      "SymInt size_k) -> Tensor",
+      {stride_tag});
+  // conditionally compiled so impl registration is in source file
+
+  // CUTLASS nvfp4 block scaled GEMM
+  ops.def(
+      "cutlass_scaled_fp4_mm(Tensor! out, Tensor a, Tensor b,"
+      "                      Tensor block_scale_a, Tensor block_scale_b,"
+      "                      Tensor alpha) -> ()",
+      {stride_tag});
+  ops.impl("cutlass_scaled_fp4_mm", torch::kCUDA, &cutlass_scaled_fp4_mm);
+
+  // CUTLASS w8a8 GEMM, supporting symmetric per-tensor or per-row/column
+  // quantization, as well as bias
+  ops.def(
+      "cutlass_scaled_mm(Tensor! out, Tensor a,"
+      "                  Tensor b, Tensor a_scales,"
+      "                  Tensor b_scales, Tensor? bias) -> ()",
+      {stride_tag});
+  ops.impl("cutlass_scaled_mm", torch::kCUDA, &cutlass_scaled_mm);
+
+  // CUTLASS w8a8 GEMM, supporting asymmetric per-tensor or per-row/column
+  // quantization.
+  ops.def(
+      "cutlass_scaled_mm_azp(Tensor! out, Tensor a,"
+      "                  Tensor b, Tensor a_scales,"
+      "                  Tensor b_scales, Tensor azp_adj,"
+      "                  Tensor? azp, Tensor? bias) -> ()",
+      {stride_tag});
+  ops.impl("cutlass_scaled_mm_azp", torch::kCUDA, &cutlass_scaled_mm_azp);
+
+  // Check if cutlass scaled_mm is supported for CUDA devices of the given
+  // capability
+  ops.def("cutlass_scaled_mm_supports_fp8(int cuda_device_capability) -> bool");
+  ops.impl("cutlass_scaled_mm_supports_fp8", &cutlass_scaled_mm_supports_fp8);
+
+  // Check if cutlass grouped gemm is supported for CUDA devices of the given
+  // capability
+  ops.def("cutlass_group_gemm_supported(int cuda_device_capability) -> bool");
+  ops.impl("cutlass_group_gemm_supported", &cutlass_group_gemm_supported);
+
+  // CUTLASS w8a8 grouped GEMM
+  ops.def(
+      "cutlass_moe_mm(Tensor! out_tensors, Tensor a_tensors, Tensor b_tensors, "
+      "               Tensor a_scales, Tensor b_scales, Tensor expert_offsets, "
+      "               Tensor problem_sizes, Tensor a_strides, "
+      "               Tensor b_strides, Tensor c_strides) -> ()",
+      {stride_tag});
+  ops.impl("cutlass_moe_mm", torch::kCUDA, &cutlass_moe_mm);
+
+  // A function that computes data required to run fused MoE with w8a8 grouped
+  // GEMM. It takes topk_ids as an input, and computes expert_offsets
+  // (token start indices of each expert). In addition to this, it computes
+  // problem sizes for each expert's multiplication used by the two mms called
+  // from fused MoE operation, and arrays with permutations required to shuffle
+  // and de-shuffle the input/output of the fused operation.
+  ops.def(
+      "get_cutlass_moe_mm_data(Tensor topk_ids, Tensor! expert_offsets, "
+      "                        Tensor! problem_sizes1, Tensor! problem_sizes2, "
+      "                        Tensor! input_permutation, "
+      "                        Tensor! output_permutation, int num_experts, "
+      "                        int n, int k) -> ()",
+      {stride_tag});
+  ops.impl("get_cutlass_moe_mm_data", torch::kCUDA, &get_cutlass_moe_mm_data);
+
+  // Check if cutlass scaled_mm supports block quantization (used by DeepSeekV3)
+  ops.def(
+      "cutlass_scaled_mm_supports_block_fp8(int cuda_device_capability) -> "
+      "bool");
+  ops.impl("cutlass_scaled_mm_supports_block_fp8",
+           &cutlass_scaled_mm_supports_block_fp8);
+
+  // Check if cutlass sparse scaled_mm is supported for CUDA devices of the
+  // given capability
+  ops.def(
+      "cutlass_sparse_scaled_mm_supported(int cuda_device_capability) -> bool");
+  ops.impl("cutlass_sparse_scaled_mm_supported",
+           &cutlass_sparse_scaled_mm_supported);
+
+  // CUTLASS sparse GEMM, supporting symmetric per-tensor or per-row/column
+  // quantization, as well as bias
+  ops.def(
+      "cutlass_scaled_sparse_mm(Tensor! out, Tensor a,"
+      "                         Tensor bt_nzs,"
+      "                         Tensor bt_meta, Tensor a_scales,"
+      "                         Tensor b_scales, Tensor? bias) -> ()",
+      {stride_tag});
+  ops.impl("cutlass_scaled_sparse_mm", torch::kCUDA, &cutlass_scaled_sparse_mm);
+
+  // CUTLASS sparse matrix compressor
+  ops.def("cutlass_sparse_compress(Tensor a) -> Tensor[]");
+  ops.impl("cutlass_sparse_compress", &cutlass_sparse_compress);
+
+  // CUTLASS MLA decode
+  ops.def(
+      "cutlass_mla_decode(Tensor! out, Tensor q_nope, Tensor q_pe,"
+      "                   Tensor kv_c_and_k_pe_cache, Tensor seq_lens,"
+      "                   Tensor page_table, float scale) -> ()");
+  ops.impl("cutlass_mla_decode", torch::kCUDA, &cutlass_mla_decode);
 
   // fp6_llm
   ops.def(
       "fp_eXmY_linear_forward_cuda(int EXPONENT, int MANTISSA,"
       "                            Tensor _in_feats, Tensor _weights,"
-      "                            Tensor _scales, int splitK=1) -> Tensor");
-  // conditionally compiled so impl in source file
+      "                            Tensor _scales, int splitK=1) -> Tensor",
+      {stride_tag});
+
+  // Mamba selective scan kernel
+  ops.def(
+      "selective_scan_fwd(Tensor! u, Tensor! delta,"
+      "Tensor! A, Tensor! B, Tensor! C,"
+      "Tensor? D_, Tensor!? z_, Tensor? delta_bias_,"
+      "bool delta_softplus,"
+      "Tensor? query_start_loc,"
+      "Tensor? cache_indices,"
+      "Tensor? has_initial_state,"
+      "Tensor! ssm_states,"
+      "int pad_slot_id) -> ()");
+  ops.impl("selective_scan_fwd", torch::kCUDA, &selective_scan_fwd);
+
+  ops.def(
+      "causal_conv1d_update(Tensor! x,"
+      "Tensor! conv_state,"
+      "Tensor! weight,"
+      "Tensor? bias_,"
+      "bool silu_activation,"
+      "Tensor? cache_seqlens_,"
+      "Tensor? conv_state_indices,"
+      "int pad_slot_id) -> ()");
+  ops.impl("causal_conv1d_update", torch::kCUDA, &causal_conv1d_update);
+
+  ops.def(
+      "causal_conv1d_fwd(Tensor! x, Tensor! weight,"
+      "Tensor? bias_,"
+      "Tensor!? conv_states,"
+      "Tensor? query_start_loc,"
+      "Tensor? cache_indices,"
+      "Tensor? has_initial_state,"
+      "bool silu_activation,"
+      "int pad_slot_id) -> ()");
+  ops.impl("causal_conv1d_fwd", torch::kCUDA, &causal_conv1d_fwd);
+
+  // Compute NVFP4 block quantized tensor.
+  ops.def(
+      "scaled_fp4_quant(Tensor! output, Tensor input,"
+      "                 Tensor! output_scale, Tensor input_scale) -> ()");
+  ops.impl("scaled_fp4_quant", torch::kCUDA, &scaled_fp4_quant);
+
+  // Check if cutlass_scaled_mm_fp4 is supported for CUDA devices
+  // of the given capability
+  ops.def("cutlass_scaled_mm_supports_fp4(int cuda_device_capability) -> bool");
+  ops.impl("cutlass_scaled_mm_supports_fp4", &cutlass_scaled_mm_supports_fp4);
+#endif
+
+  // Quantized GEMM for GPTQ.
+  // Note: even though the C++ inferred schema is correct for this op, it seems
+  // to prevent the meta function registry.
+  ops.def(
+      "gptq_gemm(Tensor a, Tensor b_q_weight, Tensor b_gptq_qzeros, "
+      "Tensor b_gptq_scales, Tensor b_g_idx, bool use_exllama, int bit) "
+      "-> Tensor",
+      {stride_tag});
+  ops.impl("gptq_gemm", torch::kCUDA, &gptq_gemm);
+
+  // Post processing for GPTQ.
+  ops.def("gptq_shuffle(Tensor! q_weight, Tensor q_perm, int bit) -> ()");
+  ops.impl("gptq_shuffle", torch::kCUDA, &gptq_shuffle);
+
+  // Compute FP8 quantized tensor for given scaling factor.
+  ops.def(
+      "static_scaled_fp8_quant(Tensor! result, Tensor input, Tensor scale) -> "
+      "()");
+  ops.impl("static_scaled_fp8_quant", torch::kCUDA, &static_scaled_fp8_quant);
+
+  // Compute dynamic-per-tensor FP8 quantized tensor and scaling factor.
+  ops.def(
+      "dynamic_scaled_fp8_quant(Tensor! result, Tensor input, Tensor! scale) "
+      "-> "
+      "()");
+  ops.impl("dynamic_scaled_fp8_quant", torch::kCUDA, &dynamic_scaled_fp8_quant);
+
+  // Compute dynamic-per-token FP8 quantized tensor and scaling factor.
+  ops.def(
+      "dynamic_per_token_scaled_fp8_quant(Tensor! result, Tensor input, "
+      "Tensor! scale, Tensor? scale_ub) -> "
+      "()");
+  ops.impl("dynamic_per_token_scaled_fp8_quant", torch::kCUDA,
+           &dynamic_per_token_scaled_fp8_quant);
+
+  // Compute int8 quantized tensor for given scaling factor.
+  ops.def(
+      "static_scaled_int8_quant(Tensor! result, Tensor input, Tensor scale,"
+      "Tensor? azp) -> ()");
+  ops.impl("static_scaled_int8_quant", torch::kCUDA, &static_scaled_int8_quant);
+
+  // Compute int8 quantized tensor and scaling factor
+  ops.def(
+      "dynamic_scaled_int8_quant(Tensor! result, Tensor input, Tensor! scale, "
+      "Tensor!? azp) -> ()");
+  ops.impl("dynamic_scaled_int8_quant", torch::kCUDA,
+           &dynamic_scaled_int8_quant);
+
+  // Quantized GEMM for SqueezeLLM.
+  ops.def(
+      "squeezellm_gemm(Tensor vec, Tensor mat, Tensor! mul, Tensor "
+      "lookup_table) -> ()");
+  ops.impl("squeezellm_gemm", torch::kCUDA, &squeezellm_gemm);
+
+#ifndef USE_ROCM
+  // reorder weight for AllSpark Ampere W8A16 Fused Gemm kernel
+  ops.def(
+      "rearrange_kn_weight_as_n32k16_order(Tensor b_qweight, Tensor b_scales, "
+      "Tensor? b_zeros, "
+      "bool has_zp, Tensor! b_qweight_reorder, Tensor! b_scales_reorder, "
+      "Tensor!? b_zeros_reorder, "
+      "int K, int N, int N_32align) -> ()");
+  //  conditionally compiled so impl in source file
+
+  // AllSpark quantization ops
+  ops.def(
+      "allspark_w8a16_gemm(Tensor a, Tensor b_qweight, Tensor b_scales, "
+      "Tensor? b_qzeros, "
+      "SymInt n, SymInt group_size, SymInt sm_count, SymInt sm_version, SymInt "
+      "CUBLAS_M_THRESHOLD, bool has_zp, bool n32k16_reorder) -> Tensor");
+  //  conditionally compiled so impl in source file
 
   // Sampling Kernels
   ops.def(
@@ -469,103 +672,6 @@ TORCH_LIBRARY_EXPAND(TORCH_EXTENSION_NAME, ops) {
       &top_k_mask_logits);
   ops.impl("top_k_mask_logits", torch::kCUDA, &top_k_mask_logits);
 
-#endif
-
-  // Quantized GEMM for GPTQ.
-  // Note: even though the C++ inferred schema is correct for this op, it seems
-  // to prevent the meta function registry.
-  ops.def(
-      "gptq_gemm(Tensor a, Tensor b_q_weight, Tensor b_gptq_qzeros, "
-      "Tensor b_gptq_scales, Tensor b_g_idx, bool use_exllama, int bit) "
-      "-> Tensor");
-  ops.impl("gptq_gemm", torch::kCUDA, &gptq_gemm);
-
-  // Post processing for GPTQ.
-  ops.def("gptq_shuffle(Tensor! q_weight, Tensor q_perm, int bit) -> ()");
-  ops.impl("gptq_shuffle", torch::kCUDA, &gptq_shuffle);
-
-  // Quantized GEMM for SqueezeLLM.
-  ops.def(
-      "squeezellm_gemm(Tensor vec, Tensor mat, Tensor! mul, Tensor "
-      "lookup_table) -> ()");
-  ops.impl("squeezellm_gemm", torch::kCUDA, &squeezellm_gemm);
-
-  // Compute FP8 quantized tensor for given scaling factor.
-  ops.def(
-      "static_scaled_fp8_quant(Tensor! out, Tensor input, Tensor scale) -> ()");
-  ops.impl("static_scaled_fp8_quant", torch::kCUDA, &static_scaled_fp8_quant);
-
-  // Compute dynamic-per-tensor FP8 quantized tensor and scaling factor.
-  ops.def(
-      "dynamic_scaled_fp8_quant(Tensor! out, Tensor input, Tensor! scale) -> "
-      "()");
-  ops.impl("dynamic_scaled_fp8_quant", torch::kCUDA, &dynamic_scaled_fp8_quant);
-
-  // Compute dynamic-per-token FP8 quantized tensor and scaling factor.
-  ops.def(
-      "dynamic_per_token_scaled_fp8_quant(Tensor! out, Tensor input, "
-      "Tensor! scale, Tensor? scale_ub) -> "
-      "()");
-  ops.impl("dynamic_per_token_scaled_fp8_quant", torch::kCUDA,
-           &dynamic_per_token_scaled_fp8_quant);
-
-  // Compute int8 quantized tensor for given scaling factor.
-  /*
-    Implementation:
-    void static_scaled_int8_quant(torch::Tensor& out, torch::Tensor const&
-    input, torch::Tensor const& scale);
-  */
-  ops.def(
-      "static_scaled_int8_quant(Tensor! out, Tensor input, Tensor scale,"
-      "Tensor? azp) -> ()");
-  ops.impl("static_scaled_int8_quant", torch::kCUDA, &static_scaled_int8_quant);
-
-  // Compute int8 quantized tensor and scaling factor
-  /*
-    Implementation:
-    void dynamic_scaled_int8_quant(torch::Tensor& out, torch::Tensor const&
-    input, torch::Tensor& scales);
-  */
-  ops.def(
-      "dynamic_scaled_int8_quant(Tensor! out, Tensor input, Tensor! scale, "
-      "Tensor!? azp) -> ()");
-  ops.impl("dynamic_scaled_int8_quant", torch::kCUDA,
-           &dynamic_scaled_int8_quant);
-#ifndef USE_ROCM
-  // Mamba kernels
-  ops.def(
-      "selective_scan_fwd(Tensor! u, Tensor! delta,"
-      "Tensor! A, Tensor! B, Tensor! C,"
-      "Tensor? D_, Tensor!? z_, Tensor? delta_bias_,"
-      "bool delta_softplus,"
-      "Tensor? query_start_loc,"
-      "Tensor? cache_indices,"
-      "Tensor? has_initial_state,"
-      "Tensor! ssm_states,"
-      "int pad_slot_id) -> ()");
-  ops.impl("selective_scan_fwd", torch::kCUDA, &selective_scan_fwd);
-
-  ops.def(
-      "causal_conv1d_update(Tensor! x,"
-      "Tensor! conv_state,"
-      "Tensor! weight,"
-      "Tensor? bias_,"
-      "bool silu_activation,"
-      "Tensor? cache_seqlens_,"
-      "Tensor? conv_state_indices,"
-      "int pad_slot_id) -> ()");
-  ops.impl("causal_conv1d_update", torch::kCUDA, &causal_conv1d_update);
-
-  ops.def(
-      "causal_conv1d_fwd(Tensor! x, Tensor! weight,"
-      "Tensor? bias_,"
-      "Tensor!? conv_states,"
-      "Tensor? query_start_loc,"
-      "Tensor? cache_indices,"
-      "Tensor? has_initial_state,"
-      "bool silu_activation,"
-      "int pad_slot_id) -> ()");
-  ops.impl("causal_conv1d_fwd", torch::kCUDA, &causal_conv1d_fwd);
 #endif
 }
 

@@ -1692,7 +1692,7 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         elapsed_time = end_time - start_time
         cuda_graph_size = start_free_gpu_memory - end_free_gpu_memory
         # This usually takes 5~20 seconds.
-        logger.info("Graph capturing finished in %.0f secs, took {:.2f} GiB",
+        logger.info("Graph capturing finished in {:.0f} secs, took {:.2f} GiB",
                     elapsed_time, cuda_graph_size / (1 << 30))
 
     def initialize_kv_cache(self, kv_cache_config: KVCacheConfig) -> None:
