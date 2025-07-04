@@ -34,7 +34,7 @@ from transformers import (PreTrainedTokenizer, PreTrainedTokenizerFast,
 from typing_extensions import Required, TypeAlias, TypedDict
 
 from aphrodite.common.config import ModelConfig
-from aphrodite.common.utils import log_once
+from aphrodite.common.logger import log_once
 from aphrodite.multimodal import MULTIMODAL_REGISTRY, MultiModalDataDict
 from aphrodite.multimodal.utils import MediaConnector
 from aphrodite.transformers_utils.processor import cached_get_processor
