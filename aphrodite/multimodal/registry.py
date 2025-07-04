@@ -7,6 +7,7 @@ from loguru import logger
 from typing_extensions import deprecated
 
 from aphrodite.common.envs import APHRODITE_MM_INPUT_CACHE_GIB
+from aphrodite.common.logger import log_once
 from aphrodite.common.utils import ClassRegistry
 from aphrodite.inputs import InputProcessingContext
 from aphrodite.transformers_utils.tokenizer import (
@@ -314,7 +315,8 @@ class MultiModalRegistry:
         # Having more tokens is over-conservative but otherwise fine
         token_ids = dummy_data.prompt_token_ids
         if len(token_ids) < seq_len:
-            logger.warning_once(
+            log_once(
+                "WARNING",
                 "Expected at least {} dummy encoder tokens for profiling, but found {} tokens instead.",  # noqa: E501
                 seq_len,
                 len(token_ids),

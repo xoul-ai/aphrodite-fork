@@ -18,6 +18,7 @@ from aphrodite.attention.backends.utils import (CommonAttentionState,
                                                 CommonMetadataBuilder)
 from aphrodite.attention.ops.paged_attn import (PagedAttention,
                                                 PagedAttentionMetadata)
+from aphrodite.common.logger import log_once
 from aphrodite.platforms import current_platform
 from aphrodite.platforms.rocm import use_rocm_custom_paged_attention
 
@@ -497,7 +498,8 @@ class ROCmFlashAttentionImpl(AttentionImpl):
         use_irope: bool = False,
     ) -> None:
         if use_irope:
-            logger.warning_once(
+            log_once(
+                "WARNING",
                 "Using irope in ROCm Flash Attention is not supported yet, it "
                 "will fail back to global attention for long context.")
         if blocksparse_params is not None:

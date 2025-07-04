@@ -16,6 +16,7 @@ from aphrodite.attention.backends.abstract import (AttentionBackend,
 from aphrodite.attention.backends.utils import CommonAttentionState
 from aphrodite.attention.ops.paged_attn import (PagedAttention,
                                                 PagedAttentionMetadata)
+from aphrodite.common.logger import log_once
 
 _PARTITION_SIZE = 512
 
@@ -124,7 +125,8 @@ class IpexAttnBackendImpl(AttentionImpl[IpexAttnMetadata]):
         use_irope: bool = False,
     ) -> None:
         if use_irope:
-            logger.warning_once(
+            log_once(
+                "WARNING",
                 "Using irope in Ipex is not supported yet, it will fall"
                 " back to global attention for long context.")
         if blocksparse_params is not None:

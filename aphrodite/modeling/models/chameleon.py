@@ -11,6 +11,7 @@ from transformers import (BatchFeature, ChameleonConfig, ChameleonProcessor,
 
 from aphrodite.attention import Attention
 from aphrodite.common.config import AphroditeConfig, CacheConfig
+from aphrodite.common.logger import log_once
 from aphrodite.common.sequence import IntermediateTensors
 from aphrodite.distributed import (get_pp_group,
                                    get_tensor_model_parallel_world_size)
@@ -1109,7 +1110,8 @@ class ChameleonForConditionalGeneration(nn.Module, SupportsMultiModal,
                         remapped_kv_scale_name = name.replace(
                             ".kv_scale", ".attn.kv_scale")
                         if remapped_kv_scale_name not in params_dict:
-                            logger.warning_once(
+                            log_once(
+                                "WARNING",
                                 "Found kv scale in the checkpoint (e.g. {}), but not found the expected name in the model (e.g. {}). kv-scale is not loaded.",  # noqa: E501
                                 name,
                                 remapped_kv_scale_name,

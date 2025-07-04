@@ -12,6 +12,7 @@ from aphrodite.attention.backends.abstract import (AttentionBackend,
                                                    AttentionType,
                                                    is_quantized_kv_cache)
 from aphrodite.attention.backends.utils import CommonAttentionState
+from aphrodite.common.logger import log_once
 
 
 class PallasAttentionBackend(AttentionBackend):
@@ -109,7 +110,8 @@ class PallasAttentionBackendImpl(AttentionImpl):
         use_irope: bool = False,
     ) -> None:
         if use_irope:
-            logger.warning_once(
+            log_once(
+                "WARNING",
                 "Using irope in Pallas is not supported yet, it will fall back "
                 "to global attention for long context.")
         self.num_heads = num_heads

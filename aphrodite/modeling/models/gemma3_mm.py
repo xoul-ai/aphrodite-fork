@@ -10,6 +10,7 @@ from transformers.models.gemma3.processing_gemma3 import Gemma3ProcessorKwargs
 
 import aphrodite.common.envs as envs
 from aphrodite.common.config import AphroditeConfig
+from aphrodite.common.logger import log_once
 from aphrodite.common.sequence import IntermediateTensors
 from aphrodite.modeling.layers.layernorm import GemmaRMSNorm
 from aphrodite.modeling.models.module_mapping import MultiModelKeys
@@ -120,7 +121,8 @@ class Gemma3ProcessingInfo(BaseProcessingInfo):
             return 0
 
         if envs.APHRODITE_USE_V1:
-            logger.warning_once(
+            log_once(
+                "WARNING",
                 "`do_pan_and_scan=True` has suboptimal results on V1 "
                 "because of the simplified attention pattern being used.")
 

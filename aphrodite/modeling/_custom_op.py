@@ -4,6 +4,7 @@ import torch.nn as nn
 from loguru import logger
 
 from aphrodite.common.config import get_current_aphrodite_config
+from aphrodite.common.logger import log_once
 from aphrodite.platforms import current_platform
 
 
@@ -102,7 +103,8 @@ class CustomOp(nn.Module):
         compilation_config = get_current_aphrodite_config().compilation_config
         custom_ops = compilation_config.custom_ops
         if not hasattr(cls, "name"):
-            logger.warning_once(
+            log_once(
+                "WARNING",
                 "Custom op {} was not registered, which means it won't appear in the op registry. It will be enabled/disabled based on the global settings.",  # noqa: E501
                 cls.__name__,
             )

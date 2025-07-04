@@ -42,6 +42,7 @@ from aphrodite.attention.layer import Attention
 from aphrodite.attention.ops.paged_attn import PagedAttention
 from aphrodite.common.config import (AphroditeConfig,
                                      get_layers_from_aphrodite_config)
+from aphrodite.common.logger import log_once
 from aphrodite.common.utils import (async_tensor_h2d, get_kv_cache_torch_dtype,
                                     make_tensor_with_pad)
 
@@ -938,7 +939,8 @@ class FlashInferImpl(AttentionImpl):
         use_irope: bool = False,
     ) -> None:
         if use_irope:
-            logger.warning_once(
+            log_once(
+                "WARNING",
                 "Using irope in FlashInfer is not supported yet, it will fall"
                 " back to global attention for long context.")
         self.num_heads = num_heads

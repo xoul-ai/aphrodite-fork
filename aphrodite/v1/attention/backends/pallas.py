@@ -12,6 +12,7 @@ from aphrodite.attention.backends.abstract import (AttentionBackend,
                                                    AttentionType)
 from aphrodite.attention.backends.utils import CommonAttentionState
 from aphrodite.common.config import AphroditeConfig
+from aphrodite.common.logger import log_once
 from aphrodite.common.utils import cdiv
 
 
@@ -99,7 +100,8 @@ class PallasAttentionBackendImpl(AttentionImpl):
         use_irope: bool = False,
     ) -> None:
         if use_irope:
-            logger.warning_once(
+            log_once(
+                "WARNING",
                 "Using irope in Pallas is not supported yet, it will fall back "
                 "to global attention for long context.")
         if blocksparse_params is not None:

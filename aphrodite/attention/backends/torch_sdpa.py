@@ -17,6 +17,7 @@ from aphrodite.attention.backends.abstract import (AttentionBackend,
 from aphrodite.attention.backends.utils import CommonAttentionState
 from aphrodite.attention.ops.ipex_attn import PagedAttention, _use_ipex
 from aphrodite.attention.ops.paged_attn import PagedAttentionMetadata
+from aphrodite.common.logger import log_once
 from aphrodite.common.utils import make_tensor_with_pad
 from aphrodite.worker.cpu_model_runner import ModelInputForCPUBuilder
 
@@ -405,10 +406,10 @@ class TorchSDPABackendImpl(AttentionImpl[TorchSDPAMetadata]):
             raise ValueError(
                 "Torch SPDA does not support block-sparse attention.")
         if logits_soft_cap is not None:
-            logger.warning_once("Torch SPDA does not support logits soft cap. "
+            log_once("WARNING", "Torch SPDA does not support logits soft cap. "
                                 "Outputs may be slightly off.")
         if use_irope:
-            logger.warning_once(
+            log_once("WARNING",
                 "Using irope in Torch SPDA is not supported yet, it will fall"
                 " back to global attention for long context.")
         self.num_heads = num_heads

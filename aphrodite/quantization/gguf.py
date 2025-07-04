@@ -7,6 +7,7 @@ from loguru import logger
 from torch.nn.parameter import Parameter, UninitializedParameter
 
 from aphrodite import _custom_ops as ops
+from aphrodite.common.logger import log_once
 from aphrodite.modeling.layers.activation import SiluAndMul
 from aphrodite.modeling.layers.fused_moe.layer import (FusedMoE,
                                                        FusedMoEMethodBase)
@@ -160,7 +161,7 @@ def _fused_moe_gguf(
             topk_weights.view(num_tokens, top_k, 1))
         ops.moe_sum(out, out_hidden_states)
     else:
-        logger.warning_once("There is no support for fast MoE kernel "
+        log_once("WARNING", "There is no support for fast MoE kernel "
                             "for current quantization method. "
                             "Falling back to slow implementation. ")
         for tok, (w, idx) in enumerate(zip(topk_weights, topk_ids)):

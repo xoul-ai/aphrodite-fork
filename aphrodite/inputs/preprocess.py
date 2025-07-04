@@ -7,6 +7,7 @@ from typing_extensions import assert_never
 
 from aphrodite.common import envs
 from aphrodite.common.config import ModelConfig
+from aphrodite.common.logger import log_once
 from aphrodite.lora.request import LoRARequest
 from aphrodite.multimodal import MULTIMODAL_REGISTRY, MultiModalRegistry
 from aphrodite.multimodal.inputs import (MultiModalDataDict,
@@ -72,13 +73,15 @@ class InputPreprocessor:
         '''
 
         if not self.model_config.is_encoder_decoder:
-            logger.warning_once(
+            log_once(
+                "WARNING",
                 "Using None for decoder start token id because "
                 "this is not an encoder/decoder model.")
             return None
 
         if (self.model_config is None or self.model_config.hf_config is None):
-            logger.warning_once(
+            log_once(
+                "WARNING",
                 "Using None for decoder start token id because "
                 "model config is not available.")
             return None
@@ -86,7 +89,8 @@ class InputPreprocessor:
         dec_start_token_id = getattr(self.model_config.hf_config,
                                      'decoder_start_token_id', None)
         if dec_start_token_id is None:
-            logger.warning_once(
+            log_once(
+                "WARNING",
                 "Falling back on <BOS> for decoder start token "
                 "id because decoder start token id is not "
                 "available.")

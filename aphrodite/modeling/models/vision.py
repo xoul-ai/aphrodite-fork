@@ -8,6 +8,7 @@ from transformers import PretrainedConfig
 import aphrodite.common.envs as envs
 from aphrodite.attention.selector import (backend_name_to_enum,
                                           get_global_forced_attn_backend)
+from aphrodite.common.logger import log_once
 from aphrodite.platforms import _Backend, current_platform
 
 _C = TypeVar("_C", bound=PretrainedConfig)
@@ -83,7 +84,8 @@ def get_vit_attn_backend(support_fa: bool = False) -> _Backend:
                 if is_flash_attn_2_available():
                     selected_backend = _Backend.FLASH_ATTN
                 else:
-                    logger.warning_once(
+                    log_once(
+                        "WARNING",
                         "Current `aphrodite-flash-attn` has a bug inside vision "
                         "module, so we use xformers backend instead. You can "
                         "run `pip install flash-attn` to use flash-attention "

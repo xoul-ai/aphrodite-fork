@@ -21,6 +21,7 @@ from safetensors.torch import load_file, safe_open, save_file
 from tqdm.auto import tqdm
 
 from aphrodite.common.config import LoadConfig, ModelConfig
+from aphrodite.common.logger import log_once
 from aphrodite.common.utils import PlaceholderModule
 from aphrodite.distributed import get_tensor_model_parallel_rank
 from aphrodite.platforms import current_platform
@@ -706,7 +707,8 @@ def maybe_remap_kv_scale_name(name: str, params_dict: dict) -> Optional[str]:
         None: If the remapped name is not found in params_dict.
     """
     if name.endswith(".kv_scale"):
-        logger.warning_once(
+        log_once(
+            "WARNING",
             "DEPRECATED. Found kv_scale in the checkpoint. "
             "This format is deprecated in favor of separate k_scale and "
             "v_scale tensors and will be removed in a future release. "
@@ -715,7 +717,8 @@ def maybe_remap_kv_scale_name(name: str, params_dict: dict) -> Optional[str]:
         # NOTE: we remap the deprecated kv_scale to k_scale
         remapped_name = name.replace(".kv_scale", ".attn.k_scale")
         if remapped_name not in params_dict:
-            logger.warning_once(
+            log_once(
+                "WARNING",
                 "Found kv_scale in the checkpoint (e.g. {}), but not found the expected name in the model (e.g. {}). kv_scale is not loaded.",  #  noqa: E501
                 name,
                 remapped_name,
@@ -737,7 +740,8 @@ def maybe_remap_kv_scale_name(name: str, params_dict: dict) -> Optional[str]:
             else:
                 remapped_name = name.replace(scale_name, f".attn{scale_name}")
             if remapped_name not in params_dict:
-                logger.warning_once(
+                log_once(
+                    "WARNING",
                     "Found {} in the checkpoint (e.g. {}), but not found the expected name in the model (e.g. {}). {} is not loaded.",  # noqa: E501
                     scale_name,
                     name,

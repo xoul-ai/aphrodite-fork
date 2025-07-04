@@ -31,6 +31,7 @@ from transformers import PretrainedConfig
 
 from aphrodite.attention import Attention
 from aphrodite.common.config import AphroditeConfig, CacheConfig
+from aphrodite.common.logger import log_once
 from aphrodite.common.sequence import IntermediateTensors
 from aphrodite.compilation.decorators import support_torch_compile
 from aphrodite.distributed import (get_pp_group,
@@ -457,7 +458,8 @@ class Qwen2MoeModel(nn.Module):
                         remapped_kv_scale_name = name.replace(
                             ".kv_scale", ".attn.kv_scale")
                         if remapped_kv_scale_name not in params_dict:
-                            logger.warning_once(
+                            log_once(
+                                "WARNING",
                                 "Found kv_scale in the checkpoint (e.g. {}), but not found the expected name in the model (e.g. {}). kv_scale is not loaded.",  #  noqa: E501
                                 name,
                                 remapped_kv_scale_name,

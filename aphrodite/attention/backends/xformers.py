@@ -21,6 +21,7 @@ from aphrodite.attention.backends.utils import (
     is_all_cross_attn_metadata_set, is_all_encoder_attn_metadata_set)
 from aphrodite.attention.ops.paged_attn import (PagedAttention,
                                                 PagedAttentionMetadata)
+from aphrodite.common.logger import log_once
 
 
 class XFormersBackend(AttentionBackend):
@@ -394,10 +395,10 @@ class XFormersImpl(AttentionImpl[XFormersMetadata]):
             raise ValueError(
                 "XFormers does not support block-sparse attention.")
         if logits_soft_cap is not None:
-            logger.warning_once("XFormers does not support logits soft cap. "
+            log_once("WARNING", "XFormers does not support logits soft cap. "
                                 "Outputs may be slightly off.")
         if use_irope:
-            logger.warning_once(
+            log_once("WARNING",
                 "Using irope in XFormers is not supported yet, it will fall"
                 " back to global attention for long context.")
         self.num_heads = num_heads

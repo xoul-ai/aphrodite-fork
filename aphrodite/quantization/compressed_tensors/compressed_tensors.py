@@ -11,6 +11,7 @@ from compressed_tensors.quantization import (QuantizationArgs,
 from loguru import logger
 from pydantic import BaseModel
 
+from aphrodite.common.logger import log_once
 from aphrodite.modeling.layers.fused_moe import FusedMoE
 from aphrodite.modeling.layers.linear import (LinearBase, LinearMethodBase,
                                               UnquantizedLinearMethod)
@@ -433,7 +434,7 @@ class CompressedTensorsConfig(QuantizationConfig):
                 model_compression_config=model_compression_config,
             )
         elif weight_quant is None:
-            logger.warning_once("Acceleration for non-quantized schemes is "
+            log_once("WARNING", "Acceleration for non-quantized schemes is "
                                 "not supported by Compressed Tensors. "
                                 "Falling back to UnquantizedLinearMethod")
             return None

@@ -9,6 +9,7 @@ from typing import List, Literal, Optional, Union
 from loguru import logger
 
 from aphrodite.common.config import LoRAConfig
+from aphrodite.common.logger import log_once
 
 
 @dataclass
@@ -51,7 +52,7 @@ class PEFTHelper:
 
     def __post_init__(self):
         if self.use_rslora:
-            logger.info_once("Loading LoRA weights trained with rsLoRA.")
+            log_once("INFO", "Loading LoRA weights trained with rsLoRA.")
             self.aphrodite_lora_scaling_factor = (
                 self.lora_alpha / math.sqrt(self.r))
         else:

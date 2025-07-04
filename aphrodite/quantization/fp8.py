@@ -9,6 +9,7 @@ from torch.nn.parameter import Parameter
 
 import aphrodite.common.envs as envs
 from aphrodite import _custom_ops as ops
+from aphrodite.common.logger import log_once
 from aphrodite.distributed import get_tensor_model_parallel_world_size
 from aphrodite.modeling.layers.fused_moe import (FusedMoE, FusedMoEMethodBase,
                                                  FusedMoeWeightScaleSupported)
@@ -444,13 +445,13 @@ class Fp8MoEMethod(FusedMoEMethodBase):
         self.allow_deep_gemm = False
         if envs.APHRODITE_USE_DEEP_GEMM:
             if not has_deep_gemm:
-                logger.warning_once("Failed to import DeepGemm kernels.")
+                log_once("WARNING", "Failed to import DeepGemm kernels.")
             elif (current_platform.is_cuda()
                   and current_platform.has_device_capability(90)):
-                logger.info_once("Using DeepGemm kernels for Fp8MoEMethod.")
+                log_once("INFO", "Using DeepGemm kernels for Fp8MoEMethod.")
                 self.allow_deep_gemm = True
             else:
-                logger.warning_once(
+                log_once("WARNING",
                     "DeepGemm not supported on the current platform.")
 
     def create_weights(self, layer: Module, num_experts: int, hidden_size: int,
@@ -689,7 +690,8 @@ class Fp8MoEMethod(FusedMoEMethodBase):
                         "activation scales are None.")
                 if (not all_close_1d(layer.w13_input_scale)
                         or not all_close_1d(layer.w2_input_scale)):
-                    logger.warning_once(
+                    log_once(
+                        "WARNING",
                         "Found input_scales that are not equal for "
                         "fp8 MoE layer. Using the maximum across experts "
                         "for each layer.")

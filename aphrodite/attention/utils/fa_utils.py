@@ -3,6 +3,7 @@ from typing import Optional
 from loguru import logger
 
 from aphrodite.common import envs
+from aphrodite.common.logger import log_once
 
 
 def get_flash_attn_version(requires_alibi: bool = False) -> Optional[int]:
@@ -26,13 +27,13 @@ def get_flash_attn_version(requires_alibi: bool = False) -> Optional[int]:
 
         # 3. fallback for unsupported combinations
         if device_capability.major == 10 and fa_version == 3:
-            logger.warning_once(
+            log_once("WARNING",
                 "Cannot use FA version 3 on Blackwell platform "
                 "defaulting to FA version 2.")
             fa_version = 2
 
         if requires_alibi and fa_version == 3:
-            logger.warning_once("Cannot use FA version 3 with ALiBi, "
+            log_once("WARNING", "Cannot use FA version 3 with ALiBi, "
                                 "defaulting to FA version 2.")
             fa_version = 2
 

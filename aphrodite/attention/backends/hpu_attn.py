@@ -20,6 +20,7 @@ from aphrodite.attention.backends.abstract import (AttentionBackend,
 from aphrodite.attention.backends.utils import CommonAttentionState
 from aphrodite.attention.ops.hpu_paged_attn import (HPUPagedAttention,
                                                     HPUPagedAttentionMetadata)
+from aphrodite.common.logger import log_once
 from aphrodite.hpu_extension.flags import enabled_flags
 from aphrodite.hpu_extension.utils import Matmul, Softmax, VLLMKVCache
 
@@ -111,7 +112,8 @@ class HPUAttentionImpl(AttentionImpl, torch.nn.Module):
     ) -> None:
         super(AttentionImpl, self).__init__()
         if use_irope:
-            logger.warning_once(
+            log_once(
+                "WARNING",
                 "Using irope in HPU is not supported yet, it will fall back "
                 "to global attention for long context.")
         self.kv_cache_dtype = kv_cache_dtype

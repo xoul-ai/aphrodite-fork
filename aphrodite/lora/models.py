@@ -18,6 +18,7 @@ from aphrodite.adapter_commons.utils import (add_adapter, deactivate_adapter,
                                              remove_adapter,
                                              set_adapter_mapping)
 from aphrodite.common.config import LoRAConfig
+from aphrodite.common.logger import log_once
 from aphrodite.common.utils import is_pin_memory_available
 from aphrodite.lora.layers import (BaseLayerWithLoRA,
                                    LinearScalingRotaryEmbeddingWithLoRA,
@@ -664,7 +665,8 @@ class LoRAModelManager(AdapterModelManager):
             module_name = module_name.replace("model.", "")
             if lora_model.check_lora_name(module_name):
                 org_module_name = module_name
-                logger.info_once(
+                log_once(
+                    "INFO",
                     "For the pool model, successfully loaded the LoRA weights "
                     "after removing the prefix 'model.'.")
         return lora_model.get_lora(org_module_name)

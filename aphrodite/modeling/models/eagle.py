@@ -5,6 +5,7 @@ import torch.nn as nn
 from loguru import logger
 
 from aphrodite.common.config import AphroditeConfig
+from aphrodite.common.logger import log_once
 from aphrodite.common.sequence import IntermediateTensors
 from aphrodite.modeling.layers.layernorm import RMSNorm
 from aphrodite.modeling.layers.logits_processor import LogitsProcessor
@@ -202,7 +203,7 @@ class EAGLE(nn.Module):
                                             default_weight_loader)
                     weight_loader(self.fc.bias, loaded_weight)
                 else:
-                    logger.warning_once("Found bias in the loaded weights but "
+                    log_once("WARNING", "Found bias in the loaded weights but "
                                         "the model config doesn't have bias.")
             elif name.startswith("enorm.weight"):
                 weight_loader = getattr(self.enorm.weight, "weight_loader",

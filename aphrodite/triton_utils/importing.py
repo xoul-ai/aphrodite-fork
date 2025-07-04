@@ -3,6 +3,8 @@ from importlib.util import find_spec
 
 from loguru import logger
 
+from aphrodite.common.logger import log_once
+
 HAS_TRITON = (
     find_spec("triton") is not None
     or find_spec("pytorch-triton-xpu") is not None  # Not compatible
@@ -20,7 +22,8 @@ if not HAS_TRITON:
             self.autotune = self._dummy_decorator("autotune")
             self.heuristics = self._dummy_decorator("heuristics")
             self.language = TritonLanguagePlaceholder()
-            logger.warning_once(
+            log_once(
+                "WARNING",
                 "Triton is not installed. Using dummy decorators. "
                 "Install it via `pip install triton` to enable kernel"
                 "compilation.")

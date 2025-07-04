@@ -18,6 +18,7 @@ except ImportError:
     xgr_installed = False
     pass
 
+from aphrodite.common.logger import log_once
 from aphrodite.modeling.guided_decoding.utils import (convert_lark_to_gbnf,
                                                       grammar_is_likely_lark)
 from aphrodite.transformers_utils.tokenizers.mistral import MistralTokenizer
@@ -186,7 +187,8 @@ class GrammarConfig:
                 model_with_warn = 'Qwen'
 
             if model_with_warn is not None and any_whitespace:
-                logger.info_once(
+                log_once(
+                    "INFO",
                     "{} model detected, consider setting `disable_any_whitespace` to prevent runaway generation of whitespaces.",  # noqa: E501
                     model_with_warn,
                 )

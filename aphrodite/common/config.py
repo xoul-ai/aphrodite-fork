@@ -567,7 +567,8 @@ class ModelConfig:
                 sliding_window_len_min = get_min_sliding_window(
                     self.hf_text_config.sliding_window)
 
-                logger.warning_once(
+                log_once(
+                    "WARNING",
                     "{} has interleaved attention, which is currently not supported by the {} backend. Disabling sliding window and capping the max length to the sliding window size ({}).",  # noqa: E501
                     self.hf_text_config.model_type,
                     backend,
@@ -1625,7 +1626,8 @@ class TokenizerPoolConfig:
     configurations."""
 
     def __post_init__(self) -> None:
-        logger.warning_once(
+        log_once(
+            "WARNING",
             "TokenizerPoolConfig is deprecated and will be removed in a "
             "future release. Passing this parameter will have no effect. "
             "Please remove it from your configurations.")
@@ -3796,7 +3798,8 @@ class CompilationConfig(BaseModel):
 
         def model_post_init(self, __context: Any) -> None:
             if not self.enable_noop and self.enable_fusion:
-                logger.warning_once(
+                log_once(
+                    "WARNING",
                     "Fusion enabled but reshape elimination disabled. "
                     "RMSNorm + quant (fp8) fusion might not work")
 
@@ -4207,7 +4210,8 @@ class AphroditeConfig:
             self.scheduler_config.chunked_prefill_enabled and \
             self.model_config.dtype == torch.float32 and \
             current_platform.get_device_capability() == (7, 5):
-            logger.warning_once(
+            log_once(
+                "WARNING",
                 "Turing devices tensor cores do not support float32 matmul. "
                 "To workaround this limitation, Aphrodite will set 'ieee' input "
                 "precision for chunked prefill triton kernels.")
@@ -4239,7 +4243,8 @@ class AphroditeConfig:
             self.compilation_config is not None and \
                 self.compilation_config.pass_config is not None and \
             self.compilation_config.pass_config.enable_sequence_parallelism:
-            logger.warning_once(
+            log_once(
+                "WARNING",
                 "Sequence parallelism is not supported with pipeline "
                 "parallelism. Disabling sequence parallelism.")
             self.compilation_config.pass_config.\

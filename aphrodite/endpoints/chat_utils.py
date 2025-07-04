@@ -34,6 +34,7 @@ from transformers import (PreTrainedTokenizer, PreTrainedTokenizerFast,
 from typing_extensions import Required, TypeAlias, TypedDict
 
 from aphrodite.common.config import ModelConfig
+from aphrodite.common.utils import log_once
 from aphrodite.multimodal import MULTIMODAL_REGISTRY, MultiModalDataDict
 from aphrodite.multimodal.utils import MediaConnector
 from aphrodite.transformers_utils.processor import cached_get_processor
@@ -309,14 +310,17 @@ def resolve_mistral_chat_template(
     **kwargs: Any,
 ) -> Optional[str]:
     if chat_template is not None:
-        logger.warning_once(
+        log_once(
+            "WARNING",
             "'chat_template' cannot be overridden for mistral tokenizer.")
     if "add_generation_prompt" in kwargs:
-        logger.warning_once(
+        log_once(
+            "WARNING",
             "'add_generation_prompt' is not supported for mistral tokenizer, "
             "so it will be ignored.")
     if "continue_final_message" in kwargs:
-        logger.warning_once(
+        log_once(
+            "WARNING",
             "'continue_final_message' is not supported for mistral tokenizer, "
             "so it will be ignored.")
     return None
