@@ -103,9 +103,10 @@ def run_aphrodite_chat(
         engine_args: EngineArgs,
         disable_detokenize: bool = False) -> tuple[float, list[RequestOutput]]:
     """
-    Run Aphrodite chat benchmark. This function is recommended ONLY for benchmarking
-    multimodal models as it properly handles multimodal inputs and chat
-    formatting. For non-multimodal models, use run_aphrodite() instead.
+    Run Aphrodite chat benchmark. This function is recommended ONLY for
+    benchmarking multimodal models as it properly handles multimodal inputs
+    and chat formatting. For non-multimodal models, use run_aphrodite()
+    instead.
     """
     from aphrodite import LLM, SamplingParams
     llm = LLM(**dataclasses.asdict(engine_args))
@@ -471,7 +472,7 @@ def add_cli_args(parser: argparse.ArgumentParser):
     parser.add_argument("--async-engine",
                         action='store_true',
                         default=False,
-                        help="Use Aphrodite async engine rather than LLM class.")
+                        help="Use Aphrodite async engine rather than LLM class.")  # noqa: E501
     parser.add_argument("--disable-frontend-multiprocessing",
                         action='store_true',
                         default=False,
@@ -583,8 +584,8 @@ def main(args: argparse.Namespace):
         print("\033[91mWARNING\033[0m: Multi-modal request with "
               f"{args.backend} backend detected. The "
               "following metrics are not accurate because image tokens are not"
-              " counted. See aphrodite-project/aphrodite/issues/9778 for details.")
-        # TODO(aphrodite-project/aphrodite/issues/9778): Count multi-modal token length.
+              " counted.")
+        # TODO: Count multi-modal token length.
         # aphrodite-chat backend counts the image tokens now
 
     print(f"Throughput: {len(requests) / elapsed_time:.2f} requests/s, "

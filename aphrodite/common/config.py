@@ -424,11 +424,11 @@ class ModelConfig:
     Defaults to `None`, which allows no processors."""
     generation_config: str = "auto"
     """The folder path to the generation config. Defaults to `"auto"`, the
-    generation config will be loaded from model path. If set to `"aphrodite"`, no
-    generation config is loaded, Aphrodite defaults will be used. If set to a folder
-    path, the generation config will be loaded from the specified folder path.
-    If `max_new_tokens` is specified in generation config, then it sets a
-    server-wide limit on the number of output tokens for all requests."""
+    generation config will be loaded from model path. If set to `"aphrodite"`,
+    no generation config is loaded, Aphrodite defaults will be used. If set to
+    a folder path, the generation config will be loaded from the specified
+    folder path. If `max_new_tokens` is specified in generation config, then it
+    sets a server-wide limit on the number of output tokens for all requests."""
     override_generation_config: dict[str, Any] = field(default_factory=dict)
     """Overrides or sets generation config. e.g. `{"temperature": 0.5}`. If
     used with `--generation-config auto`, the override parameters will be
@@ -439,9 +439,9 @@ class ModelConfig:
     """Enable sleep mode for the engine (only cuda platform is supported)."""
     model_impl: Union[str, ModelImpl] = ModelImpl.AUTO.value
     """Which implementation of the model to use:\n
-    - "auto" will try to use the Aphrodite implementation, if it exists, and fall
-    back to the Transformers implementation if no Aphrodite implementation is
-    available.\n
+    - "auto" will try to use the Aphrodite implementation, if it exists, and
+    fall back to the Transformers implementation if no Aphrodite implementation
+    is available.\n
     - "aphrodite" will use the Aphrodite model implementation.\n
     - "transformers" will use the Transformers model implementation."""
 
@@ -519,8 +519,8 @@ class ModelConfig:
         if (backend := envs.APHRODITE_ATTENTION_BACKEND
             ) and backend == "FLASHINFER" and find_spec("flashinfer") is None:
             raise ValueError(
-                "APHRODITE_ATTENTION_BACKEND is set to FLASHINFER, but flashinfer "
-                "module was not found. See "
+                "APHRODITE_ATTENTION_BACKEND is set to FLASHINFER, but "
+                "flashinfer module was not found. See "
                 "https://github.com/aphrodite-engine/aphrodite-engine/blob/main/docker/Dockerfile "  # noqa: E501
                 "for instructions on how to install it.")
 
@@ -563,7 +563,8 @@ class ModelConfig:
 
         if (not self.disable_sliding_window and has_interleaved_attention):
             if (backend :=
-                    envs.APHRODITE_ATTENTION_BACKEND) in ("XFORMERS", "FLASHINFER"):
+                    envs.APHRODITE_ATTENTION_BACKEND) in ("XFORMERS",
+                                                          "FLASHINFER"):
                 sliding_window_len_min = get_min_sliding_window(
                     self.hf_text_config.sliding_window)
 
@@ -1363,7 +1364,8 @@ class ModelConfig:
 
         Returns:
             dict[str, Any]: A dictionary with the differing sampling
-            parameters, if `generation_config` is `"aphrodite"` an empty dictionary.
+            parameters, if `generation_config` is `"aphrodite"` an empty
+            dictionary.
         """
         if self.generation_config == "aphrodite":
             config = {}
@@ -1469,10 +1471,10 @@ class CacheConfig:
     """The fraction of GPU memory to be used for the model executor, which can
     range from 0 to 1. For example, a value of 0.5 would imply 50% GPU memory
     utilization. If unspecified, will use the default value of 0.9. This is a
-    per-instance limit, and only applies to the current Aphrodite instance. It does
-    not matter if you have another Aphrodite instance running on the same GPU. For
-    example, if you have two Aphrodite instances running on the same GPU, you can
-    set the GPU memory utilization to 0.5 for each instance."""
+    per-instance limit, and only applies to the current Aphrodite instance. It
+    does not matter if you have another Aphrodite instance running on the same
+    GPU. For example, if you have two Aphrodite instances running on the same
+    GPU, you can set the GPU memory utilization to 0.5 for each instance."""
     swap_space: float = 4
     """Size of the CPU swap space per GPU (in GiB)."""
     cache_dtype: CacheDType = "auto"
@@ -1666,8 +1668,8 @@ class LoadConfig:
     - "dummy" will initialize the weights with random values, which is mainly
     for profiling.\n
     - "tensorizer" will use CoreWeave's tensorizer library for fast weight
-    loading. See the Tensorize Aphrodite Model script in the Examples section for
-    more information.\n
+    loading. See the Tensorize Aphrodite Model script in the Examples section
+    for more information.\n
     - "runai_streamer" will load the Safetensors weights using Run:ai Model
     Streamer.\n
     - "bitsandbytes" will load the weights using bitsandbytes quantization.\n
@@ -2105,12 +2107,13 @@ class SchedulerConfig:
     some image tokens can be scheduled (like TTTTIIIII, leaving IIIII),
     it will be scheduled as TTTT in one step and IIIIIIIIII in the next."""
 
-    # scheduler class or path. "aphrodite.processing.scheduler.Scheduler" (default)
-    # or "mod.custom_class".
-    scheduler_cls: Union[str, type[object]] = "aphrodite.processing.scheduler.Scheduler"
-    """The scheduler class to use. "aphrodite.processing.scheduler.Scheduler" is the
-    default scheduler. Can be a class directly or the path to a class of form
-    "mod.custom_class"."""
+    # scheduler class or path. "aphrodite.processing.scheduler.Scheduler"
+    # (default) or "mod.custom_class".
+    scheduler_cls: Union[str, type[object]] = (
+        "aphrodite.processing.scheduler.Scheduler")
+    """The scheduler class to use. "aphrodite.processing.scheduler.Scheduler"
+    is the default scheduler. Can be a class directly or the path to a class
+    of form "mod.custom_class"."""
 
     single_user_mode: bool = False
     """If True, the scheduler will process one sequence at a time,
@@ -2573,7 +2576,8 @@ class SpeculativeConfig:
 
                 # Replace hf_config for EAGLE draft_model
                 if self.method in ("eagle", "eagle3"):
-                    if self.enable_chunked_prefill and not envs.APHRODITE_USE_V1:
+                    if (self.enable_chunked_prefill and
+                        not envs.APHRODITE_USE_V1):
                         raise ValueError(
                             "Chunked prefill and EAGLE are not compatible "
                             "when using V0.")
@@ -3352,14 +3356,17 @@ class DecodingConfig:
     def guided_decoding_backend(self, value: GuidedDecodingBackend):
         self.backend = value
 
-    backend: GuidedDecodingBackend = "auto" if envs.APHRODITE_USE_V1 else "xgrammar"
+    backend: GuidedDecodingBackend = (
+        "auto" if envs.APHRODITE_USE_V1 else "xgrammar")
     """Which engine will be used for guided decoding (JSON schema / regex etc)
     by default. With "auto", we will make opinionated choices based on request
     contents and what the backend libraries currently support, so the behavior
     is subject to change in each release."""
 
     disable_fallback: bool = False
-    """If `True`, Aphrodite will not fallback to a different backend on error."""
+    """
+    If `True`, Aphrodite will not fallback to a different backend on error.
+    """
 
     disable_any_whitespace: bool = False
     """If `True`, the model will not generate any whitespace during guided
@@ -3522,7 +3529,8 @@ class ObservabilityConfig:
 class KVTransferConfig(BaseModel):
     """Configuration for distributed KV cache transfer."""
 
-    # The KV connector for Aphrodite to transmit KV caches between Aphrodite instances.
+    # The KV connector for Aphrodite to transmit KV caches between Aphrodite
+    # instances.
     kv_connector: Optional[str] = None
 
     # The device used by kv connector to buffer the KV cache.
@@ -3533,12 +3541,12 @@ class KVTransferConfig(BaseModel):
     # bytes. Recommended value: 1e9 (about 1GB).
     kv_buffer_size: float = 1e9
 
-    # Whether this Aphrodite instance produces, consumes KV cache, or both. Choices
-    # are 'kv_producer', 'kv_consumer', and 'both'.
+    # Whether this Aphrodite instance produces, consumes KV cache, or both.
+    # Choices are 'kv_producer', 'kv_consumer', and 'both'.
     kv_role: Optional[str] = None
 
-    # The rank of this Aphrodite instance in the KV cache transfer. Typical value:
-    # 0 for prefill instance, 1 for decode instance.
+    # The rank of this Aphrodite instance in the KV cache transfer. Typical
+    # value: 0 for prefill instance, 1 for decode instance.
     # Currently only 1P1D is supported.
     kv_rank: Optional[int] = None
 
@@ -3915,7 +3923,8 @@ class CompilationConfig(BaseModel):
         self.static_forward_context = {}
         self.compilation_time = 0.0
 
-    def init_backend(self, aphrodite_config: "AphroditeConfig") -> Union[str, Callable]:
+    def init_backend(self, aphrodite_config: "AphroditeConfig") -> Union[
+        str, Callable]:
         if self.level == CompilationLevel.NO_COMPILATION:
             raise ValueError("No compilation level is set.")
 
@@ -4162,8 +4171,8 @@ class AphroditeConfig:
 
         # For some reason, the _ version of this modifies the model_config
         # object, so using deepcopy to avoid this problem.
-        return AphroditeConfig._get_quantization_config(copy.deepcopy(model_config),
-                                                   load_config)
+        return AphroditeConfig._get_quantization_config(
+            copy.deepcopy(model_config), load_config)
 
     def with_hf_config(
         self,
@@ -4213,8 +4222,8 @@ class AphroditeConfig:
             log_once(
                 "WARNING",
                 "Turing devices tensor cores do not support float32 matmul. "
-                "To workaround this limitation, Aphrodite will set 'ieee' input "
-                "precision for chunked prefill triton kernels.")
+                "To workaround this limitation, Aphrodite will set 'ieee' "
+                "input precision for chunked prefill triton kernels.")
 
         if self.compilation_config is None:
             self.compilation_config = CompilationConfig()
@@ -4337,7 +4346,8 @@ class AphroditeConfig:
         However, if users specify the cudagraph capture sizes through
         compilation config, we will use the specified sizes instead.
 
-        In the end, `aphrodite_config.compilation_config.cudagraph_capture_sizes`
+        In the end,
+        `aphrodite_config.compilation_config.cudagraph_capture_sizes`
         will be the final sizes to capture cudagraph (in descending order).
 
         During runtime, if batchsize is larger than
@@ -4346,7 +4356,7 @@ class AphroditeConfig:
         If the batch size is no larger than
         `aphrodite_config.compilation_config.cudagraph_capture_sizes`,
         we can quickly find the padded graph size for a given batch size by
-        looking up `aphrodite_config.compilation_config.bs_to_padded_graph_size`.
+        looking up `aphrodite_config.compilation_config.bs_to_padded_graph_size`
         """
 
         # calculate the default `batch_size_capture_list`
@@ -4445,7 +4455,8 @@ _current_aphrodite_config: Optional[AphroditeConfig] = None
 
 
 @contextmanager
-def set_current_aphrodite_config(aphrodite_config: AphroditeConfig, check_compile=False):
+def set_current_aphrodite_config(aphrodite_config: AphroditeConfig,
+                                 check_compile: bool = False):
     """
     Temporarily set the current Aphrodite config.
     Used during model initialization.
@@ -4468,8 +4479,9 @@ def set_current_aphrodite_config(aphrodite_config: AphroditeConfig, check_compil
         logger.debug("disabled custom ops: {}",
                      aphrodite_config.compilation_config.disabled_custom_ops)
         if check_compile and \
-            aphrodite_config.compilation_config.level == CompilationLevel.PIECEWISE \
-            and compilation_counter.num_models_seen == num_models_seen:
+            aphrodite_config.compilation_config.level == \
+                CompilationLevel.PIECEWISE and \
+            compilation_counter.num_models_seen == num_models_seen:
             # If the model supports compilation,
             # compilation_counter.num_models_seen should be increased
             # by at least 1.
@@ -4517,8 +4529,8 @@ def assert_hashable(text):
     if not contains_object_print(text):
         return True
     raise AssertionError(
-        f"Aphrodite tried to hash some configs that may have Python objects ids "
-        f"in them. This is a bug, please file an issue. "
+        f"Aphrodite tried to hash some configs that may have Python objects "
+        f"ids in them. This is a bug, please file an issue. "
         f"Text being hashed: {text}")
 
 

@@ -12,7 +12,8 @@ from typing_extensions import Annotated, deprecated
 
 import aphrodite.common.envs as envs
 from aphrodite.common.config import SchedulerConfig
-from aphrodite.transformers_utils.tokenizer import AnyTokenizer, MistralTokenizer
+from aphrodite.transformers_utils.tokenizer import (AnyTokenizer,
+                                                    MistralTokenizer)
 
 _SAMPLING_EPS = 1e-5
 _MAX_TEMP = 1e-2
@@ -62,12 +63,11 @@ class GuidedDecodingParams:
                 return True
             if isinstance(value, str) and value.strip() == "":
                 return True
-            if isinstance(value, dict) and len(value) == 0:
-                return True
-            return False
+            return bool(isinstance(value, dict) and len(value) == 0)
         
-        if all(is_effectively_none(arg) for arg in (json, regex, choice, grammar,
-                                       json_object, structural_tag)):
+        if all(is_effectively_none(arg) for arg in (json, regex, choice,
+                                                   grammar, json_object,
+                                                   structural_tag)):
             return None
         # Extract json schemas from pydantic models
         if isinstance(json, (BaseModel, type(BaseModel))):
@@ -91,9 +91,7 @@ class GuidedDecodingParams:
                 return True
             if isinstance(value, str) and value.strip() == "":
                 return True
-            if isinstance(value, dict) and len(value) == 0:
-                return True
-            return False
+            return bool(isinstance(value, dict) and len(value) == 0)
         
         guide_count = sum([
             not is_effectively_none(self.json),
@@ -489,15 +487,21 @@ class SamplingParams(
         return SamplingParams(
             n=1 if n is None else n,
             best_of=best_of,
-            presence_penalty=0.0 if presence_penalty is None else presence_penalty,
-            frequency_penalty=0.0 if frequency_penalty is None else frequency_penalty,
-            repetition_penalty=1.0 if repetition_penalty is None else repetition_penalty,
-            no_repeat_ngram_size=0 if no_repeat_ngram_size is None else no_repeat_ngram_size,
+            presence_penalty=
+            0.0 if presence_penalty is None else presence_penalty,
+            frequency_penalty=
+            0.0 if frequency_penalty is None else frequency_penalty,
+            repetition_penalty=
+            1.0 if repetition_penalty is None else repetition_penalty,
+            no_repeat_ngram_size=
+            0 if no_repeat_ngram_size is None else no_repeat_ngram_size,
             temperature=1.0 if temperature is None else temperature,
             dynatemp_min=0.0 if dynatemp_min is None else dynatemp_min,
             dynatemp_max=0.0 if dynatemp_max is None else dynatemp_max,
-            dynatemp_exponent=1.0 if dynatemp_exponent is None else dynatemp_exponent,
-            temperature_last=False if temperature_last is None else temperature_last,
+            dynatemp_exponent=
+            1.0 if dynatemp_exponent is None else dynatemp_exponent,
+            temperature_last=
+            False if temperature_last is None else temperature_last,
             top_p=1.0 if top_p is None else top_p,
             top_k=-1 if top_k is None else top_k,
             top_a=0.0 if top_a is None else top_a,
@@ -506,15 +510,21 @@ class SamplingParams(
             eta_cutoff=0.0 if eta_cutoff is None else eta_cutoff,
             epsilon_cutoff=0.0 if epsilon_cutoff is None else epsilon_cutoff,
             typical_p=1.0 if typical_p is None else typical_p,
-            smoothing_factor=0.0 if smoothing_factor is None else smoothing_factor,
-            smoothing_curve=1.0 if smoothing_curve is None else smoothing_curve,
+            smoothing_factor=
+            0.0 if smoothing_factor is None else smoothing_factor,
+            smoothing_curve=
+            1.0 if smoothing_curve is None else smoothing_curve,
             seed=seed,
-            use_beam_search=False if use_beam_search is None else use_beam_search,
-            length_penalty=1.0 if length_penalty is None else length_penalty,
+            use_beam_search=
+            (False if use_beam_search is None else use_beam_search),
+            length_penalty=
+            1.0 if length_penalty is None else length_penalty,
             early_stopping=False if early_stopping is None else early_stopping,
             stop=stop,
             stop_token_ids=stop_token_ids if stop_token_ids is not None else [],
-            include_stop_str_in_output=False if include_stop_str_in_output is None else include_stop_str_in_output,
+            include_stop_str_in_output=
+            (False if include_stop_str_in_output is None else
+             include_stop_str_in_output),
             ignore_eos=False if ignore_eos is None else ignore_eos,
             max_tokens=16 if max_tokens is None else max_tokens,
             min_tokens=0 if min_tokens is None else min_tokens,
@@ -523,8 +533,11 @@ class SamplingParams(
             detokenize=True if detokenize is None else detokenize,
             custom_token_bans=custom_token_bans,
             token_ban_ranges=token_ban_ranges,
-            skip_special_tokens=True if skip_special_tokens is None else skip_special_tokens,
-            spaces_between_special_tokens=True if spaces_between_special_tokens is None else spaces_between_special_tokens,
+            skip_special_tokens=(True if skip_special_tokens is None else
+                                 skip_special_tokens),
+            spaces_between_special_tokens=
+            (True if spaces_between_special_tokens is None else
+             spaces_between_special_tokens),
             logits_processors=logits_processors,
             truncate_prompt_tokens=truncate_prompt_tokens,
             xtc_threshold=0.1 if xtc_threshold is None else xtc_threshold,
@@ -532,15 +545,23 @@ class SamplingParams(
             nsigma=0.0 if nsigma is None else nsigma,
             dry_multiplier=0.0 if dry_multiplier is None else dry_multiplier,
             dry_base=1.75 if dry_base is None else dry_base,
-            dry_allowed_length=2 if dry_allowed_length is None else dry_allowed_length,
-            dry_sequence_breaker_ids=[] if dry_sequence_breaker_ids is None else dry_sequence_breaker_ids,
+            dry_allowed_length=
+            2 if dry_allowed_length is None else dry_allowed_length,
+            dry_sequence_breaker_ids=
+            ([] if dry_sequence_breaker_ids is None else
+             dry_sequence_breaker_ids),
             dry_range=0 if dry_range is None else dry_range,
             dry_max_ngram=12 if dry_max_ngram is None else dry_max_ngram,
-            dry_max_occurrences=8 if dry_max_occurrences is None else dry_max_occurrences,
-            dry_early_exit_match_len=8 if dry_early_exit_match_len is None else dry_early_exit_match_len,
+            dry_max_occurrences=
+            8 if dry_max_occurrences is None else dry_max_occurrences,
+            dry_early_exit_match_len=
+            8 if dry_early_exit_match_len is None else dry_early_exit_match_len,
             skew=0.0 if skew is None else skew,
-            sampler_priority=[] if sampler_priority is None else sampler_priority,
-            output_kind=RequestOutputKind.CUMULATIVE if output_kind is None else output_kind,
+            sampler_priority=
+            [] if sampler_priority is None else sampler_priority,
+            output_kind=
+            (RequestOutputKind.CUMULATIVE if output_kind is None else
+             output_kind),
             guided_decoding=guided_decoding,
             logit_bias=logit_bias,
             allowed_token_ids=allowed_token_ids,

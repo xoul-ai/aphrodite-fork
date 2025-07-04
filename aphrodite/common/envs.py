@@ -258,10 +258,11 @@ environment_variables: dict[str, Callable[[], Any]] = {
     lambda: (os.environ.get(
         "APHRODITE_USE_TRITON_FLASH_ATTN", "True").lower() in ("true", "1")),
 
-    # Force aphrodite to use a specific flash-attention version (2 or 3), only valid
-    # when using the flash-attention backend.
+    # Force aphrodite to use a specific flash-attention version (2 or 3), only
+    # valid when using the flash-attention backend.
     "APHRODITE_FLASH_ATTN_VERSION":
-    lambda: maybe_convert_int(os.environ.get("APHRODITE_FLASH_ATTN_VERSION", None)),
+    lambda: maybe_convert_int(os.environ.get("APHRODITE_FLASH_ATTN_VERSION",
+                                             None)),
 
     # Internal flag to enable Dynamo fullgraph capture
     "APHRODITE_TEST_DYNAMO_FULLGRAPH_CAPTURE":
@@ -326,10 +327,10 @@ environment_variables: dict[str, Callable[[], Any]] = {
     "APHRODITE_LOGGING_LEVEL":
     lambda: os.getenv("APHRODITE_LOGGING_LEVEL", "INFO"),
 
-    # if set, aphrodite will call logits processors in a thread pool with this many
-    # threads. This is useful when using custom logits processors that either
-    # (a) launch additional CUDA kernels or (b) do significant CPU-bound work
-    # while not holding the python GIL, or both.
+    # if set, aphrodite will call logits processors in a thread pool with this
+    # many threads. This is useful when using custom logits processors that
+    # either (a) launch additional CUDA kernels or (b) do significant
+    # CPU-bound work while not holding the python GIL, or both.
     "APHRODITE_LOGITS_PROCESSOR_THREADS":
     lambda: int(os.getenv("APHRODITE_LOGITS_PROCESSOR_THREADS", "0"))
     if "APHRODITE_LOGITS_PROCESSOR_THREADS" in os.environ else None,
@@ -491,8 +492,10 @@ environment_variables: dict[str, Callable[[], Any]] = {
     # Enables torch profiler if set. Path to the directory where torch profiler
     # traces are saved. Note that it must be an absolute path.
     "APHRODITE_TORCH_PROFILER_DIR":
-    lambda: (None if os.getenv("APHRODITE_TORCH_PROFILER_DIR", None) is None else os
-             .path.expanduser(os.getenv("APHRODITE_TORCH_PROFILER_DIR", "."))),
+    lambda: (None if os.getenv("APHRODITE_TORCH_PROFILER_DIR",
+             None) is None else
+             os.path.expanduser(
+             os.getenv("APHRODITE_TORCH_PROFILER_DIR", "."))),
 
     # If set, forces prefix cache in single user mode
     "APHRODITE_FORCE_SINGLE_USER_PREFIX_CACHE":
@@ -557,7 +560,8 @@ environment_variables: dict[str, Callable[[], Any]] = {
     # Whether to use aiter paged attention.
     # By default is disabled.
     "APHRODITE_ROCM_USE_AITER_PAGED_ATTN":
-    lambda: (os.getenv("APHRODITE_ROCM_USE_AITER_PAGED_ATTN", "False").lower() in
+    lambda: (os.getenv(
+             "APHRODITE_ROCM_USE_AITER_PAGED_ATTN", "False").lower() in
              ("true", "1")),
 
     # use aiter linear op if aiter ops are enabled
@@ -639,11 +643,11 @@ environment_variables: dict[str, Callable[[], Any]] = {
     "APHRODITE_MLA_DISABLE":
     lambda: bool(int(os.getenv("APHRODITE_MLA_DISABLE", "0"))),
 
-    # If set, Aphrodite will use the Triton implementation of moe_align_block_size,
-    # i.e. moe_align_block_size_triton in fused_moe.py.
+    # If set, Aphrodite will use the Triton implementation of
+    # moe_align_block_size, i.e. moe_align_block_size_triton in fused_moe.py.
     "APHRODITE_ENABLE_MOE_ALIGN_BLOCK_SIZE_TRITON":
-    lambda: bool(int(os.getenv("APHRODITE_ENABLE_MOE_ALIGN_BLOCK_SIZE_TRITON", "0"))
-                 ),
+    lambda: bool(int(os.getenv("APHRODITE_ENABLE_MOE_ALIGN_BLOCK_SIZE_TRITON",
+                               "0"))),
 
     # Number of GPUs per worker in Ray, if it is set to be a fraction,
     # it allows ray to schedule multiple actors on a single GPU,
@@ -683,7 +687,8 @@ environment_variables: dict[str, Callable[[], Any]] = {
     # Defaults to APHRODITE_DP_RANK when not set.
     "APHRODITE_DP_RANK_LOCAL":
     lambda: int(
-        os.getenv("APHRODITE_DP_RANK_LOCAL", sys.modules[__name__].APHRODITE_DP_RANK)),
+        os.getenv("APHRODITE_DP_RANK_LOCAL",
+        sys.modules[__name__].APHRODITE_DP_RANK)),
 
     # World size of the data parallel setting
     "APHRODITE_DP_SIZE":
@@ -760,7 +765,8 @@ environment_variables: dict[str, Callable[[], Any]] = {
     # If set, allow loading or unloading lora adapters in runtime,
     "APHRODITE_ALLOW_RUNTIME_LORA_UPDATING":
     lambda:
-    (os.environ.get("APHRODITE_ALLOW_RUNTIME_LORA_UPDATING", "0").strip().lower() in
+    (os.environ.get("APHRODITE_ALLOW_RUNTIME_LORA_UPDATING",
+                    "0").strip().lower() in
      ("1", "true")),
 
     # Whether to log responses from API Server for debugging

@@ -6,7 +6,6 @@ from typing import Any, Callable, ClassVar, Optional, Union, cast, overload
 
 import cloudpickle
 import torch.nn as nn
-from loguru import logger
 from tqdm.auto import tqdm
 from typing_extensions import TypeVar, deprecated
 
@@ -1212,7 +1211,7 @@ class LLM:
                         cast(TokensPrompt, prompt)["prompt_token_ids"])
                 elif "prompt" in prompt:
                     prompt = cast(TextPrompt, prompt)["prompt"]
-            assert type(prompt) is str
+            assert isinstance(prompt, str)
             return prompt
 
         if isinstance(text_1, (str, dict)):

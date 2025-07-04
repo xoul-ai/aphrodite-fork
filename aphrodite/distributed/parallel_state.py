@@ -40,7 +40,7 @@ import aphrodite.common.envs as envs
 from aphrodite.common.utils import (direct_register_custom_op,
                                     resolve_obj_by_qualname,
                                     supports_custom_op)
-from aphrodite.distributed.device_communicators.base_device_communicator import (
+from aphrodite.distributed.device_communicators.base_device_communicator import (  # noqa: E501
     DeviceCommunicatorBase)
 from aphrodite.distributed.utils import StatelessProcessGroup
 
@@ -313,7 +313,7 @@ class GroupCoordinator:
         # only cuda uses this function,
         # so we don't abstract it into the base class
         maybe_ca_context = nullcontext()
-        from aphrodite.distributed.device_communicators.cuda_communicator import (
+        from aphrodite.distributed.device_communicators.cuda_communicator import (  # noqa: E501
             CudaCommunicator)
         if self.device_communicator is not None:
             assert isinstance(self.device_communicator, CudaCommunicator)

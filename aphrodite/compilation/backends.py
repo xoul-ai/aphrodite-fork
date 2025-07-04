@@ -115,7 +115,8 @@ class CompilerManager:
                 elapsed = now - compilation_start_time
                 logger.info(
                     "Directly load the compiled graph(s) for shape {} "
-                    "from the cache, took {:.3f} s", str(runtime_shape), elapsed)
+                    "from the cache, took {:.3f} s", str(runtime_shape),
+                    elapsed)
             return compiled_graph
 
         # no compiler cached the graph, or the cache is disabled,
@@ -144,8 +145,9 @@ class CompilerManager:
             elapsed = now - compilation_start_time
             compilation_config.compilation_time += elapsed
             if runtime_shape is None:
-                logger.info("Compiling a graph for general shape takes {:.2f} s",
-                            elapsed)
+                logger.info(
+                    "Compiling a graph for general shape takes {:.2f} s",
+                    elapsed)
             else:
                 logger.info("Compiling a graph for shape {} takes {:.2f} s",
                             runtime_shape, elapsed)
