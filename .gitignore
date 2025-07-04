@@ -212,3 +212,4 @@ images/
 # generated files
 **/generated/**
 aphrodite/_version.py
+shellcheck-stable/
