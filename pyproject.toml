@@ -52,7 +52,8 @@ include = ["aphrodite*"]
 line-length = 80
 exclude = [
     "examples/fp8/quantizer/quantize.py",
-    "kernels/hadamard/generator.py"
+    "kernels/hadamard/generator.py",
+    "kernels/flash_attention/**"
 ]
 
 [tool.ruff.lint]
