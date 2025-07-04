@@ -5,9 +5,8 @@ import torch.nn as nn
 
 from aphrodite.v1.outputs import LogprobsTensors, SamplerOutput
 from aphrodite.v1.sample.metadata import SamplingMetadata
-from aphrodite.v1.sample.ops.bad_words import apply_bad_words
-from aphrodite.v1.sample.ops.penalties import (apply_all_penalties,
-                                               apply_min_token_penalties)
+from aphrodite.v1.sample.ops import SamplingOps
+from aphrodite.v1.sample.ops.temperatures import apply_all_temperatures
 from aphrodite.v1.sample.ops.topk_topp_sampler import TopKTopPSampler
 
 _SAMPLING_EPS = 1e-5
@@ -18,6 +17,7 @@ class Sampler(nn.Module):
     def __init__(self):
         super().__init__()
         self.topk_topp_sampler = TopKTopPSampler()
+        self.sampling_ops = SamplingOps()
 
     def forward(
         self,
@@ -36,13 +36,19 @@ class Sampler(nn.Module):
         # Use float32 for the logits.
         logits = logits.to(torch.float32)
         # Apply allowed token ids.
-        logits = self.apply_allowed_token_ids(logits, sampling_metadata)
+        logits = self.sampling_ops.apply_allowed_token_ids(
+            logits, sampling_metadata)
         # Apply bad words exclusion.
-        logits = self.apply_bad_words(logits, sampling_metadata)
+        logits = self.sampling_ops.apply_bad_words(logits, sampling_metadata)
         # Apply logits bias.
-        logits = self.apply_logits_bias(logits, sampling_metadata)
+        logits = self.sampling_ops.apply_logits_bias(logits, sampling_metadata)
+        # Apply no repeat ngram.
+        logits = self.sampling_ops.apply_no_repeat_ngram(
+            logits, sampling_metadata)
         # Apply penalties (e.g., min_tokens, freq_penalties).
-        logits = self.apply_penalties(logits, sampling_metadata)
+        logits = self.sampling_ops.apply_penalties(logits, sampling_metadata)
+        # Apply DRY sampling.
+        logits = self.sampling_ops.apply_dry(logits, sampling_metadata)
         # Sample the next token.
         sampled = self.sample(logits, sampling_metadata)
         # Convert sampled token ids to int64 (long) type to ensure compatibility
@@ -72,10 +78,9 @@ class Sampler(nn.Module):
     def apply_temperature(
         self,
         logits: torch.Tensor,
-        temp: torch.Tensor,
+        sampling_metadata: SamplingMetadata,
     ) -> torch.Tensor:
-        # Use in-place division to avoid creating a new tensor.
-        return logits.div_(temp.unsqueeze(dim=1))
+        return apply_all_temperatures(logits, sampling_metadata)
 
     def greedy_sample(self, logits: torch.Tensor) -> torch.Tensor:
         return logits.argmax(dim=-1).view(-1)
@@ -103,11 +108,11 @@ class Sampler(nn.Module):
         assert sampling_metadata.temperature is not None
 
         # Apply temperature.
-        logits = self.apply_temperature(logits, sampling_metadata.temperature)
+        logits = self.apply_temperature(logits, sampling_metadata)
 
         # Apply min_p.
         if sampling_metadata.min_p is not None:
-            logits = self.apply_min_p(logits, sampling_metadata.min_p)
+            logits = self.sampling_ops.apply_min_p(logits, sampling_metadata)
 
         # Apply top_k and/or top_p.
         random_sampled = self.topk_topp_sampler(
@@ -116,6 +121,14 @@ class Sampler(nn.Module):
             sampling_metadata.top_k,
             sampling_metadata.top_p,
         )
+
+        # Apply top_a.
+        if sampling_metadata.top_a is not None:
+            logits = self.sampling_ops.apply_top_a(logits, sampling_metadata)
+
+        # Apply tfs.
+        if sampling_metadata.tfs is not None:
+            logits = self.sampling_ops.apply_tfs(logits, sampling_metadata)
 
         if greedy_sampled is None:
             return random_sampled
@@ -176,93 +189,3 @@ class Sampler(nn.Module):
         indices = indices.to(torch.int32)
 
         return LogprobsTensors(indices, logprobs, token_ranks)
-
-    def apply_penalties(
-        self,
-        logits: torch.Tensor,
-        sampling_metadata: SamplingMetadata,
-    ) -> torch.Tensor:
-        if sampling_metadata.min_tokens:
-            apply_min_token_penalties(logits,
-                                      sampling_metadata.output_token_ids,
-                                      sampling_metadata.min_tokens)
-        if not sampling_metadata.no_penalties:
-            assert sampling_metadata.prompt_token_ids is not None
-            logits = apply_all_penalties(
-                logits,
-                sampling_metadata.prompt_token_ids,
-                sampling_metadata.presence_penalties,
-                sampling_metadata.frequency_penalties,
-                sampling_metadata.repetition_penalties,
-                sampling_metadata.output_token_ids,
-            )
-        return logits
-
-    def apply_min_p(
-        self,
-        logits: torch.Tensor,
-        min_p: torch.Tensor,
-    ) -> torch.Tensor:
-        """
-        Filters logits using adaptive probability thresholding.
-        """
-        # Convert logits to probability distribution
-        probability_values = torch.nn.functional.softmax(logits, dim=-1)
-        # Calculate maximum probabilities per sequence
-        max_probabilities = torch.amax(probability_values,
-                                       dim=-1,
-                                       keepdim=True)
-        # Reshape min_p for broadcasting
-        adjusted_min_p = min_p.unsqueeze(1) * max_probabilities
-        # Identify valid tokens using threshold comparison
-        valid_token_mask = probability_values >= adjusted_min_p
-        # Apply mask using boolean indexing
-        logits[~valid_token_mask] = -float('inf')
-        return logits
-
-    def apply_logits_bias(
-        self,
-        logits: torch.Tensor,
-        sampling_metadata: SamplingMetadata,
-    ) -> torch.Tensor:
-        # TODO(houseroad): this implementation is extremely inefficient.
-        # One idea is implement this as a PyTorch C++ op, and we may
-        # even optimize the logit_bias layout.
-
-        # Get vocabulary size from logits
-        vocab_size = logits.shape[-1]
-
-        for i, logit_bias in enumerate(sampling_metadata.logit_bias):
-            if logit_bias:
-                for token_id, bias in logit_bias.items():
-                    # Check token_id bounds to ensure within vocabulary
-                    if token_id < 0 or token_id >= vocab_size:
-                        raise ValueError(
-                            f"token_id {token_id} in logit_bias contains "
-                            f"out-of-vocab token id. Vocabulary size: "
-                            f"{vocab_size}")
-                    logits[i, token_id] += bias
-        return logits
-
-    def apply_allowed_token_ids(
-        self,
-        logits: torch.Tensor,
-        sampling_metadata: SamplingMetadata,
-    ) -> torch.Tensor:
-        if sampling_metadata.allowed_token_ids_mask is not None:
-            logits.masked_fill_(sampling_metadata.allowed_token_ids_mask,
-                                float("-inf"))
-        return logits
-
-    def apply_bad_words(
-        self,
-        logits: torch.Tensor,
-        sampling_metadata: SamplingMetadata,
-    ) -> torch.Tensor:
-        if sampling_metadata.bad_words_token_ids:
-            apply_bad_words(
-                logits,
-                sampling_metadata.bad_words_token_ids,
-                sampling_metadata.output_token_ids,
-            )
-        return logits

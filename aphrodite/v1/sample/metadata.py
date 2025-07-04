@@ -7,13 +7,36 @@ import torch
 @dataclass
 class SamplingMetadata:
 
+    # Temperature
     temperature: Optional[torch.Tensor]
+    dynatemp_min: Optional[torch.Tensor]
+    dynatemp_max: Optional[torch.Tensor]
+    dynatemp_exp: Optional[torch.Tensor]
+
     all_greedy: bool
     all_random: bool
 
+    # Alphabet sampling
     top_p: Optional[torch.Tensor]
     top_k: Optional[torch.Tensor]
     min_p: Optional[torch.Tensor]
+    top_a: Optional[torch.Tensor]
+
+    # DRY
+    dry_multiplier: Optional[torch.Tensor]
+    dry_base: Optional[torch.Tensor]
+    dry_allowed_length: Optional[torch.Tensor]
+    dry_sequence_breaker_ids: Optional[torch.Tensor]
+    dry_ranges: Optional[torch.Tensor]
+    dry_max_ngram: Optional[torch.Tensor]
+    dry_max_occurrences: Optional[torch.Tensor]
+    dry_early_exit_match_len: Optional[torch.Tensor]
+
+    # No repeat ngram
+    no_repeat_ngram_size: Optional[torch.Tensor]
+
+    # Tail-Free Sampling
+    tfs: Optional[torch.Tensor]
 
     generators: dict[int, torch.Generator]
 
