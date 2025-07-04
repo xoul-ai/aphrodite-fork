@@ -43,15 +43,15 @@ class TopKTopPSampler(nn.Module):
                         "backward compatible. Falling back to the PyTorch-"
                         "native implementation of top-p & top-k sampling.")
                     self.forward = self.forward_native
-                elif envs.APHRODITE_USE_FLASHINFER_SAMPLER is not False:
+                elif envs.APHRODITE_USE_SAMPLING_KERNELS is not False:
                     # NOTE: The V0 sampler doesn't use FlashInfer for
-                    # sampling unless APHRODITE_USE_FLASHINFER_SAMPLER=1 (i.e., by
+                    # sampling unless APHRODITE_USE_SAMPLING_KERNELS=1 (i.e., by
                     # default it is unused). For backward compatibility, we set
-                    # `APHRODITE_USE_FLASHINFER_SAMPLER` as None by default and
+                    # `APHRODITE_USE_SAMPLING_KERNELS` as None by default and
                     # interpret it differently in V0 and V1 samplers: In V0,
                     # None means False, while in V1, None means True. This is
                     # why we use the condition
-                    # `envs.APHRODITE_USE_FLASHINFER_SAMPLER is not False` here.
+                    # `envs.APHRODITE_USE_SAMPLING_KERNELS is not False` here.
                     logger.info("Using FlashInfer for top-p & top-k sampling.")
                     self.forward = self.forward_cuda
                 else:
@@ -59,7 +59,7 @@ class TopKTopPSampler(nn.Module):
                         "FlashInfer is available, but it is not enabled. "
                         "Falling back to the PyTorch-native implementation of "
                         "top-p & top-k sampling. For the best performance, "
-                        "please set APHRODITE_USE_FLASHINFER_SAMPLER=1.")
+                        "please set APHRODITE_USE_SAMPLING_KERNELS=1.")
                     self.forward = self.forward_native
             else:
                 logger.warning(

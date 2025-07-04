@@ -46,7 +46,7 @@ class RejectionSampler(SpecDecodeStochasticBaseSampler):
         """
         super().__init__(strict_mode=strict_mode)
         if use_flashinfer is None:
-            self.use_flashinfer = envs.APHRODITE_USE_FLASHINFER_SAMPLER and (
+            self.use_flashinfer = envs.APHRODITE_USE_SAMPLING_KERNELS and (
                 chain_speculative_sampling is not None)
         else:
             self.use_flashinfer = use_flashinfer
