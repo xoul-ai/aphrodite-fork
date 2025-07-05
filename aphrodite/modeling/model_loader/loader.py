@@ -106,7 +106,6 @@ def device_loading_context(module: torch.nn.Module,
         # New parameters or parameters already on target device are untouched
 
 
-
 def _initialize_model(
     aphrodite_config: AphroditeConfig,
     *,
@@ -125,13 +124,16 @@ def _initialize_model(
     all_params = [param.name for param in signatures.parameters.values()]
     if "aphrodite_config" in all_params and "prefix" in all_params:
         # new-style model class
-        with set_current_aphrodite_config(aphrodite_config, check_compile=True):
-            return model_class(aphrodite_config=aphrodite_config, prefix=prefix)
+        with set_current_aphrodite_config(aphrodite_config,
+                                          check_compile=True):
+            return model_class(aphrodite_config=aphrodite_config,
+                               prefix=prefix)
 
     msg = (
         "Aphrodite model class should accept `aphrodite_config` and `prefix` "
         "as input arguments. Possibly you have an old-style model class "
-        "registered from out of tree and it is used for new Aphrodite version.")
+        "registered from out of tree and it is used for new Aphrodite version."
+    )
     warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
     logger.warning(
@@ -498,7 +500,7 @@ class DefaultModelLoader(BaseModelLoader):
             allow_patterns_overrides=getattr(model, "allow_patterns_overrides",
                                              None),
         )
-        
+
         primary_iterator, primary_bytes = self._get_weights_iterator_with_size(
             primary_weights)
         total_bytes = primary_bytes
@@ -536,13 +538,13 @@ class DefaultModelLoader(BaseModelLoader):
             weights_to_load = {name for name, _ in model.named_parameters()}
             weights_iter, total_bytes = self.get_all_weights(
                 model_config, model)
-            
+
             # Import tensor_progress_bar here to avoid circular imports
             from aphrodite.common.utils import tensor_progress_bar
-            
+
             loaded_weights = model.load_weights(
-                tensor_progress_bar(
-                    weights_iter, total_bytes, "Loading model weights..."))
+                tensor_progress_bar(weights_iter, total_bytes,
+                                    "Loading model weights..."))
             self.counter_after_loading_weights = time.perf_counter()
             if get_tensor_model_parallel_rank() == 0:
                 logger.debug(
@@ -1253,7 +1255,8 @@ class BitsAndBytesModelLoader(BaseModelLoader):
         # to ensure correct loading of weights.
         if hf_to_aphrodite_mapper := getattr(model, "hf_to_aphrodite_mapper",
                                              None):
-            self.weight_mapper = lambda name: hf_to_aphrodite_mapper._map_name(name)  # noqa: E501
+            self.weight_mapper = lambda name: hf_to_aphrodite_mapper._map_name(
+                name)  # noqa: E501
 
         # Modules whose weights might have fused on disk
         # we need their output_sizes to make shard in flight correctly with TP

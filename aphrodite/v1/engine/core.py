@@ -82,7 +82,8 @@ class EngineCore:
         aphrodite_config.cache_config.num_gpu_blocks = num_gpu_blocks
         aphrodite_config.cache_config.num_cpu_blocks = num_cpu_blocks
 
-        self.structured_output_manager = StructuredOutputManager(aphrodite_config)
+        self.structured_output_manager = StructuredOutputManager(
+            aphrodite_config)
 
         # Setup scheduler.
         if isinstance(aphrodite_config.scheduler_config.scheduler_cls, str):
@@ -105,8 +106,8 @@ class EngineCore:
             aphrodite_config=aphrodite_config,
             kv_cache_config=kv_cache_config,
             structured_output_manager=self.structured_output_manager,
-            include_finished_set=aphrodite_config.parallel_config.data_parallel_size
-            > 1,
+            include_finished_set=aphrodite_config.parallel_config.
+            data_parallel_size > 1,
             log_stats=self.log_stats,
         )
 
@@ -128,7 +129,8 @@ class EngineCore:
         self.aphrodite_config = aphrodite_config
 
     def _initialize_kv_caches(
-            self, aphrodite_config: AphroditeConfig) -> tuple[int, int, KVCacheConfig]:
+            self, aphrodite_config: AphroditeConfig
+    ) -> tuple[int, int, KVCacheConfig]:
         start = time.time()
 
         # Get all kv cache needed by the model
@@ -429,7 +431,8 @@ class EngineCoreProc(EngineCore):
 
         waited = False
         while not self.engines_running and not (self.scheduler.has_requests()):
-            if logging.getLogger().isEnabledFor(logging.DEBUG) and self.input_queue.empty():
+            if logging.getLogger().isEnabledFor(
+                    logging.DEBUG) and self.input_queue.empty():
                 logger.debug("EngineCore waiting for work.")
                 waited = True
             req = self.input_queue.get()
@@ -520,8 +523,10 @@ class EngineCoreProc(EngineCore):
 
             # Send ready message to front-end once input socket is connected.
             message_dict = {
-                'type': 'READY',
-                'num_gpu_blocks': self.aphrodite_config.cache_config.num_gpu_blocks,
+                'type':
+                'READY',
+                'num_gpu_blocks':
+                self.aphrodite_config.cache_config.num_gpu_blocks,
             }
             message = json.dumps(message_dict).encode('utf-8')
             socket.send(message)
@@ -619,12 +624,13 @@ class DPEngineCoreProc(EngineCoreProc):
                                tp_size))
 
         self.local_dp_rank = local_dp_rank
-        self.dp_group = aphrodite_config.parallel_config.stateless_init_dp_group()
+        self.dp_group = aphrodite_config.parallel_config.stateless_init_dp_group(
+        )
         self.current_wave = 0
 
         # Initialize the engine after setting up environment.
-        super().__init__(input_path, output_path, aphrodite_config, executor_class,
-                         log_stats, dp_rank)
+        super().__init__(input_path, output_path, aphrodite_config,
+                         executor_class, log_stats, dp_rank)
 
         # Counts forward-passes of the model so that we can synchronize
         # finished with DP peers every N steps.

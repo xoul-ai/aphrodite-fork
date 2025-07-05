@@ -6,7 +6,8 @@ from typing import Optional, cast
 import numpy as np
 import torch
 
-from aphrodite.common.sampling_params import SamplingParams, SamplingType
+from aphrodite.common.sampling_params import (SamplerID, SamplingParams,
+                                              SamplingType)
 from aphrodite.common.utils import swap_dict_values
 from aphrodite.lora.request import LoRARequest
 from aphrodite.multimodal.inputs import MultiModalKwargs, PlaceholderRange
@@ -438,6 +439,10 @@ class InputBatch:
 
         self.req_output_token_ids: list[Optional[list[int]]] = []
 
+        # Sampler priority and temperature_last for priority-based execution
+        self.sampler_priority: list[Optional[list[int]]] = [None] * max_num_reqs
+        self.temperature_last: list[bool] = [False] * max_num_reqs
+
         # This is updated each time the batch constituents change.
         self.sampling_metadata = self._make_sampling_metadata()
 
@@ -529,32 +534,26 @@ class InputBatch:
             self.min_tokens[req_index] = (sampling_params.min_tokens,
                                           sampling_params.all_stop_token_ids)
 
-        # Add top-a parameters
         self.top_a_cpu[req_index] = sampling_params.top_a
         if sampling_params.top_a > 0:
             self.top_a_reqs.add(req_id)
 
-        # Add tfs parameters
         self.tfs_cpu[req_index] = sampling_params.tfs
         if sampling_params.tfs < 1.0:
             self.tfs_reqs.add(req_id)
 
-        # Add eta cutoff parameters
         self.eta_cutoff_cpu[req_index] = sampling_params.eta_cutoff
         if sampling_params.eta_cutoff > 0:
             self.eta_cutoff_reqs.add(req_id)
 
-        # Add epsilon cutoff parameters
         self.epsilon_cutoff_cpu[req_index] = sampling_params.epsilon_cutoff
         if sampling_params.epsilon_cutoff > 0:
             self.epsilon_cutoff_reqs.add(req_id)
 
-        # Add typical p parameters
         self.typical_p_cpu[req_index] = sampling_params.typical_p
         if sampling_params.typical_p < 1.0:
             self.typical_p_reqs.add(req_id)
 
-        # Add quadratic parameters
         self.quadratic_smoothing_factor_cpu[req_index] = \
             sampling_params.smoothing_factor
         self.quadratic_smoothing_curve_cpu[req_index] = \
@@ -562,23 +561,19 @@ class InputBatch:
         if sampling_params.smoothing_factor > 0:
             self.quadratic_reqs.add(req_id)
 
-        # Add xtc parameters
         self.xtc_threshold_cpu[req_index] = sampling_params.xtc_threshold
         self.xtc_probability_cpu[req_index] = sampling_params.xtc_probability
         if sampling_params.xtc_probability > 0:
             self.xtc_reqs.add(req_id)
 
-        # Add top-nsigma parameters
         self.top_nsigma_cpu[req_index] = sampling_params.nsigma
         if sampling_params.nsigma > 0:
             self.top_nsigma_reqs.add(req_id)
 
-        # Add skew parameters
         self.skew_cpu[req_index] = sampling_params.skew
         if sampling_params.skew != 0:
             self.skew_reqs.add(req_id)
 
-        # Add DRY parameters
         self.dry_multiplier_cpu[req_index] = sampling_params.dry_multiplier
         self.dry_base_cpu[req_index] = sampling_params.dry_base
         self.dry_allowed_length_cpu[req_index] = \
@@ -595,11 +590,13 @@ class InputBatch:
                 self.dry_sequence_breaker_ids[req_index] = \
                     sampling_params.dry_sequence_breaker_ids
 
-        # Add no repeat ngram parameters
         self.no_repeat_ngram_size_cpu[req_index] = \
             sampling_params.no_repeat_ngram_size
         if sampling_params.no_repeat_ngram_size > 0:
             self.no_repeat_ngram_reqs.add(req_id)
+
+        self.sampler_priority[req_index] = sampling_params.sampler_priority
+        self.temperature_last[req_index] = sampling_params.temperature_last
 
         # NOTE: self.generators should not include the requests that
         # do not have their own generator.
@@ -1022,6 +1019,17 @@ class InputBatch:
                        self.allowed_token_ids_mask, num_reqs)
             allowed_token_ids_mask = self.allowed_token_ids_mask[:num_reqs]
 
+        # Process sampler priority - convert integers to SamplerID enums
+        sampler_priority_processed = None
+        if any(self.sampler_priority[:num_reqs]):
+            # Take the first non-None priority list as the batch priority
+            for priority_list in self.sampler_priority[:num_reqs]:
+                if priority_list is not None:
+                    sampler_priority_processed = [
+                        SamplerID(pid) for pid in priority_list
+                    ]
+                    break
+
         return SamplingMetadata(
             temperature=temperature,
             dynatemp_min=(
@@ -1088,6 +1096,8 @@ class InputBatch:
             logit_bias=self.logit_bias[:num_reqs],
             allowed_token_ids_mask=allowed_token_ids_mask,
             bad_words_token_ids=self.bad_words_token_ids,
+            sampler_priority=sampler_priority_processed,
+            temperature_last=any(self.temperature_last[:num_reqs]),
         )
 
     def _make_prompt_token_ids_tensor(self) -> torch.Tensor:

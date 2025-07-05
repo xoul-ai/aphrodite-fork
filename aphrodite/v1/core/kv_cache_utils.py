@@ -538,7 +538,8 @@ def check_enough_kv_cache_memory(aphrodite_config: AphroditeConfig,
 
     if needed_memory > available_memory:
         # Estimate the maximum model length that can fit in the available memory
-        estimated_max_len = estimate_max_model_len(aphrodite_config, kv_cache_spec,
+        estimated_max_len = estimate_max_model_len(aphrodite_config,
+                                                   kv_cache_spec,
                                                    available_memory)
         estimated_msg = ""
         if estimated_max_len > 0:
@@ -697,13 +698,15 @@ def get_kv_cache_config(aphrodite_config: AphroditeConfig,
     Returns:
         The generated KVCacheConfigs
     """
-    check_enough_kv_cache_memory(aphrodite_config, kv_cache_spec, available_memory)
+    check_enough_kv_cache_memory(aphrodite_config, kv_cache_spec,
+                                 available_memory)
     unify_hybrid_kv_cache_specs(kv_cache_spec)
     if is_kv_cache_type_uniform(kv_cache_spec):
         # KV cache of all layers are the same, which is true for
         # most models. Allocate the same amount of memory for
         # each layer.
-        return _get_kv_cache_config_uniform_type(aphrodite_config, kv_cache_spec,
+        return _get_kv_cache_config_uniform_type(aphrodite_config,
+                                                 kv_cache_spec,
                                                  available_memory)
 
     raise NotImplementedError

@@ -351,7 +351,7 @@ class GroupCoordinator:
 
         if self.use_custom_op_call:
             return torch.ops.aphrodite.all_reduce(input_,
-                                             group_name=self.unique_name)
+                                                  group_name=self.unique_name)
         else:
             return self._all_reduce_out_place(input_)
 
@@ -845,7 +845,6 @@ def graph_capture(device: torch.device):
     with get_tp_group().graph_capture(context), get_pp_group().graph_capture(
             context):
         yield context
-
 
 
 _ENABLE_CUSTOM_ALL_REDUCE = True

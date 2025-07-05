@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import asyncio
@@ -1110,9 +1109,9 @@ def enable_trace_function_call_for_thread(
         filename = (f"APHRODITE_TRACE_FUNCTION_for_process_{os.getpid()}"
                     f"_thread_{threading.get_ident()}_"
                     f"at_{datetime.datetime.now()}.log").replace(" ", "_")
-        log_path = os.path.join(tmp_dir, "aphrodite",
-                                f"aphrodite-instance-{aphrodite_config.instance_id}",
-                                filename)
+        log_path = os.path.join(
+            tmp_dir, "aphrodite",
+            f"aphrodite-instance-{aphrodite_config.instance_id}", filename)
         os.makedirs(os.path.dirname(log_path), exist_ok=True)
         enable_trace_function_call(log_path)
 
@@ -2724,24 +2723,27 @@ def is_torch_equal_or_newer(target: str) -> bool:
         # Fallback to PKG-INFO to load the package info, needed by the doc gen.
         return Version(importlib.metadata.version('torch')) >= Version(target)
 
-def tensor_progress_bar(iterable:Iterable[Tuple[str, torch.Tensor]],
-                        final_bytes:int, desc="Processing"):
+
+def tensor_progress_bar(iterable: Iterable[Tuple[str, torch.Tensor]],
+                        final_bytes: int,
+                        desc="Processing"):
     from aphrodite.distributed.parallel_state import (
         get_tensor_model_parallel_rank)
     show_progress = get_tensor_model_parallel_rank() == 0
-    units = 1024 ** (int(math.log2(final_bytes)) // 10)
+    units = 1024**(int(math.log2(final_bytes)) // 10)
 
     if show_progress:
         with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            BarColumn(),
-            # MofNCompleteColumn(),
-            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-            TextColumn("{task.completed:.2f}/{task.total:.2f} GiB"),
-            TimeElapsedColumn(),
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                # MofNCompleteColumn(),
+                TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+                TextColumn("{task.completed:.2f}/{task.total:.2f} GiB"),
+                TimeElapsedColumn(),
         ) as progress:
-            task = progress.add_task(f"[cyan]{desc}", total=final_bytes/units)
+            task = progress.add_task(f"[cyan]{desc}",
+                                     total=final_bytes / units)
             for item in iterable:
                 steps = item[1].element_size() * item[1].nelement() / units
                 yield item

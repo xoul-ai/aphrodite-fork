@@ -160,11 +160,11 @@ class CompilerManager:
             elapsed = now - compilation_start_time
             compilation_config.compilation_time += elapsed
             if runtime_shape is None:
-                logger.info(
+                logger.debug(
                     "Compiling a graph for general shape takes {:.2f} s",
                     elapsed)
             else:
-                logger.info("Compiling a graph for shape {} takes {:.2f} s",
+                logger.debug("Compiling a graph for shape {} takes {:.2f} s",
                             runtime_shape, elapsed)
 
         return compiled_graph

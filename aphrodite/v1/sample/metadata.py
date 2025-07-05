@@ -1,7 +1,9 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List
 
 import torch
+
+from aphrodite.common.sampling_params import SamplerID
 
 
 @dataclass
@@ -85,3 +87,7 @@ class SamplingMetadata:
 
     # req_index -> bad_words_token_ids
     bad_words_token_ids: dict[int, list[list[int]]]
+
+    # Sampler priority and temperature_last for priority-based execution
+    sampler_priority: Optional[List[SamplerID]] = None
+    temperature_last: bool = False
