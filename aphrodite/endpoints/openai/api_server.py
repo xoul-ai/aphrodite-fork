@@ -1214,7 +1214,8 @@ badwordsids: list[int] = []
 
 
 def prepare_engine_payload(
-        kai_payload: KAIGenerationInputSchema
+        kai_payload: KAIGenerationInputSchema,
+        tokenizer
 ) -> tuple[SamplingParams, list[int]]:
     """Create SamplingParams and truncated input tokens for AsyncEngine"""
 
@@ -1222,35 +1223,35 @@ def prepare_engine_payload(
         kai_payload.genkey = f"kai-{random_uuid()}"
 
     kai_payload.top_k = kai_payload.top_k if kai_payload.top_k != 0.0 else -1
-    kai_payload.tfs = max(_SAMPLING_EPS, kai_payload.tfs)
-    if kai_payload.temperature < _SAMPLING_EPS:
+    kai_payload.tfs = max(_SAMPLING_EPS, kai_payload.tfs or 0.0)
+    if (kai_payload.temperature or 0.0) < _SAMPLING_EPS:
         kai_payload.n = 1
         kai_payload.top_p = 1.0
         kai_payload.top_k = -1
 
     sampling_params = SamplingParams(
-        n=kai_payload.n,
-        best_of=kai_payload.n,
-        repetition_penalty=kai_payload.rep_pen,
-        temperature=kai_payload.temperature,
-        smoothing_factor=kai_payload.smoothing_factor,
-        smoothing_curve=kai_payload.smoothing_curve,
-        tfs=kai_payload.tfs,
-        top_p=kai_payload.top_p,
-        top_k=kai_payload.top_k,
-        top_a=kai_payload.top_a,
-        min_p=kai_payload.min_p,
-        typical_p=kai_payload.typical,
-        eta_cutoff=kai_payload.eta_cutoff,
-        epsilon_cutoff=kai_payload.eps_cutoff,
+        n=kai_payload.n or 1,
+        best_of=kai_payload.n or 1,
+        repetition_penalty=kai_payload.rep_pen or 1.0,
+        temperature=kai_payload.temperature or 1.0,
+        smoothing_factor=kai_payload.smoothing_factor or 0.0,
+        smoothing_curve=kai_payload.smoothing_curve or 1.0,
+        tfs=kai_payload.tfs or 1.0,
+        top_p=kai_payload.top_p or 1.0,
+        top_k=kai_payload.top_k or -1,
+        top_a=kai_payload.top_a or 0.0,
+        min_p=kai_payload.min_p or 0.0,
+        typical_p=kai_payload.typical or 1.0,
+        eta_cutoff=kai_payload.eta_cutoff or 0.0,
+        epsilon_cutoff=kai_payload.eps_cutoff or 0.0,
         stop=kai_payload.stop_sequence,
-        include_stop_str_in_output=kai_payload.include_stop_str_in_output,
+        include_stop_str_in_output=kai_payload.include_stop_str_in_output or False,
         custom_token_bans=badwordsids
         if kai_payload.use_default_badwordsids else [],
         max_tokens=kai_payload.max_length,
         seed=kai_payload.sampler_seed,
-        xtc_probability=kai_payload.xtc_probability,
-        xtc_threshold=kai_payload.xtc_threshold,
+        xtc_probability=kai_payload.xtc_probability or 0.0,
+        xtc_threshold=kai_payload.xtc_threshold or 0.0,
     )
 
     max_input_tokens = max(
@@ -1263,7 +1264,8 @@ def prepare_engine_payload(
 @kai_api.post("/generate")
 async def generate(kai_payload: KAIGenerationInputSchema,
                    raw_request: Request) -> JSONResponse:
-    sampling_params, input_tokens = prepare_engine_payload(kai_payload)
+    tokenizer = await engine_client(raw_request).get_tokenizer()
+    sampling_params, input_tokens = prepare_engine_payload(kai_payload, tokenizer)
     result_generator = engine_client(raw_request).generate(
         {
             "prompt": kai_payload.prompt,
@@ -1294,7 +1296,8 @@ async def generate(kai_payload: KAIGenerationInputSchema,
 async def generate_stream(kai_payload: KAIGenerationInputSchema,
                           raw_request: Request) -> StreamingResponse:
 
-    sampling_params, input_tokens = prepare_engine_payload(kai_payload)
+    tokenizer = await engine_client(raw_request).get_tokenizer()
+    sampling_params, input_tokens = prepare_engine_payload(kai_payload, tokenizer)
     results_generator = engine_client(raw_request).generate(
         {
             "prompt": kai_payload.prompt,
@@ -1362,8 +1365,9 @@ async def get_version():
 
 
 @kai_api.get("/model")
-async def get_model():
-    return JSONResponse({"result": f"aphrodite/{served_model_names[0]}"})
+async def get_model(raw_request: Request):
+    return JSONResponse(
+        {"result": f"aphrodite/{raw_request.app.state.served_model_names[0]}"})
 
 
 @kai_api.get("/config/soft_prompts_list")
@@ -1385,15 +1389,15 @@ async def set_current_softprompt():
 
 
 @kai_api.get("/config/max_length")
-async def get_max_length() -> JSONResponse:
-    max_length = args.max_length
+async def get_max_length(raw_request: Request) -> JSONResponse:
+    max_length = raw_request.app.state.aphrodite_config.max_model_len
     return JSONResponse({"value": max_length})
 
 
 @kai_api.get("/config/max_context_length")
 @extra_api.get("/true_max_context_length")
-async def get_max_context_length() -> JSONResponse:
-    max_context_length = args.max_model_len
+async def get_max_context_length(raw_request: Request) -> JSONResponse:
+    max_context_length = raw_request.app.state.aphrodite_config.max_model_len
     return JSONResponse({"value": max_context_length})
 
 
@@ -1441,6 +1445,13 @@ def build_app(args: Namespace) -> FastAPI:
     else:
         app = FastAPI(lifespan=lifespan)
     app.include_router(router)
+    
+    # Include KoboldAI API routes if enabled
+    if envs.APHRODITE_KOBOLD_API:
+        app.include_router(kai_api, prefix="/api/v1")
+        app.include_router(extra_api, prefix="/api/extra")
+        logger.info("KoboldAI API routes enabled")
+    
     app.root_path = args.root_path
 
     mount_metrics(app)
@@ -1531,6 +1542,7 @@ async def init_app_state(
         served_model_names = args.served_model_name
     else:
         served_model_names = [args.model]
+    state.served_model_names = served_model_names
 
     if args.disable_log_requests:
         request_logger = None
@@ -1754,6 +1766,14 @@ async def run_server(args, **uvicorn_kwargs) -> None:
         logger.info(
             f"Tokenization API:  {protocol}://{host_name}:{port_str}{root_path}/v1/tokenize"
         )  # noqa: E501
+
+        if envs.APHRODITE_KOBOLD_API:
+            logger.info(
+                f"KoboldAI API:      {protocol}://{host_name}:{port_str}{root_path}/api/v1"
+            )  # noqa: E501
+            logger.info(
+                f"KoboldAI Extra:    {protocol}://{host_name}:{port_str}{root_path}/api/extra"
+            )  # noqa: E501
 
         shutdown_task = await serve_http(
             app,

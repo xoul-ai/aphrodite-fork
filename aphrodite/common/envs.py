@@ -773,6 +773,10 @@ environment_variables: dict[str, Callable[[], Any]] = {
     "APHRODITE_DEBUG_LOG_API_SERVER_RESPONSE":
     lambda: os.environ.get("APHRODITE_DEBUG_LOG_API_SERVER_RESPONSE", "False").
     lower() == "true",
+
+    # If set, enables the KoboldAI API routes in the API server
+    "APHRODITE_KOBOLD_API":
+    lambda: bool(int(os.getenv("APHRODITE_KOBOLD_API", "0"))),
 }
 
 # end-env-vars-definition
