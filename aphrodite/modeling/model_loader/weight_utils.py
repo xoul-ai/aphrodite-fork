@@ -277,7 +277,7 @@ def download_weights_from_hf(
         )
         time_taken = time.perf_counter() - start_time
         if time_taken > 0.5:
-            logger.info("Time spent downloading weights for {}: %.6f seconds",
+            logger.info("Time spent downloading weights for {}: {:.2f} seconds",
                         model_name_or_path, time_taken)
     return hf_folder
 

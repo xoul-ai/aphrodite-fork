@@ -277,7 +277,8 @@ def awq_dequantize(qweight: torch.Tensor, scales: torch.Tensor,
                    zeros: torch.Tensor, split_k_iters: int, thx: int,
                    thy: int) -> torch.Tensor:
     if envs.APHRODITE_USE_TRITON_AWQ:
-        from aphrodite.quantization.awq_triton import awq_dequantize_triton
+        from aphrodite.quantization.awq_triton import (
+            awq_dequantize_triton)
         return awq_dequantize_triton(qweight, scales, zeros)
     return torch.ops._C.awq_dequantize(qweight, scales, zeros, split_k_iters,
                                        thx, thy)
@@ -286,7 +287,8 @@ def awq_dequantize(qweight: torch.Tensor, scales: torch.Tensor,
 def awq_gemm(input: torch.Tensor, qweight: torch.Tensor, qzeros: torch.Tensor,
              scales: torch.Tensor, split_k_iters: int) -> torch.Tensor:
     if envs.APHRODITE_USE_TRITON_AWQ:
-        from aphrodite.quantization.awq_triton import awq_gemm_triton
+        from aphrodite.quantization.awq_triton import (
+            awq_gemm_triton)
         return awq_gemm_triton(input, qweight, qzeros, scales, split_k_iters)
     return torch.ops._C.awq_gemm(input, qweight, qzeros, scales, split_k_iters)
 
@@ -870,6 +872,7 @@ def gptq_marlin_repack(b_q_weight: torch.Tensor, perm: torch.Tensor,
                                            num_bits)
 
 
+# gptq_marlin
 def awq_marlin_repack(b_q_weight: torch.Tensor, size_k: int, size_n: int,
                       num_bits: int) -> torch.Tensor:
     return torch.ops._C.awq_marlin_repack(b_q_weight, size_k, size_n, num_bits)
@@ -916,11 +919,15 @@ def gptq_marlin_gemm(a: torch.Tensor,
                      size_k: int,
                      is_k_full: bool,
                      has_zp: bool = False,
-                     use_fp32_reduce: bool = False) -> torch.Tensor:
+                     use_atomic_add: bool = False,
+                     use_fp32_reduce: bool = False,
+                     is_zp_float: bool = False) -> torch.Tensor:
     return torch.ops._C.gptq_marlin_gemm(a, b_q_weight, b_scales, b_zeros,
                                          g_idx, perm, workspace, b_q_type.id,
                                          size_m, size_n, size_k, is_k_full,
-                                         has_zp, use_fp32_reduce)
+                                         has_zp, use_atomic_add,
+                                         use_fp32_reduce, is_zp_float)
+
 
 # fp8 marlin
 def fp8_marlin_gemm(a: torch.Tensor, b_q_weight: torch.Tensor,
