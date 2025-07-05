@@ -450,10 +450,11 @@ class DefaultModelLoader(BaseModelLoader):
             loaded_weights = model.load_weights(
                 self.get_all_weights(model_config, model))
             self.counter_after_loading_weights = time.perf_counter()
-            logger.info(
-                "Loading weights took {:.2f} seconds",
-                self.counter_after_loading_weights -
-                self.counter_before_loading_weights)
+            if get_tensor_model_parallel_rank() == 0:
+                logger.info(
+                    "Loading weights took {:.2f} seconds",
+                    self.counter_after_loading_weights -
+                    self.counter_before_loading_weights)
             # We only enable strict check for non-quantized models
             # that have loaded weights tracking currently.
             if model_config.quantization is None and loaded_weights is not None:

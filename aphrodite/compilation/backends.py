@@ -432,8 +432,8 @@ class AphroditeBackend:
         if disable_cache:
             logger.info("Aphrodite's torch.compile cache is disabled.")
         else:
-            logger.info("Using cache directory: {} for Aphrodite's "
-                        "torch.compile", local_cache_dir)
+            logger.debug("Using cache directory: {} for Aphrodite's "
+                         "torch.compile", local_cache_dir)
 
         self.compiler_manager.initialize_cache(local_cache_dir, disable_cache)
 

@@ -8,6 +8,8 @@ import torch
 import torch.distributed
 import torch.nn as nn
 from loguru import logger
+from rich.progress import (BarColumn, Progress, TaskProgressColumn, TextColumn,
+                           TimeRemainingColumn)
 
 from aphrodite.attention import AttentionType, get_attn_backend
 from aphrodite.attention.layer import Attention
@@ -21,7 +23,8 @@ from aphrodite.common.utils import (STR_DTYPE_TO_TORCH_DTYPE,
                                     check_use_alibi, is_pin_memory_available)
 from aphrodite.distributed.kv_transfer import (get_kv_transfer_group,
                                                has_kv_transfer_group)
-from aphrodite.distributed.parallel_state import get_pp_group, graph_capture
+from aphrodite.distributed.parallel_state import (
+    get_pp_group, get_tensor_model_parallel_rank, graph_capture)
 from aphrodite.forward_context import set_forward_context
 from aphrodite.modeling.layers.rotary_embedding import MRotaryEmbedding
 from aphrodite.modeling.model_loader import get_model
@@ -1348,9 +1351,10 @@ class GPUModelRunner(LoRAModelRunnerMixin):
                     self.model.get_eagle3_aux_hidden_state_layers())
             time_after_load = time.perf_counter()
         self.model_memory_usage = m.consumed_memory
-        logger.info("Model loading took {:.4f} GiB and {:.6f} seconds",
-                    self.model_memory_usage / GiB_bytes,
-                    time_after_load - time_before_load)
+        if get_tensor_model_parallel_rank() == 0:
+            logger.info("Model loading took {:.2f} GiB and {:.2f} seconds",
+                        self.model_memory_usage / GiB_bytes,
+                        time_after_load - time_before_load)
 
     def _get_prompt_logprobs_dict(
         self,
@@ -1700,23 +1704,52 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         start_time = time.perf_counter()
         start_free_gpu_memory = torch.cuda.mem_get_info()[0]
 
+        # Calculate total number of operations for progress tracking
+        total_operations = len(self.cudagraph_batch_sizes) * (
+            self.aphrodite_config.compilation_config.cudagraph_num_of_warmups +
+            1)
+
         # Trigger CUDA graph capture for specific shapes.
         # Capture the large shapes first so that the smaller shapes
         # can reuse the memory pool allocated for the large shapes.
         with graph_capture(device=self.device):
-            for num_tokens in reversed(self.cudagraph_batch_sizes):
-                for _ in range(self.aphrodite_config.compilation_config.
-                               cudagraph_num_of_warmups):
+            if get_tensor_model_parallel_rank() == 0:
+                with Progress(
+                    TextColumn("[bold blue]{task.description}"),
+                    BarColumn(),
+                    TaskProgressColumn(),
+                    TimeRemainingColumn(),
+                    console=None,
+                ) as progress:
+                    task = progress.add_task(
+                        "Capturing CUDA graphs",
+                        total=total_operations
+                    )
+
+                    for num_tokens in reversed(self.cudagraph_batch_sizes):
+                        for _ in range(self.aphrodite_config.compilation_config.
+                                       cudagraph_num_of_warmups):
+                            self._dummy_run(num_tokens)
+                            progress.advance(task)
+                        self._dummy_run(num_tokens)
+                        progress.advance(task)
+            else:
+                # No progress bar for other ranks
+                for num_tokens in reversed(self.cudagraph_batch_sizes):
+                    for _ in range(self.aphrodite_config.compilation_config.
+                                   cudagraph_num_of_warmups):
+                        self._dummy_run(num_tokens)
                     self._dummy_run(num_tokens)
-                self._dummy_run(num_tokens)
 
         end_time = time.perf_counter()
         end_free_gpu_memory = torch.cuda.mem_get_info()[0]
         elapsed_time = end_time - start_time
         cuda_graph_size = start_free_gpu_memory - end_free_gpu_memory
         # This usually takes 5~20 seconds.
-        logger.info("Graph capturing finished in {:.0f} secs, took {:.2f} GiB",
-                    elapsed_time, cuda_graph_size / (1 << 30))
+        if get_tensor_model_parallel_rank() == 0:
+            logger.info(
+                "Graph capturing finished in {:.0f} secs, took {:.2f} GiB",
+                 elapsed_time, cuda_graph_size / (1 << 30))
 
     def initialize_kv_cache(self, kv_cache_config: KVCacheConfig) -> None:
         """
