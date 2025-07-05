@@ -43,13 +43,13 @@ class Sampler(nn.Module):
         logits = self.sampling_ops.apply_bad_words(logits, sampling_metadata)
         # Apply logits bias.
         logits = self.sampling_ops.apply_logits_bias(logits, sampling_metadata)
+        # Apply DRY sampling.
+        logits = self.sampling_ops.apply_dry(logits, sampling_metadata)
+        # Apply penalties (e.g., min_tokens, freq_penalties).
+        logits = self.sampling_ops.apply_penalties(logits, sampling_metadata)
         # Apply no repeat ngram.
         logits = self.sampling_ops.apply_no_repeat_ngram(
             logits, sampling_metadata)
-        # Apply penalties (e.g., min_tokens, freq_penalties).
-        logits = self.sampling_ops.apply_penalties(logits, sampling_metadata)
-        # Apply DRY sampling.
-        logits = self.sampling_ops.apply_dry(logits, sampling_metadata)
         # Sample the next token.
         sampled = self.sample(logits, sampling_metadata)
         # Convert sampled token ids to int64 (long) type to ensure compatibility
@@ -112,16 +112,30 @@ class Sampler(nn.Module):
         logits = self.apply_temperature(
             logits, sampling_metadata)
 
-        # Apply min_p.
-        if sampling_metadata.min_p is not None:
-            logger.debug("Applying min_p={}", sampling_metadata.min_p)
-            logits = self.sampling_ops.apply_min_p(
+        # Apply top_nsigma.
+        if sampling_metadata.top_nsigma is not None:
+            logger.debug("Applying top_nsigma={}", sampling_metadata.top_nsigma)
+            logits = self.sampling_ops.apply_top_nsigma(
                 logits, sampling_metadata)
+
+        # Apply top_k and/or top_p.
+        random_sampled = self.topk_topp_sampler(
+            logits,
+            sampling_metadata.generators,
+            sampling_metadata.top_k,
+            sampling_metadata.top_p,
+        )
 
         # Apply top_a.
         if sampling_metadata.top_a is not None:
             logger.debug("Applying top_a={}", sampling_metadata.top_a)
             logits = self.sampling_ops.apply_top_a(
+                logits, sampling_metadata)
+
+        # Apply min_p.
+        if sampling_metadata.min_p is not None:
+            logger.debug("Applying min_p={}", sampling_metadata.min_p)
+            logits = self.sampling_ops.apply_min_p(
                 logits, sampling_metadata)
 
         # Apply tfs.
@@ -163,20 +177,6 @@ class Sampler(nn.Module):
                          sampling_metadata.xtc_threshold)
             logits = self.sampling_ops.apply_xtc(
                 logits, sampling_metadata)
-
-        # Apply top_nsigma.
-        if sampling_metadata.top_nsigma is not None:
-            logger.debug("Applying top_nsigma={}", sampling_metadata.top_nsigma)
-            logits = self.sampling_ops.apply_top_nsigma(
-                logits, sampling_metadata)
-
-        # Apply top_k and/or top_p.
-        random_sampled = self.topk_topp_sampler(
-            logits,
-            sampling_metadata.generators,
-            sampling_metadata.top_k,
-            sampling_metadata.top_p,
-        )
 
         # Apply skew (after softmax).
         if sampling_metadata.skew is not None:
