@@ -24,7 +24,8 @@ from aphrodite.common.utils import (STR_DTYPE_TO_TORCH_DTYPE,
 from aphrodite.distributed.kv_transfer import (get_kv_transfer_group,
                                                has_kv_transfer_group)
 from aphrodite.distributed.parallel_state import (
-    get_pp_group, get_tensor_model_parallel_rank, graph_capture)
+    get_pp_group, get_tensor_model_parallel_rank,
+    get_tensor_model_parallel_world_size, graph_capture)
 from aphrodite.forward_context import set_forward_context
 from aphrodite.modeling.layers.rotary_embedding import MRotaryEmbedding
 from aphrodite.modeling.model_loader import get_model
@@ -1351,9 +1352,14 @@ class GPUModelRunner(LoRAModelRunnerMixin):
                     self.model.get_eagle3_aux_hidden_state_layers())
             time_after_load = time.perf_counter()
         self.model_memory_usage = m.consumed_memory
-        if get_tensor_model_parallel_rank() == 0:
+        world_size = get_tensor_model_parallel_world_size()
+        if world_size == 1:
             logger.info("Model loading took {:.2f} GiB and {:.2f} seconds",
                         self.model_memory_usage / GiB_bytes,
+                        time_after_load - time_before_load)
+        elif world_size > 1:
+            logger.info("Model loading took {:.2f} GiB and {:.2f} seconds",
+                        self.model_memory_usage / GiB_bytes * world_size,
                         time_after_load - time_before_load)
 
     def _get_prompt_logprobs_dict(

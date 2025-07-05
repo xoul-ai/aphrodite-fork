@@ -348,9 +348,10 @@ class MLACommonMetadataBuilder(Generic[M]):
             runner.parallel_config)
         self.mla_dims = get_mla_dims(model_config)
         self.aot_schedule = is_aphrodite_fa and (get_flash_attn_version() == 3)
+        is_ampere = current_platform.has_device_capability((8, 0))
 
         # Dont try to access the runner on AMD
-        if self.aot_schedule:
+        if self.aot_schedule or is_ampere:
             self.page_size = self.runner.block_size
 
         if self.chunked_prefill_enabled:
