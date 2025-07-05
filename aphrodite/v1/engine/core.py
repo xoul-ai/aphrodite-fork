@@ -55,8 +55,17 @@ class EngineCore:
                  executor_fail_callback: Optional[Callable] = None):
         assert aphrodite_config.model_config.runner_type != "pooling"
 
-        logger.info("Initializing a V1 LLM engine (v{}) with config: {}\n",
-                    APHRODITE_VERSION, aphrodite_config)
+        display_config = int(os.environ.get("APHRODITE_DISPLAY_CONFIG", "0"))
+        log_level = os.environ.get("APHRODITE_LOG_LEVEL", "INFO")
+
+        if display_config == 1 or log_level == "DEBUG":
+            logger.info("Initializing a V1 LLM engine (v{}) with config: {}\n",
+                        APHRODITE_VERSION, aphrodite_config)
+        else:
+            logger.info(
+                "Initializing a V1 LLM engine (v{}).\n"
+                "Pass APHRODITE_DISPLAY_CONFIG=1 to see the full config.",
+                APHRODITE_VERSION)
 
         self.log_stats = log_stats
 

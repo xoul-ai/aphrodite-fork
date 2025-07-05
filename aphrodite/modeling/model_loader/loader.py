@@ -128,9 +128,10 @@ def _initialize_model(
         with set_current_aphrodite_config(aphrodite_config, check_compile=True):
             return model_class(aphrodite_config=aphrodite_config, prefix=prefix)
 
-    msg = ("Aphrodite model class should accept `aphrodite_config` and `prefix` as "
-           "input arguments. Possibly you have an old-style model class"
-           " registered from out of tree and it is used for new Aphrodite version.")
+    msg = (
+        "Aphrodite model class should accept `aphrodite_config` and `prefix` "
+        "as input arguments. Possibly you have an old-style model class "
+        "registered from out of tree and it is used for new Aphrodite version.")
     warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
     logger.warning(
@@ -234,7 +235,8 @@ class DefaultModelLoader(BaseModelLoader):
 
     def _maybe_download_from_modelscope(
             self, model: str, revision: Optional[str]) -> Optional[str]:
-        """Download model from ModelScope hub if APHRODITE_USE_MODELSCOPE is True.
+        """Download model from ModelScope hub if APHRODITE_USE_MODELSCOPE is
+           True.
 
         Returns the path to the downloaded model, or None if the model is not
         downloaded from ModelScope."""
@@ -409,11 +411,84 @@ class DefaultModelLoader(BaseModelLoader):
         return ((source.prefix + name, tensor)
                 for (name, tensor) in weights_iterator)
 
+    def _get_weights_iterator_with_size(
+        self, source: "Source"
+    ) -> Tuple[Generator[Tuple[str, torch.Tensor], None, None], int]:
+        """Get an iterator for the model weights and calculate total size."""
+        hf_folder, hf_weights_files, use_safetensors = self._prepare_weights(
+            source.model_or_path, source.revision, source.fall_back_to_pt,
+            source.allow_patterns_overrides)
+
+        # Calculate total size by iterating through files
+        total_bytes = 0
+        for file_path in hf_weights_files:
+            if os.path.exists(file_path):
+                total_bytes += os.path.getsize(file_path)
+
+        if self.load_config.load_format == LoadFormat.NPCACHE:
+            # Currently np_cache only support *.bin checkpoints
+            assert use_safetensors is False
+            weights_iterator = np_cache_weights_iterator(
+                source.model_or_path,
+                self.load_config.download_dir,
+                hf_folder,
+                hf_weights_files,
+                self.load_config.use_tqdm_on_load,
+            )
+        elif use_safetensors:
+            if self.load_config.load_format == LoadFormat.FASTSAFETENSORS:
+                weights_iterator = fastsafetensors_weights_iterator(
+                    hf_weights_files,
+                    self.load_config.use_tqdm_on_load,
+                )
+            else:
+                weights_iterator = safetensors_weights_iterator(
+                    hf_weights_files,
+                    self.load_config.use_tqdm_on_load,
+                )
+        else:
+            weights_iterator = pt_weights_iterator(
+                hf_weights_files,
+                self.load_config.use_tqdm_on_load,
+                self.load_config.pt_load_map_location,
+            )
+
+        if current_platform.is_tpu():
+            # In PyTorch XLA, we should call `xm.mark_step` frequently so that
+            # not too many ops are accumulated in the XLA program.
+            import torch_xla.core.xla_model as xm
+
+            def _xla_weights_iterator(iterator: Generator):
+                for weights in iterator:
+                    yield weights
+                    xm.mark_step()
+
+            weights_iterator = _xla_weights_iterator(weights_iterator)
+
+        elif current_platform.is_hpu():
+            import habana_frameworks.torch.core as htcore
+
+            def _hpu_weights_iterator(iterator: Generator):
+                for weights in iterator:
+                    yield weights
+                    htcore.mark_step()
+
+            weights_iterator = _hpu_weights_iterator(weights_iterator)
+
+        if self.counter_before_loading_weights == 0.0:
+            self.counter_before_loading_weights = time.perf_counter()
+        # Apply the prefix.
+        return ((source.prefix + name, tensor)
+                for (name, tensor) in weights_iterator), total_bytes
+
     def get_all_weights(
         self,
         model_config: ModelConfig,
         model: nn.Module,
-    ) -> Generator[Tuple[str, torch.Tensor], None, None]:
+    ) -> Tuple[Iterable[Tuple[str, torch.Tensor]], int]:
+        """
+        Get all weights including primary and secondary sources with total size.
+        """
         primary_weights = DefaultModelLoader.Source(
             model_config.model,
             model_config.revision,
@@ -423,14 +498,26 @@ class DefaultModelLoader(BaseModelLoader):
             allow_patterns_overrides=getattr(model, "allow_patterns_overrides",
                                              None),
         )
-        yield from self._get_weights_iterator(primary_weights)
+        
+        primary_iterator, primary_bytes = self._get_weights_iterator_with_size(
+            primary_weights)
+        total_bytes = primary_bytes
+
+        # Collect all weight iterators and their sizes
+        iterators = [primary_iterator]
 
         secondary_weights = cast(
             Iterable[DefaultModelLoader.Source],
             getattr(model, "secondary_weights", ()),
         )
         for source in secondary_weights:
-            yield from self._get_weights_iterator(source)
+            iterator, bytes_size = self._get_weights_iterator_with_size(source)
+            iterators.append(iterator)
+            total_bytes += bytes_size
+
+        # Chain all iterators together
+        from itertools import chain
+        return chain.from_iterable(iterators), total_bytes
 
     def download_model(self, model_config: ModelConfig) -> None:
         self._prepare_weights(model_config.model,
@@ -447,11 +534,18 @@ class DefaultModelLoader(BaseModelLoader):
                 model = _initialize_model(aphrodite_config=aphrodite_config)
 
             weights_to_load = {name for name, _ in model.named_parameters()}
+            weights_iter, total_bytes = self.get_all_weights(
+                model_config, model)
+            
+            # Import tensor_progress_bar here to avoid circular imports
+            from aphrodite.common.utils import tensor_progress_bar
+            
             loaded_weights = model.load_weights(
-                self.get_all_weights(model_config, model))
+                tensor_progress_bar(
+                    weights_iter, total_bytes, "Loading model weights..."))
             self.counter_after_loading_weights = time.perf_counter()
             if get_tensor_model_parallel_rank() == 0:
-                logger.info(
+                logger.debug(
                     "Loading weights took {:.2f} seconds",
                     self.counter_after_loading_weights -
                     self.counter_before_loading_weights)
@@ -582,8 +676,10 @@ class TensorizerLoader(BaseModelLoader):
                 get_tensor_model_parallel_rank())
 
         if is_aphrodite_tensorized(self.tensorizer_config):
-            return self._load_model_serialized(aphrodite_config=aphrodite_config)
-        return self._load_model_serialized_cpu(aphrodite_config=aphrodite_config)
+            return self._load_model_serialized(
+                aphrodite_config=aphrodite_config)
+        return self._load_model_serialized_cpu(
+            aphrodite_config=aphrodite_config)
 
     @staticmethod
     def save_model(
@@ -889,8 +985,8 @@ class BitsAndBytesModelLoader(BaseModelLoader):
                 self.load_config.pt_load_map_location,
             )
         for org_name, param in iterator:
-            # mapping weight names from transformers to aphrodite while preserving
-            # original names.
+            # mapping weight names from transformers to aphrodite while
+            # preserving original names.
             mapped_name = self.weight_mapper(org_name)
             yield org_name, mapped_name, param
 
@@ -1155,8 +1251,9 @@ class BitsAndBytesModelLoader(BaseModelLoader):
 
         # For some models like Molmo, we need to use hf_to_aphrodite_mapper
         # to ensure correct loading of weights.
-        if hf_to_aphrodite_mapper := getattr(model, "hf_to_aphrodite_mapper", None):
-            self.weight_mapper = lambda name: hf_to_aphrodite_mapper._map_name(name)
+        if hf_to_aphrodite_mapper := getattr(model, "hf_to_aphrodite_mapper",
+                                             None):
+            self.weight_mapper = lambda name: hf_to_aphrodite_mapper._map_name(name)  # noqa: E501
 
         # Modules whose weights might have fused on disk
         # we need their output_sizes to make shard in flight correctly with TP

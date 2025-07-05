@@ -3,13 +3,15 @@ import dataclasses
 import os
 import pprint
 import time
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple
 from unittest.mock import patch
 
 import torch
 import torch.fx as fx
 from loguru import logger
+from rich.progress import (BarColumn, Progress, TaskProgressColumn, TextColumn,
+                           TimeRemainingColumn)
 
 import aphrodite.common.envs as envs
 from aphrodite.common.config import AphroditeConfig, CompilationConfig
@@ -20,6 +22,19 @@ from .counter import compilation_counter
 from .inductor_pass import InductorPass
 from .monitor import end_monitoring_torch_compile
 from .pass_manager import PostGradPassManager
+
+
+@contextmanager
+def suppress_logs_during_progress():
+    """Temporarily suppress loguru output during progress bar display."""
+    # Add a temporary handler that does nothing
+    temp_handler_id = logger.add(lambda msg: None, level="DEBUG")
+    
+    try:
+        yield
+    finally:
+        # Remove the temporary handler
+        logger.remove(temp_handler_id)
 
 
 class CompilerManager:
@@ -113,7 +128,7 @@ class CompilerManager:
                 # there can be multiple graphs due to piecewise compilation.
                 now = time.time()
                 elapsed = now - compilation_start_time
-                logger.info(
+                logger.debug(
                     "Directly load the compiled graph(s) for shape {} "
                     "from the cache, took {:.3f} s", str(runtime_shape),
                     elapsed)
@@ -133,7 +148,7 @@ class CompilerManager:
             self.is_cache_updated = True
             if graph_index == 0:
                 # adds some info logging for the first graph
-                logger.info("Cache the graph of shape {} for later use",
+                logger.debug("Cache the graph of shape {} for later use",
                             str(runtime_shape))
             logger.debug(
                 "store the {}-th graph for shape {} from {} via handle {}",
@@ -242,6 +257,12 @@ class PiecewiseCompileInterpreter(torch.fx.Interpreter):
         self.aphrodite_config = aphrodite_config
         self.aphrodite_backend = aphrodite_backend
 
+        # Initialize progress tracking
+        self.compiled_count = 0
+        self.total_to_compile = len(compile_submod_names)
+        self.progress = None
+        self.progress_task = None
+
     def run(self, *args):
         fake_args = [
             self.fake_mode.from_tensor(t) if isinstance(t, torch.Tensor) else t
@@ -262,16 +283,42 @@ class PiecewiseCompileInterpreter(torch.fx.Interpreter):
             sym_shape_indices = [
                 i for i, x in enumerate(args) if isinstance(x, torch.SymInt)
             ]
+            
+                        # Initialize progress bar on first compilation
+            if self.progress is None:
+                with suppress_logs_during_progress():
+                    self.progress = Progress(
+                        TextColumn("[bold blue]{task.description}"),
+                        BarColumn(),
+                        TaskProgressColumn(),
+                        TextColumn("({task.elapsed:.1f}s)"),
+                        TimeRemainingColumn(),
+                        console=None,
+                    )
+                    self.progress.start()
+                    self.progress_task = self.progress.add_task(
+                        "Compiling piecewise graphs",
+                        total=self.total_to_compile)
+            
+            # Update progress description
+            if self.progress_task is not None:
+                with suppress_logs_during_progress():
+                    self.progress.update(
+                        self.progress_task,
+                        description=f"torch.compile ({self.compiled_count + 1}/"
+                        f"{self.total_to_compile})")
+            
             global compilation_start_time
-            compiled_graph_for_general_shape = self.aphrodite_backend.\
-                compiler_manager.compile(
-                submod,
-                args,
-                self.compilation_config.inductor_compile_config,
-                self.compilation_config,
-                graph_index=index,
-                num_graphs=len(self.compile_submod_names),
-                runtime_shape=None)
+            with suppress_logs_during_progress():
+                compiled_graph_for_general_shape = self.aphrodite_backend.\
+                    compiler_manager.compile(
+                    submod,
+                    args,
+                    self.compilation_config.inductor_compile_config,
+                    self.compilation_config,
+                    graph_index=index,
+                    num_graphs=len(self.compile_submod_names),
+                    runtime_shape=None)
 
             self.module.__dict__[target] = PiecewiseBackend(
                 submod, self.aphrodite_config, self.graph_pool, index,
@@ -279,6 +326,20 @@ class PiecewiseCompileInterpreter(torch.fx.Interpreter):
                 compiled_graph_for_general_shape, self.aphrodite_backend)
 
             compilation_counter.num_piecewise_capturable_graphs_seen += 1
+            
+            # Advance progress
+            self.compiled_count += 1
+            if self.progress_task is not None:
+                with suppress_logs_during_progress():
+                    self.progress.advance(self.progress_task)
+                
+            # Close progress bar when done
+            if (self.compiled_count >= self.total_to_compile and
+                self.progress is not None):
+                with suppress_logs_during_progress():
+                    self.progress.stop()
+                self.progress = None
+                self.progress_task = None
 
         return output
 
@@ -612,6 +673,12 @@ class PiecewiseBackend:
                 need_to_compile=shape in self.compile_sizes,
                 use_cudagraph=shape in self.cudagraph_capture_sizes,
             )
+            
+        # Initialize progress tracking for shape compilation
+        self.shape_progress = None
+        self.shape_progress_task = None
+        self.total_shapes_to_compile = len(self.compile_sizes)
+        self.compiled_shapes_count = 0
 
     def check_for_ending_compilation(self):
         if self.is_last_graph and not self.to_be_compiled_sizes:
@@ -637,17 +704,57 @@ class PiecewiseBackend:
             entry.runnable = self.compiled_graph_for_general_shape
 
         if entry.need_to_compile and not entry.compiled:
+            # Initialize shape compilation progress bar on first compilation
+            if self.shape_progress is None and self.total_shapes_to_compile > 0:
+                with suppress_logs_during_progress():
+                    self.shape_progress = Progress(
+                        TextColumn("[bold green]{task.description}"),
+                        BarColumn(),
+                        TaskProgressColumn(),
+                        TextColumn("({task.elapsed:.1f}s)"),
+                        TimeRemainingColumn(),
+                        console=None,
+                    )
+                    self.shape_progress.start()
+                    self.shape_progress_task = self.shape_progress.add_task(
+                        "Compiling for specific shapes",
+                        total=self.total_shapes_to_compile)
+            
+            # Update progress description
+            if self.shape_progress_task is not None:
+                with suppress_logs_during_progress():
+                    self.shape_progress.update(
+                        self.shape_progress_task,
+                        description=f"Compiling shape {runtime_shape} "
+                        f"({self.compiled_shapes_count + 1}/"
+                        f"{self.total_shapes_to_compile})")
+            
             entry.compiled = True
             self.to_be_compiled_sizes.remove(runtime_shape)
             # args are real arguments
-            entry.runnable = self.aphrodite_backend.compiler_manager.compile(
-                self.graph,
-                args,
-                self.compilation_config.inductor_compile_config,
-                self.compilation_config,
-                graph_index=self.piecewise_compile_index,
-                num_graphs=self.total_piecewise_compiles,
-                runtime_shape=runtime_shape)
+            with suppress_logs_during_progress():
+                entry.runnable = self.aphrodite_backend.compiler_manager.compile(  # noqa
+                    self.graph,
+                    args,
+                    self.compilation_config.inductor_compile_config,
+                    self.compilation_config,
+                    graph_index=self.piecewise_compile_index,
+                    num_graphs=self.total_piecewise_compiles,
+                    runtime_shape=runtime_shape)
+
+            # Advance shape compilation progress
+            self.compiled_shapes_count += 1
+            if self.shape_progress_task is not None:
+                with suppress_logs_during_progress():
+                    self.shape_progress.advance(self.shape_progress_task)
+                
+            # Close shape progress bar when done
+            if (self.compiled_shapes_count >= self.total_shapes_to_compile and
+                self.shape_progress is not None):
+                with suppress_logs_during_progress():
+                    self.shape_progress.stop()
+                self.shape_progress = None
+                self.shape_progress_task = None
 
             # finished compilations for all required shapes
             if self.is_last_graph and not self.to_be_compiled_sizes:

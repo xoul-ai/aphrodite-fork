@@ -1,4 +1,3 @@
-
 """
 This file implements common components for MLA implementations.
 
@@ -217,7 +216,6 @@ if TYPE_CHECKING:
     from aphrodite.v1.core.sched.output import SchedulerOutput
     from aphrodite.v1.worker.gpu_input_batch import InputBatch
     from aphrodite.v1.worker.gpu_model_runner import GPUModelRunner
-
 
 
 class MLACommonBackend(AttentionBackend):

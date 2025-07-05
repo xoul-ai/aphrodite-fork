@@ -14,6 +14,7 @@ import importlib.metadata
 import importlib.util
 import inspect
 import ipaddress
+import math
 import multiprocessing
 import os
 import pickle
@@ -60,6 +61,8 @@ import zmq.asyncio
 from loguru import logger
 from packaging import version
 from packaging.version import Version
+from rich.progress import (BarColumn, Progress, SpinnerColumn, TextColumn,
+                           TimeElapsedColumn)
 from torch.library import Library
 from typing_extensions import Never, ParamSpec, TypeIs, assert_never
 
@@ -70,7 +73,7 @@ import aphrodite.triton_utils  # noqa: F401
 from aphrodite.common.logger import enable_trace_function_call
 
 if TYPE_CHECKING:
-    from aphrodite.common.config import ModelConfig, AphroditeConfig
+    from aphrodite.common.config import AphroditeConfig, ModelConfig
 
 # Exception strings for non-implemented encoder/decoder scenarios
 
@@ -1213,6 +1216,7 @@ def _cuda_device_count_stateless(
     # torch/cuda/__init__.py#L831C1-L831C17
     import torch.cuda
     import torch.version
+
     from aphrodite.platforms import current_platform
     if not torch.cuda._is_compiled():
         return 0
@@ -2548,7 +2552,7 @@ def warn_for_unimplemented_methods(cls: type[T]) -> type[T]:
         if unimplemented_methods:
             method_names = ','.join(unimplemented_methods)
             msg = (f"Methods {method_names} not implemented in {self}")
-            logger.warning(msg)
+            logger.debug(msg)
 
     @wraps(original_init)
     def wrapped_init(self, *args, **kwargs) -> None:
@@ -2719,3 +2723,28 @@ def is_torch_equal_or_newer(target: str) -> bool:
     except Exception:
         # Fallback to PKG-INFO to load the package info, needed by the doc gen.
         return Version(importlib.metadata.version('torch')) >= Version(target)
+
+def tensor_progress_bar(iterable:Iterable[Tuple[str, torch.Tensor]],
+                        final_bytes:int, desc="Processing"):
+    from aphrodite.distributed.parallel_state import (
+        get_tensor_model_parallel_rank)
+    show_progress = get_tensor_model_parallel_rank() == 0
+    units = 1024 ** (int(math.log2(final_bytes)) // 10)
+
+    if show_progress:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            # MofNCompleteColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            TextColumn("{task.completed:.2f}/{task.total:.2f} GiB"),
+            TimeElapsedColumn(),
+        ) as progress:
+            task = progress.add_task(f"[cyan]{desc}", total=final_bytes/units)
+            for item in iterable:
+                steps = item[1].element_size() * item[1].nelement() / units
+                yield item
+                progress.update(task, advance=steps)
+    else:
+        yield from iterable

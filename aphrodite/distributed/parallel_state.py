@@ -1000,7 +1000,7 @@ def initialize_model_parallel(
                                     backend,
                                     group_name="dp")
 
-    logger.info(
+    logger.debug(
         "rank {} in world size {} is assigned as "
         "DP rank {}, PP rank {}, TP rank {}", rank, world_size,
         _DP.rank_in_group, _PP.rank_in_group, _TP.rank_in_group)

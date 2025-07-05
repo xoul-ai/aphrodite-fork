@@ -61,7 +61,6 @@ else:
     xgr = LazyLoader("xgr", globals(), "xgrammar")
 
 
-
 class GPUModelRunner(LoRAModelRunnerMixin):
 
     def __init__(
@@ -203,8 +202,8 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         # self.cudagraph_batch_sizes sorts in ascending order.
         # The batch sizes in the config are in descending order.
         self.cudagraph_batch_sizes = list(
-            reversed(
-                self.aphrodite_config.compilation_config.cudagraph_capture_sizes))
+            reversed(self.aphrodite_config.compilation_config.
+                     cudagraph_capture_sizes))
 
         # Cache the device properties.
         self.device_properties = torch.cuda.get_device_properties(self.device)
@@ -1721,20 +1720,19 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         with graph_capture(device=self.device):
             if get_tensor_model_parallel_rank() == 0:
                 with Progress(
-                    TextColumn("[bold blue]{task.description}"),
-                    BarColumn(),
-                    TaskProgressColumn(),
-                    TimeRemainingColumn(),
-                    console=None,
+                        TextColumn("[bold blue]{task.description}"),
+                        BarColumn(),
+                        TaskProgressColumn(),
+                        TimeRemainingColumn(),
+                        console=None,
                 ) as progress:
-                    task = progress.add_task(
-                        "Capturing CUDA graphs",
-                        total=total_operations
-                    )
+                    task = progress.add_task("Capturing CUDA graphs",
+                                             total=total_operations)
 
                     for num_tokens in reversed(self.cudagraph_batch_sizes):
-                        for _ in range(self.aphrodite_config.compilation_config.
-                                       cudagraph_num_of_warmups):
+                        for _ in range(
+                                self.aphrodite_config.compilation_config.
+                                cudagraph_num_of_warmups):
                             self._dummy_run(num_tokens)
                             progress.advance(task)
                         self._dummy_run(num_tokens)
@@ -1755,7 +1753,7 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         if get_tensor_model_parallel_rank() == 0:
             logger.info(
                 "Graph capturing finished in {:.0f} secs, took {:.2f} GiB",
-                 elapsed_time, cuda_graph_size / (1 << 30))
+                elapsed_time, cuda_graph_size / (1 << 30))
 
     def initialize_kv_cache(self, kv_cache_config: KVCacheConfig) -> None:
         """
@@ -1812,7 +1810,8 @@ class GPUModelRunner(LoRAModelRunnerMixin):
             format. Layers that do not need KV cache are not included.
         """
 
-        layers = get_layers_from_aphrodite_config(self.aphrodite_config, Attention)
+        layers = get_layers_from_aphrodite_config(self.aphrodite_config,
+                                                  Attention)
         block_size = self.aphrodite_config.cache_config.block_size
         use_mla = self.aphrodite_config.model_config.use_mla
         kv_cache_spec: dict[str, KVCacheSpec] = {}

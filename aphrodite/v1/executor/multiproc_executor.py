@@ -272,7 +272,8 @@ class WorkerProc:
         input_shm_handle: Handle,
     ):
         self.rank = rank
-        wrapper = WorkerWrapperBase(aphrodite_config=aphrodite_config, rpc_rank=rank)
+        wrapper = WorkerWrapperBase(aphrodite_config=aphrodite_config,
+                                    rpc_rank=rank)
         # TODO: move `init_worker` to executor level as a collective rpc call
         all_kwargs: list[dict] = [
             {} for _ in range(aphrodite_config.parallel_config.world_size)

@@ -431,34 +431,11 @@ def safetensors_weights_iterator(
     use_tqdm_on_load: bool,
 ) -> Generator[Tuple[str, torch.Tensor], None, None]:
     """Iterate over the weights in the model safetensor files."""
-    if not enable_tqdm(
-        use_tqdm_on_load) or get_tensor_model_parallel_rank() != 0:
-        # If progress bar is disabled or not rank 0, iterate without it
-        for st_file in hf_weights_files:
-            with safe_open(st_file, framework="pt") as f:
-                for name in f.keys():  # noqa: SIM118
-                    param = f.get_tensor(name)
-                    yield name, param
-        return
-
-    with Progress(
-        TextColumn("[bold blue]{task.description}"),
-        BarColumn(),
-        TaskProgressColumn(),
-        TimeRemainingColumn(),
-        console=None,
-    ) as progress:
-        task = progress.add_task(
-            "Loading safetensors checkpoint shards",
-            total=len(hf_weights_files)
-        )
-
-        for st_file in hf_weights_files:
-            with safe_open(st_file, framework="pt") as f:
-                for name in f.keys():  # noqa: SIM118
-                    param = f.get_tensor(name)
-                    yield name, param
-            progress.advance(task)
+    for st_file in hf_weights_files:
+        with safe_open(st_file, framework="pt") as f:
+            for name in f.keys():  # noqa: SIM118
+                param = f.get_tensor(name)
+                yield name, param
 
 
 def runai_safetensors_weights_iterator(
