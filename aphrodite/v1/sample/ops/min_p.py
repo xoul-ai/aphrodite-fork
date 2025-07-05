@@ -17,9 +17,7 @@ def min_p(
     # Convert logits to probability distribution
     probability_values = torch.nn.functional.softmax(logits, dim=-1)
     # Calculate maximum probabilities per sequence
-    max_probabilities = torch.amax(probability_values,
-                                    dim=-1,
-                                    keepdim=True)
+    max_probabilities = torch.amax(probability_values, dim=-1, keepdim=True)
     # Reshape min_p for broadcasting
     adjusted_min_p = min_p.unsqueeze(1) * max_probabilities
     # Identify valid tokens using threshold comparison

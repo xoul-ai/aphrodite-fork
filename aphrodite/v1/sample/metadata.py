@@ -38,6 +38,29 @@ class SamplingMetadata:
     # Tail-Free Sampling
     tfs: Optional[torch.Tensor]
 
+    # Eta Cutoff
+    eta_cutoff: Optional[torch.Tensor]
+
+    # Epsilon Cutoff
+    epsilon_cutoff: Optional[torch.Tensor]
+
+    # Typical Sampling
+    typical_p: Optional[torch.Tensor]
+
+    # Quadratic Sampling
+    quadratic_smoothing_factor: Optional[torch.Tensor]
+    quadratic_smoothing_curve: Optional[torch.Tensor]
+
+    # XTC Sampling
+    xtc_threshold: Optional[torch.Tensor]
+    xtc_probability: Optional[torch.Tensor]
+
+    # Top-nsigma Sampling
+    top_nsigma: Optional[torch.Tensor]
+
+    # Skew
+    skew: Optional[torch.Tensor]
+
     generators: dict[int, torch.Generator]
 
     # None means no logprobs, 0 means sampled token logprobs only

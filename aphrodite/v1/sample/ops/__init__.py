@@ -5,17 +5,24 @@ from aphrodite.common.utils import (is_pin_memory_available,
 from aphrodite.v1.sample.metadata import SamplingMetadata
 from aphrodite.v1.sample.ops.bad_words import apply_bad_words
 from aphrodite.v1.sample.ops.dry import apply_all_dry
+from aphrodite.v1.sample.ops.epsilon_cutoff import epsilon_cutoff
+from aphrodite.v1.sample.ops.eta_cutoff import eta_cutoff
 from aphrodite.v1.sample.ops.min_p import min_p
 from aphrodite.v1.sample.ops.no_repeat_ngram import no_repeat_ngram
 from aphrodite.v1.sample.ops.penalties import (apply_all_penalties,
                                                apply_min_token_penalties)
+from aphrodite.v1.sample.ops.quadratic import quadratic
+from aphrodite.v1.sample.ops.skew import skew
 from aphrodite.v1.sample.ops.tfs import tfs
 from aphrodite.v1.sample.ops.top_a import top_a
+from aphrodite.v1.sample.ops.top_nsigma import top_nsigma
+from aphrodite.v1.sample.ops.typical_p import typical_p
+from aphrodite.v1.sample.ops.xtc import xtc
 
 
 class SamplingOps:
     """Handles all sampling operations applied to logits."""
-    
+
     def apply_penalties(
         self,
         logits: torch.Tensor,
@@ -43,8 +50,8 @@ class SamplingOps:
         sampling_metadata: SamplingMetadata,
     ) -> torch.Tensor:
         """Apply DRY sampling to the logits."""
-        if (sampling_metadata.dry_multiplier is not None and
-            sampling_metadata.prompt_token_ids is not None):
+        if (sampling_metadata.dry_multiplier is not None
+                and sampling_metadata.prompt_token_ids is not None):
 
             # Convert output_token_ids to tensor
             _, vocab_size = logits.shape
@@ -57,13 +64,13 @@ class SamplingOps:
             ).to(logits.device, non_blocking=True)
 
             # Ensure all required tensors are not None
-            if (sampling_metadata.dry_base is not None and
-                sampling_metadata.dry_allowed_length is not None and
-                sampling_metadata.dry_sequence_breaker_ids is not None and
-                sampling_metadata.dry_ranges is not None and
-                sampling_metadata.dry_max_ngram is not None and
-                sampling_metadata.dry_max_occurrences is not None and
-                sampling_metadata.dry_early_exit_match_len is not None):
+            if (sampling_metadata.dry_base is not None
+                    and sampling_metadata.dry_allowed_length is not None
+                    and sampling_metadata.dry_sequence_breaker_ids is not None
+                    and sampling_metadata.dry_ranges is not None
+                    and sampling_metadata.dry_max_ngram is not None
+                    and sampling_metadata.dry_max_occurrences is not None and
+                    sampling_metadata.dry_early_exit_match_len is not None):
 
                 logits = apply_all_dry(
                     logits,
@@ -107,6 +114,56 @@ class SamplingOps:
         sampling_metadata: SamplingMetadata,
     ) -> torch.Tensor:
         return tfs(logits, sampling_metadata)
+
+    def apply_eta_cutoff(
+
+        self,
+        logits: torch.Tensor,
+        sampling_metadata: SamplingMetadata,
+    ) -> torch.Tensor:
+        return eta_cutoff(logits, sampling_metadata)
+
+    def apply_epsilon_cutoff(
+        self,
+        logits: torch.Tensor,
+        sampling_metadata: SamplingMetadata,
+    ) -> torch.Tensor:
+        return epsilon_cutoff(logits, sampling_metadata)
+
+    def apply_typical_p(
+        self,
+        logits: torch.Tensor,
+        sampling_metadata: SamplingMetadata,
+    ) -> torch.Tensor:
+        return typical_p(logits, sampling_metadata)
+
+    def apply_quadratic(
+        self,
+        logits: torch.Tensor,
+        sampling_metadata: SamplingMetadata,
+    ) -> torch.Tensor:
+        return quadratic(logits, sampling_metadata)
+
+    def apply_xtc(
+        self,
+        logits: torch.Tensor,
+        sampling_metadata: SamplingMetadata,
+    ) -> torch.Tensor:
+        return xtc(logits, sampling_metadata)
+
+    def apply_top_nsigma(
+        self,
+        logits: torch.Tensor,
+        sampling_metadata: SamplingMetadata,
+    ) -> torch.Tensor:
+        return top_nsigma(logits, sampling_metadata)
+
+    def apply_skew(
+        self,
+        logits: torch.Tensor,
+        sampling_metadata: SamplingMetadata,
+    ) -> torch.Tensor:
+        return skew(logits, sampling_metadata)
 
     def apply_logits_bias(
         self,

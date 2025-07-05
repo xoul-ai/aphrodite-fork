@@ -6,9 +6,8 @@ from aphrodite.v1.sample.metadata import SamplingMetadata
 
 
 def _get_ngrams(
-    ngram_size: int,
-    prev_input_ids: torch.Tensor
-) -> dict[tuple[int, ...], list[int]]:
+        ngram_size: int,
+        prev_input_ids: torch.Tensor) -> dict[tuple[int, ...], list[int]]:
     """Get dictionary of ngrams and the tokens that followed them.
 
     Args:
@@ -31,12 +30,10 @@ def _get_ngrams(
 
     return generated_ngrams
 
-def _get_generated_ngrams(
-    banned_ngrams: dict[tuple[int, ...], list[int]],
-    prev_input_ids: torch.Tensor,
-    ngram_size: int,
-    cur_len: int
-) -> list[int]:
+
+def _get_generated_ngrams(banned_ngrams: dict[tuple[int, ...], list[int]],
+                          prev_input_ids: torch.Tensor, ngram_size: int,
+                          cur_len: int) -> list[int]:
     """Get list of tokens that would create a repeated ngram if generated next.
 
     Args:
@@ -54,11 +51,9 @@ def _get_generated_ngrams(
 
     return banned_ngrams.get(current_ngram, [])
 
-def _calc_banned_ngram_tokens(
-    ngram_size: int,
-    prev_input_ids: torch.Tensor,
-    cur_len: int
-) -> list[int]:
+
+def _calc_banned_ngram_tokens(ngram_size: int, prev_input_ids: torch.Tensor,
+                              cur_len: int) -> list[int]:
     """Calculate tokens that would create repeated ngrams if generated next.
 
     Args:
@@ -74,14 +69,11 @@ def _calc_banned_ngram_tokens(
 
     generated_ngrams = _get_ngrams(ngram_size, prev_input_ids)
 
-    banned_tokens = _get_generated_ngrams(
-        generated_ngrams,
-        prev_input_ids,
-        ngram_size,
-        cur_len
-    )
+    banned_tokens = _get_generated_ngrams(generated_ngrams, prev_input_ids,
+                                          ngram_size, cur_len)
 
     return banned_tokens
+
 
 def no_repeat_ngram(
     logits: torch.Tensor,
@@ -128,11 +120,9 @@ def no_repeat_ngram(
         if cur_len < size:
             continue
 
-        banned_tokens = _calc_banned_ngram_tokens(
-            ngram_size=size,
-            prev_input_ids=input_ids,
-            cur_len=cur_len-1
-        )
+        banned_tokens = _calc_banned_ngram_tokens(ngram_size=size,
+                                                  prev_input_ids=input_ids,
+                                                  cur_len=cur_len - 1)
 
         if banned_tokens:
             logits[i, banned_tokens] = -float("inf")
