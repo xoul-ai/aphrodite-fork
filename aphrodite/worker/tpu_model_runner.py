@@ -146,7 +146,7 @@ class TPUModelRunner(ModelRunnerBase[ModelInputForTPU]):
         # the embedding weights.
         xm_tp_rank = xr.global_ordinal()
         with patch(
-                "aphrodite.model_executor.layers.vocab_parallel_embedding."
+                "aphrodite.modeling.layers.vocab_parallel_embedding."
                 "get_tensor_model_parallel_rank",
                 return_value=xm_tp_rank):
             model = get_model(aphrodite_config=self.aphrodite_config)

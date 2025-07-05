@@ -230,7 +230,7 @@ class MultiModalRegistry:
 
     def _get_model_cls(self, model_config: "ModelConfig"):
         # Avoid circular import
-        from aphrodite.model_executor.model_loader import (
+        from aphrodite.modeling.model_loader import (
             get_model_architecture)
 
         model_cls, _ = get_model_architecture(model_config)

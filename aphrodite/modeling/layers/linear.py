@@ -754,7 +754,7 @@ class MergedColumnParallelLinear(ColumnParallelLinear):
         tp_size = get_tensor_model_parallel_world_size()
 
         if isinstance(param, BlockQuantScaleParameter):
-            from aphrodite.model_executor.layers.quantization.fp8 import (
+            from aphrodite.quantization.fp8 import (
                 Fp8LinearMethod, Fp8MoEMethod)
             assert self.quant_method is not None
             assert isinstance(self.quant_method,

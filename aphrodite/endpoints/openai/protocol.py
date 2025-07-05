@@ -370,6 +370,10 @@ class ChatCompletionRequest(OpenAIBaseModel):
             "Whether to include the stop string in the output. "
             "This is only applied when the stop or stop_token_ids is set."),
     )
+    mm_processor_kwargs: Optional[dict[str, Any]] = Field(
+        default=None,
+        description=("Additional kwargs to pass to the HF processor."),
+    )
     guided_json: Optional[Union[str, dict, BaseModel]] = Field(
         default=None,
         description=("If specified, the output will follow the JSON schema."),
@@ -388,6 +392,11 @@ class ChatCompletionRequest(OpenAIBaseModel):
         default=None,
         description=(
             "If specified, the output will follow the context free grammar."),
+    )
+    structural_tag: Optional[str] = Field(
+        default=None,
+        description=(
+            "If specified, the output will follow the structural tag schema."),
     )
     guided_decoding_backend: Optional[str] = Field(
         default=None,
