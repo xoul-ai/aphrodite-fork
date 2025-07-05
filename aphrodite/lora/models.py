@@ -107,7 +107,6 @@ class LoRAModel(AdapterModel):
     def check_lora_name(self, lora_name: str) -> bool:
         return lora_name in self.loras
 
-    # (yard1): TODO see if we can derive target_embedding_padding automatically
     @classmethod
     def from_lora_tensors(
         cls,
@@ -125,9 +124,19 @@ class LoRAModel(AdapterModel):
         """Create a LoRAModel from a dictionary of tensors."""
         pin_memory = str(device) == "cpu" and is_pin_memory_available()
         loras: Dict[str, LoRALayerWeights] = {}
+        skipped_weights = []
+
         for tensor_name, tensor in tensors.items():
-            module_name, is_lora_a, is_bias = parse_fine_tuned_lora_name(
-                tensor_name, weights_mapper)
+            parse_result = parse_fine_tuned_lora_name(tensor_name,
+                                                      weights_mapper)
+
+            # Skip unsupported weights instead of failing
+            if parse_result is None:
+                skipped_weights.append(tensor_name)
+                continue
+
+            module_name, is_lora_a, is_bias = parse_result
+
             if module_name not in loras:
                 lora_embeddings_tensor = None
                 if embeddings:
@@ -174,13 +183,21 @@ class LoRAModel(AdapterModel):
                     loras[module_name].lora_b = loras[
                         module_name].lora_b.pin_memory()
 
+        # Log skipped weights for debugging
+        if skipped_weights:
+            logger.warning(
+                f"Skipped {len(skipped_weights)} unsupported LoRA weights: "
+                f"{skipped_weights[:5]}{'...' if len(skipped_weights) > 5 else ''}"
+            )
+
         for lora in loras.values():
             lora.optimize()
 
-        return cls(lora_model_id,
-                   peft_helper.r,
-                   loras,
-                   scaling_factor=peft_helper.aphrodite_long_context_scaling_factor)
+        return cls(
+            lora_model_id,
+            peft_helper.r,
+            loras,
+            scaling_factor=peft_helper.aphrodite_long_context_scaling_factor)
 
     @classmethod
     def from_local_checkpoint(
@@ -225,15 +242,19 @@ class LoRAModel(AdapterModel):
             # Find unexpected modules.
             # Use safetensor key as a source of truth to find expected modules.
             # in peft if you have target_modules A, B, C and C does not exist
-            # in the model it won’t error and model will be trained with A, B
-            # loraified. C won’t exist in the safetensor but it will exist in
+            # in the model it won't error and model will be trained with A, B
+            # loraified. C won't exist in the safetensor but it will exist in
             # the target_modules of the adapter_config.json.
             unexpected_modules = []
             with safetensors.safe_open(lora_tensor_path,
                                        framework="pt") as f:  # type: ignore
                 for lora_module in f.keys():  # noqa
-                    module_name, _, _ = parse_fine_tuned_lora_name(
+                    parse_result = parse_fine_tuned_lora_name(
                         lora_module, weights_mapper)
+                    if parse_result is None:
+                        # Skip unsupported weights
+                        continue
+                    module_name, _, _ = parse_result
                     part_name = module_name.split(".")[-1]
                     if part_name not in expected_lora_modules:
                         unexpected_modules.append(module_name)
@@ -285,10 +306,14 @@ class LoRAModel(AdapterModel):
                                     map_location=device,
                                     weights_only=True)
 
-        return cls.from_lora_tensors(
-            lora_model_id=get_lora_id()
-            if lora_model_id is None else lora_model_id,
-            tensors=tensors,
+        if lora_model_id is None:
+            global _GLOBAL_LORA_ID
+            _GLOBAL_LORA_ID += 1
+            lora_model_id = _GLOBAL_LORA_ID
+
+        lora = cls.from_lora_tensors(
+            lora_model_id,
+            tensors,
             peft_helper=peft_helper,
             device=device,
             dtype=dtype,
@@ -296,7 +321,16 @@ class LoRAModel(AdapterModel):
             target_embedding_padding=target_embedding_padding,
             embedding_modules=embedding_modules,
             embedding_padding_modules=embedding_padding_modules,
-            weights_mapper=weights_mapper)
+            weights_mapper=weights_mapper,
+        )
+
+        # Check if any valid LoRA weights were loaded
+        if not lora.loras:
+            raise ValueError(
+                f"No valid LoRA weights found in {lora_dir}. "
+                f"All weights were either unsupported or filtered out.")
+
+        return lora
 
 
 class LoRAModelManager(AdapterModelManager):

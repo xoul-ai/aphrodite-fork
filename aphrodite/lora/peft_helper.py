@@ -4,7 +4,7 @@ import json
 import math
 import os
 from dataclasses import MISSING, dataclass, field, fields
-from typing import List, Literal, Optional, Union
+from typing import Literal, Optional, Union
 
 from loguru import logger
 
@@ -36,25 +36,28 @@ class PEFTHelper:
     # Extra aphrodite field, start with 'aphrodite_' to avoid conflict
     aphrodite_lora_scaling_factor: float = field(default=1.0)
     aphrodite_max_position_embeddings: Optional[int] = field(default=False)
-    aphrodite_long_context_scaling_factor: Optional[float] = field(default=None)
+    aphrodite_long_context_scaling_factor: Optional[float] = field(
+        default=None)
 
-    def _validate_features(self) -> List[str]:
+    def _validate_features(self) -> tuple[list[str], list[str]]:
         """
         Check if there are any unsupported LoRA features.
         """
         error_msg = []
+        warning_msg = []
+
         if self.modules_to_save:
-            error_msg.append("Aphrodite only supports modules_to_save "
-                             "being None.")
+            warning_msg.append(
+                "Aphrodite only supports modules_to_save being None.")
         if self.use_dora:
             error_msg.append("Aphrodite does not yet support DoRA.")
-        return error_msg
+        return error_msg, warning_msg
 
     def __post_init__(self):
         if self.use_rslora:
             log_once("INFO", "Loading LoRA weights trained with rsLoRA.")
-            self.aphrodite_lora_scaling_factor = (
-                self.lora_alpha / math.sqrt(self.r))
+            self.aphrodite_lora_scaling_factor = (self.lora_alpha /
+                                                  math.sqrt(self.r))
         else:
             self.aphrodite_lora_scaling_factor = self.lora_alpha / self.r
         if self.context_length:
@@ -103,7 +106,7 @@ class PEFTHelper:
         Validates the LoRA configuration settings against application 
         constraints and requirements.
         """
-        error_msg = self._validate_features()
+        error_msg, warning_msg = self._validate_features()
         if self.r > lora_config.max_lora_rank:
             error_msg.append(
                 f"LoRA rank {self.r} is greater than max_lora_rank"
@@ -113,3 +116,7 @@ class PEFTHelper:
                 "Adapter bias cannot be used without bias_enabled.")
         if error_msg:
             raise ValueError(f"{' '.join(error_msg)}")
+        if warning_msg:
+            logger.warning(
+                "Aphrodite LoRA configuration has some unsupported features: "
+                "{}", " ".join(warning_msg))

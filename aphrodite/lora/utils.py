@@ -90,9 +90,9 @@ def replace_submodule(model: nn.Module, module_name: str,
 
 
 def parse_fine_tuned_lora_name(
-        name: str,
-        weights_mapper: Optional[WeightsMapper] = None
-) -> Tuple[str, bool, bool]:
+    name: str,
+    weights_mapper: Optional[WeightsMapper] = None
+) -> Optional[Tuple[str, bool, bool]]:
     """Parse the name of lora weights.
 
     args:
@@ -101,10 +101,11 @@ def parse_fine_tuned_lora_name(
         weights_mapper: maps the name of weight, e.g.
             `model.` -> `language_model.model.`,
     return:
-        Tuple(module_name, is_lora_a):
+        Tuple(module_name, is_lora_a, is_bias) or None if unsupported:
             module_name: the name of the module, e.g. model.dense1,
             is_lora_a whether the tensor is lora_a or lora_b.
             is_bias whether the tensor is lora bias.
+            None if the weight name is not a supported LoRA weight format.
     """
 
     # LoRA weight qualified name usually starts with `base_model.model.`,
@@ -135,7 +136,20 @@ def parse_fine_tuned_lora_name(
         new_name = ".".join(parts[start_index:-2])
         return new_name, False, True
 
-    raise ValueError(f"{name} is unsupported LoRA weight")
+    # Return None for unsupported weights instead of raising an exception
+    return None
+
+
+def is_supported_lora_weight(name: str) -> bool:
+    """Check if a weight name follows a supported LoRA format.
+    
+    args:
+        name: the name of the weight to check
+        
+    return:
+        True if the weight name follows a supported LoRA format, False otherwise.
+    """
+    return parse_fine_tuned_lora_name(name) is not None
 
 
 def is_regex_target_modules(load_modules: Union[str, List[str]],

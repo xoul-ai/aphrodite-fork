@@ -133,9 +133,17 @@ class WorkerLoRAManager(AbstractWorkerManager):
             raise ValueError(
                 f"Loading lora {lora_request.lora_name} failed: No adapter "
                 f"found for {lora_request.lora_path}") from e
-        except Exception as e:
-            # For BadRequestError
+        except ValueError as e:
+            # Re-raise ValueError with more context
+            if "No valid LoRA weights found" in str(e):
+                raise ValueError(
+                    f"Call to add_lora method failed: {e}. "
+                    f"This may be due to unsupported LoRA weight formats "
+                    f"or incompatible target modules.") from e
             raise e
+        except Exception as e:
+            # For other exceptions, provide a generic error message
+            raise ValueError(f"Call to add_lora method failed: {e}") from e
 
         if lora.extra_vocab_size > self.lora_config.lora_extra_vocab_size:
             raise ValueError(f"LoRA added vocab size {lora.extra_vocab_size} "
