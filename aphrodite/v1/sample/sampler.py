@@ -109,14 +109,48 @@ class Sampler(nn.Module):
         assert sampling_metadata.temperature is not None
 
         # Apply temperature.
-        logits = self.apply_temperature(
-            logits, sampling_metadata)
+        logits = self.apply_temperature(logits, sampling_metadata)
 
         # Apply top_nsigma.
         if sampling_metadata.top_nsigma is not None:
-            logger.debug("Applying top_nsigma={}", sampling_metadata.top_nsigma)
             logits = self.sampling_ops.apply_top_nsigma(
                 logits, sampling_metadata)
+
+        # Apply top_a.
+        if sampling_metadata.top_a is not None:
+            logits = self.sampling_ops.apply_top_a(logits, sampling_metadata)
+
+        # Apply min_p.
+        if sampling_metadata.min_p is not None:
+            logits = self.sampling_ops.apply_min_p(logits, sampling_metadata)
+
+        # Apply tfs.
+        if sampling_metadata.tfs is not None:
+            logits = self.sampling_ops.apply_tfs(logits, sampling_metadata)
+
+        # Apply eta cutoff.
+        if sampling_metadata.eta_cutoff is not None:
+            logits = self.sampling_ops.apply_eta_cutoff(
+                logits, sampling_metadata)
+
+        # Apply epsilon cutoff.
+        if sampling_metadata.epsilon_cutoff is not None:
+            logits = self.sampling_ops.apply_epsilon_cutoff(
+                logits, sampling_metadata)
+
+        # Apply typical p.
+        if sampling_metadata.typical_p is not None:
+            logits = self.sampling_ops.apply_typical_p(logits,
+                                                       sampling_metadata)
+
+        # Apply quadratic.
+        if sampling_metadata.quadratic_smoothing_factor is not None:
+            logits = self.sampling_ops.apply_quadratic(logits,
+                                                       sampling_metadata)
+
+        # Apply xtc.
+        if sampling_metadata.xtc_threshold is not None:
+            logits = self.sampling_ops.apply_xtc(logits, sampling_metadata)
 
         # Apply top_k and/or top_p.
         random_sampled = self.topk_topp_sampler(
@@ -126,61 +160,8 @@ class Sampler(nn.Module):
             sampling_metadata.top_p,
         )
 
-        # Apply top_a.
-        if sampling_metadata.top_a is not None:
-            logger.debug("Applying top_a={}", sampling_metadata.top_a)
-            logits = self.sampling_ops.apply_top_a(
-                logits, sampling_metadata)
-
-        # Apply min_p.
-        if sampling_metadata.min_p is not None:
-            logger.debug("Applying min_p={}", sampling_metadata.min_p)
-            logits = self.sampling_ops.apply_min_p(
-                logits, sampling_metadata)
-
-        # Apply tfs.
-        if sampling_metadata.tfs is not None:
-            logger.debug("Applying tfs={}", sampling_metadata.tfs)
-            logits = self.sampling_ops.apply_tfs(
-                logits, sampling_metadata)
-
-        # Apply eta cutoff.
-        if sampling_metadata.eta_cutoff is not None:
-            logger.debug("Applying eta_cutoff={}",
-                          sampling_metadata.eta_cutoff)
-            logits = self.sampling_ops.apply_eta_cutoff(
-                logits, sampling_metadata)
-
-        # Apply epsilon cutoff.
-        if sampling_metadata.epsilon_cutoff is not None:
-            logger.debug("Applying epsilon_cutoff={}",
-                         sampling_metadata.epsilon_cutoff)
-            logits = self.sampling_ops.apply_epsilon_cutoff(
-                logits, sampling_metadata)
-
-        # Apply typical p.
-        if sampling_metadata.typical_p is not None:
-            logger.debug("Applying typical_p={}", sampling_metadata.typical_p)
-            logits = self.sampling_ops.apply_typical_p(
-                logits, sampling_metadata)
-
-        # Apply quadratic.
-        if sampling_metadata.quadratic_smoothing_factor is not None:
-            logger.debug("Applying quadratic_smoothing_factor={}",
-                         sampling_metadata.quadratic_smoothing_factor)
-            logits = self.sampling_ops.apply_quadratic(
-                logits, sampling_metadata)
-
-        # Apply xtc.
-        if sampling_metadata.xtc_threshold is not None:
-            logger.debug("Applying xtc_threshold={}",
-                         sampling_metadata.xtc_threshold)
-            logits = self.sampling_ops.apply_xtc(
-                logits, sampling_metadata)
-
         # Apply skew (after softmax).
         if sampling_metadata.skew is not None:
-            logger.debug("Applying skew={}", sampling_metadata.skew)
             # Convert logits back to probabilities for skew
             probs = logits.softmax(dim=-1, dtype=torch.float32)
             probs = self.sampling_ops.apply_skew(probs, sampling_metadata)
