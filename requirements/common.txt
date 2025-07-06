@@ -50,3 +50,4 @@ opentelemetry-semantic-conventions-ai>=0.4.1,<0.5.0  # vllm.tracing
 python-multipart # required for multipart/form-data requests
 loguru # required for logging
 blobfile
+numba
