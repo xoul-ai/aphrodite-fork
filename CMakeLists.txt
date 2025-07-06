@@ -839,7 +839,7 @@ if (APHRODITE_GPU_LANG STREQUAL "CUDA")
     endif()
 
     # FlashMLA build - requires CUDA 12.3 or later and Hopper architecture
-    cuda_archs_loose_intersection(FLASH_MLA_ARCHS "9.0a" "${CUDA_ARCHS}")
+    cuda_archs_loose_intersection(FLASH_MLA_ARCHS "9.0a 10.0 10.1 12.0" "${CUDA_ARCHS}")
     if(${CMAKE_CUDA_COMPILER_VERSION} VERSION_GREATER 12.3 AND FLASH_MLA_ARCHS)
         set(FlashMLA_SOURCES
             kernels/flash_mla/flash_api.cpp
