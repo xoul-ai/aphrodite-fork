@@ -16,8 +16,10 @@ from aphrodite.hpu_extension.flags import enabled_flags
 
 
 def grouped_max(block_max, batch_size, block_groups):
-    group_max = torch.full([batch_size + 1, *block_max.shape[1:]], -math.inf,
-                           dtype=block_max.dtype, device=block_max.device)
+    group_max = torch.full([batch_size + 1, *block_max.shape[1:]],
+                           -math.inf,
+                           dtype=block_max.dtype,
+                           device=block_max.device)
     group_max = group_max.index_reduce_(0, block_groups, block_max, 'amax')
     group_max = group_max.index_select(0, block_groups)
     return group_max
@@ -25,7 +27,8 @@ def grouped_max(block_max, batch_size, block_groups):
 
 def b2b_impl(tensor, block_mapping, matmul_op):
     shape = tuple(tensor.shape)
-    return matmul_op(block_mapping, tensor.view(shape[0], -1)).view(-1, *shape[1:])
+    return matmul_op(block_mapping, tensor.view(shape[0],
+                                                -1)).view(-1, *shape[1:])
 
 
 def batch2block(tensor, block_mapping, matmul_op=torch.matmul):
@@ -60,8 +63,10 @@ def pipelined_pa(attn, value, block_groups, block_mapping, batch_size,
     sum_adjusted = block_sums.mul(block_adjustment)
 
     # Sum block's sums that belongs to the same sequences
-    group_sum_adjusted = block2batch(sum_adjusted, block_mapping, block2batch_matmul_op)
-    group_sum_adjusted = batch2block(group_sum_adjusted, block_mapping, batch2block_matmul_op)
+    group_sum_adjusted = block2batch(sum_adjusted, block_mapping,
+                                     block2batch_matmul_op)
+    group_sum_adjusted = batch2block(group_sum_adjusted, block_mapping,
+                                     batch2block_matmul_op)
     sum_adjusted = sum_adjusted.view(*adjustment_target_shape)
     group_sum_adjusted = group_sum_adjusted.view(*adjustment_target_shape)
     block_adjustment = block_adjustment.view(*adjustment_target_shape)
@@ -76,15 +81,16 @@ def pipelined_pa(attn, value, block_groups, block_mapping, batch_size,
 
 
 def flat_pa(query, key_cache, value_cache, block_list, block_mapping,
-            block_bias, block_groups, scale, matmul_qk_op,
-            matmul_av_op, batch2block_matmul_op, block2batch_matmul_op,
-            keys_fetch_func, values_fetch_func, **ignored_args):
+            block_bias, block_groups, scale, matmul_qk_op, matmul_av_op,
+            batch2block_matmul_op, block2batch_matmul_op, keys_fetch_func,
+            values_fetch_func, **ignored_args):
     batch_size, _, hidden_size = query.shape
     _, _, kv_heads, head_size = key_cache.shape
     q_heads = hidden_size // head_size
 
     query_shape = (-1, q_heads, 1, head_size)
-    query = batch2block(scale * query, block_mapping, batch2block_matmul_op).view(query_shape)
+    query = batch2block(scale * query, block_mapping,
+                        batch2block_matmul_op).view(query_shape)
     key = keys_fetch_func(key_cache, block_list).transpose(1, 2)
     value = values_fetch_func(value_cache, block_list).transpose(1, 2)
     block_bias = block_bias.view(key.size(0), 1, 1, -1)
@@ -102,9 +108,14 @@ def flat_pa(query, key_cache, value_cache, block_list, block_mapping,
         attn = attn.float()
         htcore.mark_step()
     attn = attn + block_bias
-    attn = pipelined_pa(attn, value, block_groups, block_mapping,
-                        batch_size=batch_size, matmul_av_op=matmul_av_op,
-                        batch2block_matmul_op=batch2block_matmul_op, block2batch_matmul_op=block2batch_matmul_op)
+    attn = pipelined_pa(attn,
+                        value,
+                        block_groups,
+                        block_mapping,
+                        batch_size=batch_size,
+                        matmul_av_op=matmul_av_op,
+                        batch2block_matmul_op=batch2block_matmul_op,
+                        block2batch_matmul_op=block2batch_matmul_op)
     attn = block2batch(attn, block_mapping, block2batch_matmul_op)
     attn = attn.squeeze(-2)
     if kv_heads != q_heads:
@@ -149,17 +160,15 @@ def _flex_prompt_attention(
     return attn_weights
 
 
-def _naive_prompt_attention(
-        query: torch.Tensor,
-        key: torch.Tensor,
-        value: torch.Tensor,
-        scale: float,
-        attn_bias: Optional[torch.Tensor] = None,
-        matmul_qk_op=torch.matmul,
-        softmax_op=torch.softmax,
-        matmul_av_op=torch.matmul,
-        **ignored_args
-) -> torch.Tensor:
+def _naive_prompt_attention(query: torch.Tensor,
+                            key: torch.Tensor,
+                            value: torch.Tensor,
+                            scale: float,
+                            attn_bias: Optional[torch.Tensor] = None,
+                            matmul_qk_op=torch.matmul,
+                            softmax_op=torch.softmax,
+                            matmul_av_op=torch.matmul,
+                            **ignored_args) -> torch.Tensor:
     query = query.transpose(1, 2)
     key = key.transpose(1, 2)
     value = value.transpose(1, 2)
@@ -187,17 +196,15 @@ def _naive_prompt_attention(
     return attn_weights
 
 
-def _fsdpa_prompt_attention(
-        query: torch.Tensor,
-        key: torch.Tensor,
-        value: torch.Tensor,
-        scale: float,
-        fsdpa_op,
-        is_causal: bool,
-        attn_bias: Optional[torch.Tensor] = None,
-        valid_seq_lengths: Optional[torch.Tensor] = None,
-        **ignored_args
-) -> torch.Tensor:
+def _fsdpa_prompt_attention(query: torch.Tensor,
+                            key: torch.Tensor,
+                            value: torch.Tensor,
+                            scale: float,
+                            fsdpa_op,
+                            is_causal: bool,
+                            attn_bias: Optional[torch.Tensor] = None,
+                            valid_seq_lengths: Optional[torch.Tensor] = None,
+                            **ignored_args) -> torch.Tensor:
     query = query.transpose(1, 2)
     key = key.transpose(1, 2)
     value = value.transpose(1, 2)
@@ -220,8 +227,8 @@ def _fsdpa_prompt_attention(
 
 
 def prompt_attention(
-        impl: str,
-        **args,
+    impl: str,
+    **args,
 ) -> torch.Tensor:
     _get_context(args)
     impl_mapping = {
@@ -339,7 +346,7 @@ class MoeMatmul(torch.nn.Module):
         raise NotImplementedError()
 
 
-class VllmMixtureOfExpertsOp(torch.nn.Module):
+class AphroditeMixtureOfExpertsOp(torch.nn.Module):
 
     def __init__(self, num_total_experts):
         super().__init__()
@@ -359,29 +366,30 @@ class VllmMixtureOfExpertsOp(torch.nn.Module):
         experts_range = range(self.num_experts)
         w1_list = [self.w13_list[i].weight.squeeze() for i in experts_range]
         w2_list = [self.w2_list[i].weight.squeeze() for i in experts_range]
-        return torch.ops.hpu.mixture_of_experts(hidden_states=hidden_states,
-                                                expert_routing_table=expert_routing_table,
-                                                router_weights=router_weights,
-                                                w12=w1_list,
-                                                w3=w2_list,
-                                                permuted_weights=permuted_weights,
-                                                activation=activation,
-                                                experts_min=0,
-                                                experts_max=self.num_experts - 1)
+        return torch.ops.hpu.mixture_of_experts(
+            hidden_states=hidden_states,
+            expert_routing_table=expert_routing_table,
+            router_weights=router_weights,
+            w12=w1_list,
+            w3=w2_list,
+            permuted_weights=permuted_weights,
+            activation=activation,
+            experts_min=0,
+            experts_max=self.num_experts - 1)
 
 
 class DynamicFusedMOE(torch.nn.Module):
 
     def __init__(self, num_total_experts):
         super().__init__()
-        self.MoeOp = VllmMixtureOfExpertsOp(num_total_experts)
+        self.MoeOp = AphroditeMixtureOfExpertsOp(num_total_experts)
 
     def forward(self, hidden_states, score, topk):
         htorch.core.mark_step()
         routing_weights = F.softmax(score, dim=1, dtype=torch.float32)
         routing_weights, selected_experts = torch.topk(routing_weights,
-                                                        topk,
-                                                        dim=-1)
+                                                       topk,
+                                                       dim=-1)
         routing_weights /= routing_weights.sum(dim=-1, keepdim=True)
         routing_weights = routing_weights.to(hidden_states.dtype)
 
@@ -432,7 +440,8 @@ def scaled_fp8_quant(
     else:
         output = torch.empty_like(input, dtype=torch.float8_e4m3fn)
     if scale is None:
-        raise NotImplementedError("dynamic scaled_fp8_quant not implemented for HPU")
+        raise NotImplementedError(
+            "dynamic scaled_fp8_quant not implemented for HPU")
         # TODO: calculate scale to match gaudi2 240 range instead of 448
         if use_per_token_if_dynamic:
             scale = torch.empty((input.numel() // input.shape[-1], 1),

@@ -115,7 +115,7 @@ class LLM:
             to eager mode. Additionally for encoder-decoder models, if the
             sequence length of the encoder input is larger than this, we fall
             back to the eager mode.
-        disable_custom_all_reduce: See :class:`~aphrodite.config.ParallelConfig`
+        disable_custom_all_reduce: See :class:`~aphrodite.common.config.ParallelConfig`
         disable_async_output_proc: Disable async output processing.
             This may result in lower performance.
         hf_token: The token to use as HTTP bearer authorization for remote files

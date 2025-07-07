@@ -22,7 +22,7 @@ from lmcache.experimental.cache_engine import LMCacheEngine
 from lmcache.logging import init_logger
 
 import aphrodite.common.envs as envs
-from aphrodite.common.config import VllmConfig
+from aphrodite.common.config import AphroditeConfig
 from aphrodite.common.utils import cdiv, make_zmq_socket
 from aphrodite.distributed.kv_transfer.kv_connector.v1.base import (
     KVConnectorBase_V1, KVConnectorMetadata, KVConnectorRole)
@@ -40,11 +40,10 @@ if TYPE_CHECKING:
     from aphrodite.v1.request import Request
 
 
-
 def get_zmq_rpc_path_lmcache(
         role: KVConnectorRole,
         is_tp: bool = False,
-        aphrodite_config: Optional["VllmConfig"] = None) -> str:
+        aphrodite_config: Optional["AphroditeConfig"] = None) -> str:
     base_url = envs.APHRODITE_RPC_BASE_PATH
     # Default to 0 if not configured
     rpc_port = 0
@@ -59,7 +58,7 @@ def get_zmq_rpc_path_lmcache(
 class LMCacheLookupClient:
 
     def __init__(self, role: KVConnectorRole, is_tp: bool,
-                 aphrodite_config: "VllmConfig"):
+                 aphrodite_config: "AphroditeConfig"):
         self.encoder = MsgpackEncoder()
         self.ctx = zmq.Context()  # type: ignore[attr-defined]
         socket_path = get_zmq_rpc_path_lmcache(role, is_tp, aphrodite_config)
@@ -83,7 +82,7 @@ class LMCacheLookupClient:
 class LMCacheLookupServer:
 
     def __init__(self, lmcache_engine: LMCacheEngine, role: KVConnectorRole,
-                 is_tp: bool, aphrodite_config: "VllmConfig"):
+                 is_tp: bool, aphrodite_config: "AphroditeConfig"):
         self.decoder = MsgpackDecoder(torch.Tensor)
         self.ctx = zmq.Context()  # type: ignore[attr-defined]
         socket_path = get_zmq_rpc_path_lmcache(role, is_tp, aphrodite_config)
@@ -304,16 +303,18 @@ class LMCacheConnectorMetadata(KVConnectorMetadata):
 
 class LMCacheConnectorV1Impl:
 
-    def __init__(self, aphrodite_config: "VllmConfig", role: KVConnectorRole,
-                 parent: KVConnectorBase_V1):
+    def __init__(self, aphrodite_config: "AphroditeConfig",
+                 role: KVConnectorRole, parent: KVConnectorBase_V1):
         self._parent = parent
         self.kv_role = aphrodite_config.kv_transfer_config.kv_role
         is_tp = aphrodite_config.parallel_config.tensor_parallel_size > 1
         if role == KVConnectorRole.SCHEDULER:
-            self.lookup_client = LMCacheLookupClient(role, is_tp, aphrodite_config)
+            self.lookup_client = LMCacheLookupClient(role, is_tp,
+                                                     aphrodite_config)
         else:
             self.lmcache_engine = init_lmcache_engine(
-                aphrodite_config.model_config, aphrodite_config.parallel_config,
+                aphrodite_config.model_config,
+                aphrodite_config.parallel_config,
                 aphrodite_config.cache_config)
             # NOTE: Only create the KV lookup API server on worker rank 0
             # when there are multiple workers

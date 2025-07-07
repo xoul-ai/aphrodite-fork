@@ -62,7 +62,6 @@ else:
     QuantizationConfig = None
     ConfigType = type
 
-
 ConfigT = TypeVar("ConfigT", bound=ConfigType)
 
 # This value is chosen to have a balance between ITL and TTFT. Note it is
@@ -217,6 +216,7 @@ ModelDType = Literal["auto", "half", "float16", "bfloat16", "float", "float32"]
 
 
 class ConfigMixin:
+
     def get_config_diff(self) -> Dict[str, Any]:
         """Returns a dictionary of config values that differ from defaults."""
         sig = inspect.signature(self.__init__)
@@ -231,17 +231,18 @@ class ConfigMixin:
 
             current_val = getattr(self, param_name)
 
-            if (param_name in ('served_model_name', 'tokenizer') and
-                current_val == self.model):
+            if (param_name in ('served_model_name', 'tokenizer')
+                    and current_val == self.model):
                 continue
             if param_name == 'max_model_len' and not isinstance(
-                self, ModelConfig):
+                    self, ModelConfig):
                 continue
             if param_name == 'ignore_patterns' and current_val == [
-                "original/**/*"]:
+                    "original/**/*"
+            ]:
                 continue
             if param_name == 'cache_config' and isinstance(
-                self, SchedulerConfig):
+                    self, SchedulerConfig):
                 continue
 
             if isinstance(current_val, ConfigMixin):
@@ -255,6 +256,7 @@ class ConfigMixin:
                 diff[param_name] = current_val
 
         return diff
+
 
 @config
 @dataclass
@@ -477,7 +479,7 @@ class ModelConfig:
         str_factors = str(factors)
         assert_hashable(str_factors)
         return hashlib.sha256(str(factors).encode()).hexdigest()
-    
+
     def __post_init__(self) -> None:
         self.model = maybe_model_redirect(self.model)
         # The tokenizer is consistent with the model by default.
@@ -562,9 +564,8 @@ class ModelConfig:
             (self.hf_text_config.model_type in interleaved_attn_models))
 
         if (not self.disable_sliding_window and has_interleaved_attention):
-            if (backend :=
-                    envs.APHRODITE_ATTENTION_BACKEND) in ("XFORMERS",
-                                                          "FLASHINFER"):
+            if (backend := envs.APHRODITE_ATTENTION_BACKEND) in ("XFORMERS",
+                                                                 "FLASHINFER"):
                 sliding_window_len_min = get_min_sliding_window(
                     self.hf_text_config.sliding_window)
 
@@ -930,13 +931,11 @@ class ModelConfig:
             if self.quant_llm_fp_bits is None:
                 raise ValueError(
                     "quant_llm_fp_bits must be specified when using "
-                    "quant_llm quantization."
-                )
+                    "quant_llm quantization.")
             if self.quant_llm_fp_bits not in VALID_QUANT_LLM_FP_BITS:
                 raise ValueError(
                     f"Invalid quant_llm_fp_bits: {self.quant_llm_fp_bits}. "
-                    f"Must be one of {VALID_QUANT_LLM_FP_BITS}."
-                )
+                    f"Must be one of {VALID_QUANT_LLM_FP_BITS}.")
             if self.quant_llm_exp_bits is None:
                 self.quant_llm_exp_bits = DEFAULT_EXP_BITS[
                     self.quant_llm_fp_bits]
@@ -944,8 +943,7 @@ class ModelConfig:
                 if self.quant_llm_exp_bits not in VALID_QUANT_LLM_EXPONENTS:
                     raise ValueError(
                         f"Invalid exponent bits: {self.quant_llm_exp_bits}. "
-                        f"Must be one of {VALID_QUANT_LLM_EXPONENTS}."
-                    )
+                        f"Must be one of {VALID_QUANT_LLM_EXPONENTS}.")
 
             self.hf_config.quantization_config = {
                 "bits": self.quant_llm_fp_bits,
@@ -958,10 +956,8 @@ class ModelConfig:
             online_quant_methods:
             fp_bits = int(self.quantization[2])
             if fp_bits not in VALID_QUANT_LLM_FP_BITS:
-                raise ValueError(
-                    f"Invalid quant_llm_fp_bits: {fp_bits}. "
-                    f"Must be one of {VALID_QUANT_LLM_FP_BITS}."
-                )
+                raise ValueError(f"Invalid quant_llm_fp_bits: {fp_bits}. "
+                                 f"Must be one of {VALID_QUANT_LLM_FP_BITS}.")
             if fp_bits in [2, 3]:
                 logger.warning("FP2 and FP3 quantization methods lead to "
                                "significant accuracy loss. Use them with "
@@ -2263,7 +2259,6 @@ class SchedulerConfig:
         return self.num_scheduler_steps > 1
 
 
-
 Device = Literal["auto", "cuda", "neuron", "cpu", "tpu", "xpu", "hpu"]
 
 
@@ -2576,8 +2571,8 @@ class SpeculativeConfig:
 
                 # Replace hf_config for EAGLE draft_model
                 if self.method in ("eagle", "eagle3"):
-                    if (self.enable_chunked_prefill and
-                        not envs.APHRODITE_USE_V1):
+                    if (self.enable_chunked_prefill
+                            and not envs.APHRODITE_USE_V1):
                         raise ValueError(
                             "Chunked prefill and EAGLE are not compatible "
                             "when using V0.")
@@ -2801,6 +2796,7 @@ class SpeculativeConfig:
 
 
 LoRADType = Literal["auto", "float16", "bfloat16"]
+
 
 @config
 @dataclass
@@ -3282,8 +3278,10 @@ def _get_and_verify_max_len(
         model_max_length = getattr(hf_config, "model_max_length", None)
         if envs.APHRODITE_DYNAMIC_ROPE_SCALING:
             scaling_factor = max_model_len / derived_max_model_len
-            hf_config.rope_scaling = {"factor": scaling_factor,
-                                      "type": "dynamic"}
+            hf_config.rope_scaling = {
+                "factor": scaling_factor,
+                "type": "dynamic"
+            }
             logger.info(
                 "Using dynamic RoPE scaling to extend the model's max context "
                 f"length from {derived_max_model_len} to {max_model_len}.")
@@ -3356,8 +3354,8 @@ class DecodingConfig:
     def guided_decoding_backend(self, value: GuidedDecodingBackend):
         self.backend = value
 
-    backend: GuidedDecodingBackend = (
-        "auto" if envs.APHRODITE_USE_V1 else "xgrammar")
+    backend: GuidedDecodingBackend = ("auto"
+                                      if envs.APHRODITE_USE_V1 else "xgrammar")
     """Which engine will be used for guided decoding (JSON schema / regex etc)
     by default. With "auto", we will make opinionated choices based on request
     contents and what the backend libraries currently support, so the behavior
@@ -3666,7 +3664,6 @@ class KVEventsConfig(BaseModel):
         return KVEventsConfig.model_validate_json(cli_value)
 
 
-
 class CompilationLevel:
     # constants for the levels of the compilation process
     NO_COMPILATION = 0
@@ -3923,8 +3920,8 @@ class CompilationConfig(BaseModel):
         self.static_forward_context = {}
         self.compilation_time = 0.0
 
-    def init_backend(self, aphrodite_config: "AphroditeConfig") -> Union[
-        str, Callable]:
+    def init_backend(
+            self, aphrodite_config: "AphroditeConfig") -> Union[str, Callable]:
         if self.level == CompilationLevel.NO_COMPILATION:
             raise ValueError("No compilation level is set.")
 
@@ -4502,7 +4499,7 @@ def get_current_aphrodite_config() -> AphroditeConfig:
         # we don't set the aphrodite config. In that case, we set a default
         # config.
         logger.warning("Current Aphrodite config is not set.")
-        from aphrodite.config import AphroditeConfig
+        from aphrodite.common.config import AphroditeConfig
         return AphroditeConfig()
     return _current_aphrodite_config
 
@@ -4538,7 +4535,7 @@ T = TypeVar("T")
 
 
 def get_layers_from_aphrodite_config(aphrodite_config: AphroditeConfig,
-                                layer_type: type[T]) -> dict[str, T]:
+                                     layer_type: type[T]) -> dict[str, T]:
     return {
         layer_name: layer
         for layer_name, layer in

@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 import torch
 
-from aphrodite.common.config import VllmConfig
+from aphrodite.common.config import AphroditeConfig
 from aphrodite.distributed.kv_transfer.kv_connector.v1.base import (
     KVConnectorBase_V1, KVConnectorMetadata, KVConnectorRole)
 from aphrodite.distributed.kv_transfer.kv_connector.v1.lmcache_integration.aphrodite_v1_adapter import (
@@ -15,12 +15,13 @@ if TYPE_CHECKING:
     from aphrodite.v1.request import Request
 
 
-
 class LMCacheConnectorV1(KVConnectorBase_V1):
 
-    def __init__(self, aphrodite_config: "VllmConfig", role: KVConnectorRole):
+    def __init__(self, aphrodite_config: "AphroditeConfig",
+                 role: KVConnectorRole):
         super().__init__(aphrodite_config=aphrodite_config, role=role)
-        self._lmcache_engine = LMCacheConnectorV1Impl(aphrodite_config, role, self)
+        self._lmcache_engine = LMCacheConnectorV1Impl(aphrodite_config, role,
+                                                      self)
 
     # ==============================
     # Worker-side methods
