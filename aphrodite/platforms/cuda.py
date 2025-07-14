@@ -19,6 +19,12 @@ from aphrodite.common.utils import import_pynvml
 
 from .interface import DeviceCapability, Platform, PlatformEnum, _Backend
 
+try:
+    from aphrodite.distributed.parallel_state import (
+        get_tensor_model_parallel_rank)
+except Exception:
+    get_tensor_model_parallel_rank = lambda: 0
+
 if TYPE_CHECKING:
     from aphrodite.common.config import AphroditeConfig, ModelConfig
 
@@ -218,7 +224,9 @@ class CudaPlatformBase(Platform):
                 return ("aphrodite.v1.attention.backends."
                         "triton_attn.TritonAttentionBackend")
             if cls.has_device_capability(80):
-                log_once("INFO", "Using Flash Attention backend on V1 engine.")
+                if get_tensor_model_parallel_rank() == 0:
+                    log_once(
+                        "INFO", "Using Flash Attention backend on V1 engine.")
                 return ("aphrodite.v1.attention.backends."
                         "flash_attn.FlashAttentionBackend")
         if selected_backend == _Backend.FLASHINFER:

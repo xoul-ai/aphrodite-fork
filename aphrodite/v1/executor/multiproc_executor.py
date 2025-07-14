@@ -289,8 +289,10 @@ class WorkerProc:
         self.worker = wrapper
 
         pid = os.getpid()
-        _add_prefix(sys.stdout, f"AphroditeWorker rank={rank}", pid)
-        _add_prefix(sys.stderr, f"AphroditeWorker rank={rank}", pid)
+        # Allow disabling multiprocessing prefixes via environment variable
+        if os.environ.get("APHRODITE_DISABLE_MP_PREFIXES", "1") != "1":
+            _add_prefix(sys.stdout, f"AphroditeWorker rank={rank}", pid)
+            _add_prefix(sys.stderr, f"AphroditeWorker rank={rank}", pid)
 
         # Initialize MessageQueue for receiving SchedulerOutput
         self.rpc_broadcast_mq = MessageQueue.create_from_handle(

@@ -1333,7 +1333,8 @@ class GPUModelRunner(LoRAModelRunnerMixin):
         return draft_token_ids
 
     def load_model(self) -> None:
-        logger.info("Starting to load model {}...", self.model_config.model)
+        if get_tensor_model_parallel_rank() == 0:
+            logger.info("Starting to load model {}...", self.model_config.model)
         with DeviceMemoryProfiler() as m:  # noqa: SIM117
             self.model = get_model(aphrodite_config=self.aphrodite_config)
             if self.lora_config:

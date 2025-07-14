@@ -47,6 +47,12 @@ except ImportError:
         "SafeTensorsFileLoader")
     SingleGroup = fastsafetensors.placeholder_attr("SingleGroup")
 
+try:
+    from aphrodite.distributed.parallel_state import (
+        get_tensor_model_parallel_rank)
+except Exception:
+    get_tensor_model_parallel_rank = lambda: 0
+
 # use system-level temp directory for file locks, so that multiple users
 # can share the same lock without error.
 # lock files in the temp directory will be automatically deleted when the
@@ -261,7 +267,8 @@ def download_weights_from_hf(
                 allow_patterns = [pattern]
                 break
 
-    logger.info("Using model weights format {}", allow_patterns)
+    if get_tensor_model_parallel_rank() == 0:
+        logger.info("Using model weights format {}", allow_patterns)
     # Use file lock to prevent multiple processes from
     # downloading the same model weights at the same time.
     with get_lock(model_name_or_path, cache_dir):
@@ -312,9 +319,9 @@ def download_safetensors_index_file_from_hf(
         # If file not found on remote or locally, we should not fail since
         # only some models will have index_file.
         except huggingface_hub.utils.EntryNotFoundError:
-            logger.info("No {} found in remote.", index_file)
+            logger.debug("No {} found in remote.", index_file)
         except huggingface_hub.utils.LocalEntryNotFoundError:
-            logger.info("No {} found in local cache.", index_file)
+            logger.debug("No {} found in local cache.", index_file)
 
 
 # For models like Mistral-7B-v0.3, there are both sharded

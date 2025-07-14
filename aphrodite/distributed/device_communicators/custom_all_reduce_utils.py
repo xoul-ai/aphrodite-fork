@@ -200,7 +200,7 @@ def gpu_p2p_access_check(src: int, tgt: int) -> bool:
             and (not os.path.exists(path))):
         # only the local master process (with local_rank == 0) can
         #  enter this block to calculate the cache
-        logger.info("generating GPU P2P access cache in {}", path)
+        logger.debug("generating GPU P2P access cache in {}", path)
         cache: Dict[str, bool] = {}
         ids = list(range(num_dev))
         # batch of all pairs of GPUs
@@ -238,7 +238,7 @@ def gpu_p2p_access_check(src: int, tgt: int) -> bool:
             json.dump(cache, f, indent=4)
     if is_distributed:
         get_world_group().barrier()
-    logger.info("reading GPU P2P access cache from {}", path)
+    logger.debug("reading GPU P2P access cache from {}", path)
     with open(path) as f:
         cache = json.load(f)
     _gpu_p2p_access_cache = cache

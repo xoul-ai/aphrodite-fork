@@ -13,6 +13,12 @@ try:
 except ImportError:
     is_flashinfer_available = False
 
+try:
+    from aphrodite.distributed.parallel_state import (
+        get_tensor_model_parallel_rank)
+except Exception:
+    get_tensor_model_parallel_rank = lambda: 0
+
 
 class TopKTopPSampler(nn.Module):
     """
@@ -37,11 +43,12 @@ class TopKTopPSampler(nn.Module):
                     # earlier design.
                     # https://github.com/flashinfer-ai/flashinfer/releases/
                     # tag/v0.2.3
-                    logger.info(
-                        "Currently, FlashInfer top-p & top-k sampling sampler "
-                        "is disabled because FlashInfer>=v0.2.3 is not "
-                        "backward compatible. Falling back to the PyTorch-"
-                        "native implementation of top-p & top-k sampling.")
+                    if get_tensor_model_parallel_rank() == 0:
+                        logger.info(
+                            "Currently, FlashInfer top-p & top-k sampling sampler "
+                            "is disabled because FlashInfer>=v0.2.3 is not "
+                            "backward compatible. Falling back to the PyTorch-"
+                            "native implementation of top-p & top-k sampling.")
                     self.forward = self.forward_native
                 elif envs.APHRODITE_USE_SAMPLING_KERNELS is not False:
                     # NOTE: The V0 sampler doesn't use FlashInfer for
@@ -55,17 +62,21 @@ class TopKTopPSampler(nn.Module):
                     logger.info("Using FlashInfer for top-p & top-k sampling.")
                     self.forward = self.forward_cuda
                 else:
-                    logger.warning(
-                        "FlashInfer is available, but it is not enabled. "
-                        "Falling back to the PyTorch-native implementation of "
-                        "top-p & top-k sampling. For the best performance, "
-                        "please set APHRODITE_USE_SAMPLING_KERNELS=1.")
+                    if get_tensor_model_parallel_rank() == 0:
+                        logger.warning(
+                            "FlashInfer is available, but it is not enabled. "
+                            "Falling back to the PyTorch-native implementation "
+                            "of top-p & top-k sampling. For the best "
+                            "performance, please set "
+                            "APHRODITE_USE_SAMPLING_KERNELS=1.")
                     self.forward = self.forward_native
             else:
-                logger.warning(
-                    "FlashInfer is not available. Falling back to the PyTorch-"
-                    "native implementation of top-p & top-k sampling. For the "
-                    "best performance, please install FlashInfer.")
+                if get_tensor_model_parallel_rank() == 0:
+                    logger.warning(
+                        "FlashInfer is not available. Falling back to the "
+                        "PyTorch-native implementation of top-p & top-k "
+                        "sampling. For the best performance, please install "
+                        "FlashInfer.")
                 self.forward = self.forward_native
         elif current_platform.is_tpu():
             self.forward = self.forward_tpu

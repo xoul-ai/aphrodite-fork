@@ -67,8 +67,9 @@ class CustomAllreduce:
         if not custom_ar:
             # disable because of missing custom allreduce library
             # e.g. in a non-GPU environment
-            logger.info("Custom allreduce is disabled because "
-                        "of missing custom allreduce library")
+            if dist.get_rank(group=group) == 0:
+                logger.info("Custom allreduce is disabled because "
+                            "of missing custom allreduce library")
             return
 
         self.group = group
@@ -78,9 +79,10 @@ class CustomAllreduce:
 
         if not all(in_the_same_node_as(group, source_rank=0)):
             # No need to initialize custom allreduce for multi-node case.
-            logger.warning(
-                "Custom allreduce is disabled because this process group"
-                " spans across nodes.")
+            if dist.get_rank(group=group) == 0:
+                logger.warning(
+                    "Custom allreduce is disabled because this process group"
+                    " spans across nodes.")
             return
 
         rank = dist.get_rank(group=self.group)
@@ -91,11 +93,12 @@ class CustomAllreduce:
             return
 
         if world_size not in CustomAllreduce._SUPPORTED_WORLD_SIZES:
-            logger.warning(
-                "Custom allreduce is disabled due to an unsupported world"
-                " size: {}. Supported world sizes: {}. To silence this "
-                "warning, specify disable_custom_all_reduce=True explicitly.",
-                world_size, str(CustomAllreduce._SUPPORTED_WORLD_SIZES))
+            if rank == 0:
+                logger.warning(
+                    "Custom allreduce is disabled due to an unsupported world"
+                    " size: {}. Supported world sizes: {}. To silence this "
+                    "warning, specify disable_custom_all_reduce=True explicitly.",
+                    world_size, str(CustomAllreduce._SUPPORTED_WORLD_SIZES))
             return
 
         if isinstance(device, int):
@@ -130,20 +133,23 @@ class CustomAllreduce:
         fully_connected = current_platform.is_fully_connected(
             physical_device_ids)
         if world_size > 2 and not fully_connected:
-            logger.warning(
-                "Custom allreduce is disabled because it's not supported on"
-                " more than two PCIe-only GPUs. To silence this warning, "
-                "specify disable_custom_all_reduce=True explicitly.")
+            if rank == 0:
+                logger.warning(
+                    "Custom allreduce is disabled because it's not supported on"
+                    " more than two PCIe-only GPUs. To silence this warning, "
+                    "specify disable_custom_all_reduce=True explicitly.")
             return
         # test P2P capability, this checks software/cudaruntime support
         # this is expensive to compute at the first time
         # then we cache the result
         # On AMD GPU, p2p is always enabled between XGMI connected GPUs
         if not current_platform.is_rocm() and not _can_p2p(rank, world_size):
-            logger.warning(
-                "Custom allreduce is disabled because your platform lacks "
-                "GPU P2P capability or P2P test failed. To silence this "
-                "warning, specify disable_custom_all_reduce=True explicitly.")
+            if rank == 0:
+                logger.warning(
+                    "Custom allreduce is disabled because your platform lacks "
+                    "GPU P2P capability or P2P test failed. To silence this "
+                    "warning, specify disable_custom_all_reduce=True "
+                    "explicitly.")
             return
 
         self.disabled = False

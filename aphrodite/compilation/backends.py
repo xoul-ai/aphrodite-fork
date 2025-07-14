@@ -23,6 +23,12 @@ from .inductor_pass import InductorPass
 from .monitor import end_monitoring_torch_compile
 from .pass_manager import PostGradPassManager
 
+try:
+    from aphrodite.distributed.parallel_state import (
+        get_tensor_model_parallel_rank)
+except Exception:
+    get_tensor_model_parallel_rank = lambda: 0
+
 
 @contextmanager
 def suppress_logs_during_progress():
@@ -284,8 +290,8 @@ class PiecewiseCompileInterpreter(torch.fx.Interpreter):
                 i for i, x in enumerate(args) if isinstance(x, torch.SymInt)
             ]
             
-                        # Initialize progress bar on first compilation
-            if self.progress is None:
+            # Initialize progress bar on first compilation
+            if self.progress is None and get_tensor_model_parallel_rank() == 0:
                 with suppress_logs_during_progress():
                     self.progress = Progress(
                         TextColumn("[bold blue]{task.description}"),
@@ -503,7 +509,8 @@ class AphroditeBackend:
         compilation_counter.num_graphs_seen += 1
         from .monitor import torch_compile_start_time
         dynamo_time = time.time() - torch_compile_start_time
-        logger.info("Dynamo bytecode transform time: {:.2f} s", dynamo_time)
+        if get_tensor_model_parallel_rank() == 0:
+            logger.info("Dynamo bytecode transform time: {:.2f} s", dynamo_time)
         self.compilation_config.compilation_time += dynamo_time
 
         # we control the compilation process, each instance can only be
