@@ -1,11 +1,11 @@
 import os
 from typing import Union
 
-from lmcache.config import \
-    LMCacheEngineConfig as Config  # type: ignore[assignment]
-from lmcache.experimental.config import \
-    LMCacheEngineConfig as ExperimentalConfig  # type: ignore[assignment]
-from lmcache.logging import init_logger
+from lmcache.config import (
+    LMCacheEngineConfig as Config)  # type: ignore[assignment]
+from lmcache.experimental.config import (
+    LMCacheEngineConfig as ExperimentalConfig)  # type: ignore[assignment]
+from loguru import logger
 
 ENGINE_NAME = "aphrodite-instance"
 
@@ -31,10 +31,10 @@ def lmcache_get_config() -> Union[Config, ExperimentalConfig]:
         LMCacheEngineConfig = ExperimentalConfig  # type: ignore[assignment]
 
     if "LMCACHE_CONFIG_FILE" not in os.environ:
-        logger.warn("No LMCache configuration file is set. Trying to read"
-                    " configurations from the environment variables.")
-        logger.warn("You can set the configuration file through "
-                    "the environment variable: LMCACHE_CONFIG_FILE")
+        logger.warning("No LMCache configuration file is set. Trying to read"
+                       " configurations from the environment variables.")
+        logger.warning("You can set the configuration file through "
+                       "the environment variable: LMCACHE_CONFIG_FILE")
         config = LMCacheEngineConfig.from_env()
     else:
         config_file = os.environ["LMCACHE_CONFIG_FILE"]

@@ -15,8 +15,8 @@ from lmcache.experimental.cache_engine import (LMCacheEngine,
                                                LMCacheEngineBuilder)
 from lmcache.experimental.config import LMCacheEngineConfig
 from lmcache.experimental.gpu_connector import VLLMPagedMemGPUConnectorV2
-from lmcache.logging import init_logger
 from lmcache.utils import _lmcache_nvtx_annotate
+from loguru import logger
 
 from aphrodite.attention.backends.flash_attn import FlashAttentionMetadata
 from aphrodite.common.config import CacheConfig, ModelConfig, ParallelConfig
@@ -24,7 +24,6 @@ from aphrodite.common.sequence import IntermediateTensors
 from aphrodite.common.utils import get_kv_cache_torch_dtype
 
 from .utils import ENGINE_NAME, lmcache_get_config
-
 
 LMCACHE_CUDA_STREAM = torch.cuda.Stream()
 

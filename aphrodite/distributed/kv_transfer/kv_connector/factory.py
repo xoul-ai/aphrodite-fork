@@ -40,6 +40,8 @@ class KVConnectorFactory:
                              f"but found {envs.APHRODITE_USE_V1=}")
 
         connector_name = config.kv_transfer_config.kv_connector
+        if connector_name is None:
+            raise ValueError("kv_connector is not set in kv_transfer_config")
         if connector_name not in cls._registry:
             raise ValueError(f"Unsupported connector type: {connector_name}")
 
@@ -58,8 +60,17 @@ class KVConnectorFactory:
                              f"but found {envs.APHRODITE_USE_V1=}")
 
         connector_name = config.kv_transfer_config.kv_connector
+        if connector_name is None:
+            raise ValueError("kv_connector is not set in kv_transfer_config")
+        if connector_name not in cls._registry:
+            raise ValueError(f"Unsupported connector type: {connector_name}")
+
         connector_cls = cls._registry[connector_name]()
-        assert issubclass(connector_cls, KVConnectorBase_V1)
+        if not issubclass(connector_cls, KVConnectorBase_V1):
+            raise ValueError(
+                f"Connector '{connector_name}' is not a V1 connector. "
+                f"V1 connectors must inherit from KVConnectorBase_V1. "
+                f"Available V1 connectors: SharedStorageConnector, LMCacheConnectorV1")
         logger.info("Creating v1 connector with name: {}", connector_name)
         # NOTE: v1 connector is explicitly separated into two roles.
         # Scheduler connector:

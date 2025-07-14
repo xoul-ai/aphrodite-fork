@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Optional
 import torch
 import zmq
 from lmcache.experimental.cache_engine import LMCacheEngine
-from lmcache.logging import init_logger
+from loguru import logger
 
 import aphrodite.common.envs as envs
 from aphrodite.common.config import AphroditeConfig
