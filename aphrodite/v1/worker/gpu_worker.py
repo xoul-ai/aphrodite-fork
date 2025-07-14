@@ -175,9 +175,27 @@ class Worker(WorkerBase):
         torch.cuda.reset_peak_memory_stats()
 
         _, total_gpu_memory = torch.cuda.mem_get_info()
+
+        # In single user mode, we only need to profile for one sequence
+        # instead of the maximum possible sequences
+        if self.scheduler_config.single_user_mode:
+            # Temporarily modify max_num_tokens for profiling
+            original_max_num_tokens = self.model_runner.max_num_tokens
+            # Use max_model_len but ensure it doesn't
+            # exceed max_num_batched_tokens
+            profiling_tokens = min(self.model_config.max_model_len, 
+                                   self.scheduler_config.max_num_batched_tokens)
+            self.model_runner.max_num_tokens = profiling_tokens
+        else:
+            original_max_num_tokens = self.model_runner.max_num_tokens
+
         # Execute a forward pass with dummy inputs to profile the memory usage
         # of the model.
         self.model_runner.profile_run()
+
+        # Restore original max_num_tokens if we modified it
+        if self.scheduler_config.single_user_mode:
+            self.model_runner.max_num_tokens = original_max_num_tokens
 
         free_gpu_memory, _ = torch.cuda.mem_get_info()
         # NOTE: Here we assume that the other processes using the same
@@ -185,8 +203,8 @@ class Worker(WorkerBase):
         assert self.init_gpu_memory > free_gpu_memory, (
             "Error in memory profiling. "
             f"Initial free memory {self.init_gpu_memory}, current free memory"
-            f" {free_gpu_memory}. This happens when the GPU memory was "
-            "not properly cleaned up before initializing the Aphrodite instance.")
+            f" {free_gpu_memory}. This happens when the GPU memory was not "
+            "properly cleaned up before initializing the Aphrodite instance.")
 
         # Get the peak memory allocation recorded by torch
         peak_memory = torch.cuda.memory_stats()["allocated_bytes.all.peak"]
@@ -202,9 +220,26 @@ class Worker(WorkerBase):
         non_torch_allocations = total_allocated_bytes - torch_allocated_bytes
         if non_torch_allocations > 0:
             peak_memory += non_torch_allocations
-        available_kv_cache_memory = (
-            total_gpu_memory * self.cache_config.gpu_memory_utilization -
-            peak_memory)
+
+        # Calculate memory per sequence for comparison
+        tokens_per_block = self.cache_config.block_size
+        blocks_per_seq = (self.model_config.max_model_len +
+                          tokens_per_block - 1) // tokens_per_block
+
+        # Estimate memory per sequence based on KV cache spec
+        kv_cache_spec = self.model_runner.get_kv_cache_spec()
+        memory_per_seq = 0
+        for layer_spec in kv_cache_spec.values():
+            memory_per_seq += layer_spec.page_size_bytes * blocks_per_seq
+
+        # In single user mode, we only need enough memory for one sequence
+        # instead of the maximum possible sequences
+        if self.scheduler_config.single_user_mode:
+            available_kv_cache_memory = memory_per_seq
+        else:
+            available_kv_cache_memory = (
+                total_gpu_memory * self.cache_config.gpu_memory_utilization -
+                peak_memory)
 
         return int(available_kv_cache_memory)
 
@@ -226,7 +261,8 @@ class Worker(WorkerBase):
         # warm up sizes that are not in cudagraph capture sizes,
         # but users still want to compile for better performance,
         # e.g. for the max-num-batched token size in chunked prefill.
-        warmup_sizes = self.aphrodite_config.compilation_config.compile_sizes.copy()
+        warmup_sizes = \
+            self.aphrodite_config.compilation_config.compile_sizes.copy()
         if not self.model_config.enforce_eager:
             warmup_sizes = [
                 x for x in warmup_sizes if x not in

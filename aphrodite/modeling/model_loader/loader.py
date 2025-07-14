@@ -544,7 +544,7 @@ class DefaultModelLoader(BaseModelLoader):
 
             loaded_weights = model.load_weights(
                 tensor_progress_bar(weights_iter, total_bytes,
-                                    "Loading model weights..."))
+                                    "Loading model weights"))
             self.counter_after_loading_weights = time.perf_counter()
             if get_tensor_model_parallel_rank() == 0:
                 logger.debug(

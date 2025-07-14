@@ -2734,7 +2734,6 @@ def tensor_progress_bar(iterable: Iterable[Tuple[str, torch.Tensor]],
 
     if show_progress:
         with Progress(
-                SpinnerColumn(),
                 TextColumn("[progress.description]{task.description}"),
                 BarColumn(),
                 # MofNCompleteColumn(),
@@ -2742,7 +2741,7 @@ def tensor_progress_bar(iterable: Iterable[Tuple[str, torch.Tensor]],
                 TextColumn("{task.completed:.2f}/{task.total:.2f} GiB"),
                 TimeElapsedColumn(),
         ) as progress:
-            task = progress.add_task(f"[cyan]{desc}",
+            task = progress.add_task(f"[bold blue]{desc}",
                                      total=final_bytes / units)
             for item in iterable:
                 steps = item[1].element_size() * item[1].nelement() / units

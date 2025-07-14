@@ -636,8 +636,14 @@ def _get_kv_cache_config_uniform_type(aphrodite_config: AphroditeConfig,
     num_tokens = num_blocks * aphrodite_config.cache_config.block_size
     num_tokens_str = f"{num_tokens:,}"
     max_concurrency = num_tokens / aphrodite_config.model_config.max_model_len
-    logger.info("GPU KV cache size: {} tokens ({:.1f}x concurrency)",
-                num_tokens_str, max_concurrency)
+
+    # Calculate total KV cache memory in GiB
+    total_kv_cache_memory = available_memory
+    total_kv_cache_memory_gib = total_kv_cache_memory / GiB_bytes
+
+    logger.info(
+        "GPU KV cache size: {} tokens ({:.2f} GiB, {:.1f}x concurrency)",
+        num_tokens_str, total_kv_cache_memory_gib, max_concurrency)
 
     per_layer_size = page_size * num_blocks
     # All layers have the same KV cache spec, so we create one kv cache group

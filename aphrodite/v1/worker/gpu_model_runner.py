@@ -1335,7 +1335,6 @@ class GPUModelRunner(LoRAModelRunnerMixin):
     def load_model(self) -> None:
         logger.info("Starting to load model {}...", self.model_config.model)
         with DeviceMemoryProfiler() as m:  # noqa: SIM117
-            time_before_load = time.perf_counter()
             self.model = get_model(aphrodite_config=self.aphrodite_config)
             if self.lora_config:
                 self.model = self.load_lora_model(self.model,
@@ -1349,17 +1348,7 @@ class GPUModelRunner(LoRAModelRunnerMixin):
             if self.use_aux_hidden_state_outputs:
                 self.model.set_aux_hidden_state_layers(
                     self.model.get_eagle3_aux_hidden_state_layers())
-            time_after_load = time.perf_counter()
         self.model_memory_usage = m.consumed_memory
-        world_size = get_tensor_model_parallel_world_size()
-        if world_size == 1:
-            logger.info("Model loading took {:.2f} GiB and {:.2f} seconds",
-                        self.model_memory_usage / GiB_bytes,
-                        time_after_load - time_before_load)
-        elif world_size > 1:
-            logger.info("Model loading took {:.2f} GiB and {:.2f} seconds",
-                        self.model_memory_usage / GiB_bytes * world_size,
-                        time_after_load - time_before_load)
 
     def _get_prompt_logprobs_dict(
         self,

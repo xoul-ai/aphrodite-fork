@@ -2147,6 +2147,25 @@ class SchedulerConfig:
                 "max_num_seqs was is not set. Defaulting to arbitrary value "
                 "of {}.", self.max_num_seqs)
 
+        if self.single_user_mode:
+            # In single user mode, we only need to support one sequence at a
+            # time.
+            original_max_num_seqs = self.max_num_seqs
+            original_cuda_graph_sizes = self.cuda_graph_sizes.copy()
+
+            if self.max_num_seqs != 1:
+                self.max_num_seqs = 1
+
+            # In single user mode, we only need CUDA graphs for batch size 1
+            if self.cuda_graph_sizes != [1]:
+                self.cuda_graph_sizes = [1]
+
+            if original_max_num_seqs != 1 or original_cuda_graph_sizes != [1]:
+                logger.info(
+                    "Single user mode enabled. Setting max_num_seqs from {} to "
+                    "1, and cuda_graph_sizes from {} to [1].",
+                    original_max_num_seqs, original_cuda_graph_sizes)
+
         if self.max_num_batched_tokens is None:
             if self.enable_chunked_prefill:
                 if self.num_scheduler_steps > 1:
