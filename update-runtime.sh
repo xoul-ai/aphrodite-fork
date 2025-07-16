@@ -12,4 +12,5 @@ bin/micromamba run -r conda -n aphrodite-runtime pip install -r requirements-cud
 # if you have multiple environments and one of them does not contain CUDA runtime.
 export CUDA_HOME=$(realpath $(find ./ -type d -path "*/conda/envs/aphrodite-runtime" 2>/dev/null | head -n 1))
 export PATH=$CUDA_HOME/bin:$PATH
-bin/micromamba run -r conda -n aphrodite-runtime pip install -ve .
+bin/micromamba run -r conda -n aphrodite-runtime pip install cmake>=3.26 ninja packaging>=24.2 "setuptools>=77.0.3,<80.0.0" setuptools-scm>=8.0 wheel jinja2
+bin/micromamba run -r conda -n aphrodite-runtime pip install --no-build-isolation -ve .
