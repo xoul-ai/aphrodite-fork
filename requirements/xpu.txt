@@ -1,0 +1,15 @@
+# Common dependencies
+-r common.txt
+
+ray>=2.9
+cmake>=3.26
+packaging>=24.2
+setuptools-scm>=8
+setuptools>=77.0.3,<80.0.0
+wheel
+jinja2>=3.1.6
+datasets # for benchmark scripts
+
+
+# FIXME: This will be fix in ipex 2.7. just leave this here for awareness.
+oneccl_bind_pt==2.7.0+xpu
